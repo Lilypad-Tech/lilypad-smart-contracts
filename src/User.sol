@@ -8,11 +8,11 @@ contract User is ILilypadUser {
     // Mapping to store user roles
     mapping(address => SharedStructs.UserType) private users;
     
-    // Array to store list of user addresses
-    address[] private userList;
+    // mapping of roles to addresses
+    mapping(SharedStructs.UserType => address[]) private usersByRole;
 
     function SetUser(address walletAddress, SharedStructs.UserType role) external returns (bool) {
-        users[walletAddress] = role;
+        //TODO
         return true;
     }
 
@@ -20,21 +20,13 @@ contract User is ILilypadUser {
         return users[walletAddress];
     }
 
-    function AddUserToList(address walletAddress) external returns (bool) {
-        userList.push(walletAddress);
+    function AddUserToList(address walletAddress, SharedStructs.UserType role) external returns (bool) {
+        // TODO
         return true;
     }
 
-    function RemoveUserFromList(address walletAddress) external returns (bool) {
-        for (uint i = 0; i < userList.length; i++) {
-            if (userList[i] == walletAddress) {
-                // Move last element to position being removed
-                userList[i] = userList[userList.length - 1];
-                // Remove last element
-                userList.pop();
-                return true;
-            }
-        }
+    function RemoveUserFromList(address walletAddress, SharedStructs.UserType role) external returns (bool) {
+        // TODO
         return false;
     }
 
