@@ -15,9 +15,11 @@ library SharedStructs {
   // we map addresses onto infomation about the user
   struct User {
     address userAddress;
-    // the CID of information for this user
-    string metadataCID;
+    // the decentralized identifier for the user's metadata (e.g. CID)
+    string metadataID;
+    // the url of the user's metadata
     string url;
-    UserType[] roles;
+    // // the roles of the user
+    // UserType[] roles;
   }
 }
