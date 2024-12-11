@@ -12,16 +12,19 @@ contract LilypadUser is ILilypadUser, Initializable {
     // mapping of addresses to roles
     mapping(address => mapping(SharedStructs.UserType => bool)) usersRoles;
 
-    event UserManagementEvent(address walletAddress, string metadataID, string url, SharedStructs.UserType role);
+    event UserManagementEvent(
+        address walletAddress,
+        string metadataID,
+        string url,
+        SharedStructs.UserType role
+    );
 
     error UserAlreadyExists();
     error UserNotFound();
     error RoleAlreadyAssigned();
     error RoleNotAllowed();
 
-    function initialize() external initializer {
-
-    }
+    function initialize() external initializer {}
 
     function insertUser(
         address walletAddress,
@@ -46,7 +49,6 @@ contract LilypadUser is ILilypadUser, Initializable {
         return true;
     }
 
-
     function updateUser(
         address walletAddress,
         string memory metadataID,
@@ -57,9 +59,22 @@ contract LilypadUser is ILilypadUser, Initializable {
             revert UserNotFound();
         }
 
+        // A resource provider cannot be a job creator and a job creator cannot be a resource provider
+        if (
+            (usersRoles[walletAddress][
+                SharedStructs.UserType.ResourceProvider
+            ] ==
+                true &&
+                role == SharedStructs.UserType.JobCreator) ||
+            (usersRoles[walletAddress][SharedStructs.UserType.JobCreator] ==
+                true &&
+                role == SharedStructs.UserType.ResourceProvider)
+        ) {
+            revert RoleNotAllowed();
+        }
+
         users[walletAddress].metadataID = metadataID;
         users[walletAddress].url = url;
-        usersRoles[walletAddress][role] = true;
 
         emit UserManagementEvent(walletAddress, metadataID, url, role);
 
