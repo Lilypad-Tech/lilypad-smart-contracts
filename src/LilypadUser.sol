@@ -23,6 +23,7 @@ contract LilypadUser is ILilypadUser, Initializable {
     error UserNotFound();
     error RoleAlreadyAssigned();
     error RoleNotAllowed();
+    error RoleNotFound();
 
     function initialize() external initializer {}
 
@@ -49,10 +50,23 @@ contract LilypadUser is ILilypadUser, Initializable {
         return true;
     }
 
-    function updateUser(
+    function updateUserMetadata(
         address walletAddress,
         string memory metadataID,
-        string memory url,
+        string memory url
+    ) external returns (bool) {
+        if (users[walletAddress].userAddress == address(0)) {
+            revert UserNotFound();
+        }
+
+        users[walletAddress].metadataID = metadataID;
+        users[walletAddress].url = url;
+
+        return true;
+    }
+
+    function addRole(
+        address walletAddress,
         SharedStructs.UserType role
     ) external returns (bool) {
         if (users[walletAddress].userAddress == address(0)) {
@@ -73,10 +87,38 @@ contract LilypadUser is ILilypadUser, Initializable {
             revert RoleNotAllowed();
         }
 
-        users[walletAddress].metadataID = metadataID;
-        users[walletAddress].url = url;
+        usersRoles[walletAddress][role] = true;
 
-        emit UserManagementEvent(walletAddress, metadataID, url, role);
+        emit UserManagementEvent(
+            walletAddress,
+            users[walletAddress].metadataID,
+            users[walletAddress].url,
+            role
+        );
+
+        return true;
+    }
+
+    function removeRole(
+        address walletAddress,
+        SharedStructs.UserType role
+    ) external returns (bool) {
+        if (users[walletAddress].userAddress == address(0)) {
+            revert UserNotFound();
+        }
+
+        if (!usersRoles[walletAddress][role]) {
+            revert RoleNotFound();
+        }
+
+        usersRoles[walletAddress][role] = false;
+
+        emit UserManagementEvent(
+            walletAddress,
+            users[walletAddress].metadataID,
+            users[walletAddress].url,
+            role
+        );
 
         return true;
     }
