@@ -69,7 +69,8 @@ contract LilypadUser is ILilypadUser, Initializable {
         address walletAddress,
         SharedStructs.UserType role
     ) external returns (bool) {
-        if (users[walletAddress].userAddress == address(0)) {
+        SharedStructs.User memory user = users[walletAddress];
+        if (user.userAddress == address(0)) {
             revert UserNotFound();
         }
 
@@ -91,8 +92,8 @@ contract LilypadUser is ILilypadUser, Initializable {
 
         emit UserManagementEvent(
             walletAddress,
-            users[walletAddress].metadataID,
-            users[walletAddress].url,
+            user.metadataID,
+            user.url,
             role
         );
 
