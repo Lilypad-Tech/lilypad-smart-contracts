@@ -4,17 +4,62 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/LilypadUser.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract LilypadUserTest is Test {
     LilypadUser public lilypadUser;
     address public constant ALICE = address(0x1);
     address public constant BOB = address(0x2);
+    address public constant CONTROLLER = address(0x3);
 
     event UserManagementEvent(address walletAddress, string metadataID, string url, SharedStructs.UserType role);
 
     function setUp() public {
         lilypadUser = new LilypadUser();
         lilypadUser.initialize();
+        
+        // Grant operator role to OPERATOR address
+        lilypadUser.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
+    }
+
+    function test_RevertWhen_NonAdminInsertsUser() public {
+        vm.startPrank(ALICE);
+        
+        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
+        lilypadUser.insertUser(BOB, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+    }
+
+    function test_ControllerCanUpdateMetadata() public {
+        // First insert user as admin
+        vm.startPrank(address(this)); // test contract is admin
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+        vm.stopPrank();
+
+        // Update as operator
+        vm.startPrank(CONTROLLER);
+        bool success = lilypadUser.updateUserMetadata(ALICE, "metadata2", "http://updated.com");
+        assertTrue(success);
+        vm.stopPrank();
+
+        SharedStructs.User memory user = lilypadUser.getUser(ALICE);
+        assertEq(user.metadataID, "metadata2");
+        assertEq(user.url, "http://updated.com");
+    }
+
+    function test_UserCannotUpdateOwnMetadata() public {
+        // First insert user as admin
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+
+        // Update as user
+        vm.startPrank(ALICE);
+        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
+        lilypadUser.updateUserMetadata(ALICE, "metadata2", "http://updated.com");
+        vm.stopPrank();
+
+        SharedStructs.User memory user = lilypadUser.getUser(ALICE);
+        assertEq(user.metadataID, "metadata1");
+        assertEq(user.url, "http://example.com");
     }
 
     // Unit Tests

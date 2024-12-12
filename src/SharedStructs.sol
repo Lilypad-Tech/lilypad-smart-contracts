@@ -11,6 +11,8 @@ library SharedStructs {
         Admin
     }
 
+    bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
+
     // we map addresses onto infomation about the user
     struct User {
         address userAddress;

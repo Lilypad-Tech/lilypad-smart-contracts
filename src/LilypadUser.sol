@@ -2,10 +2,11 @@
 pragma solidity ^0.8.13;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ILilypadUser} from "./interfaces/ILilypadUser.sol";
 import {SharedStructs} from "./SharedStructs.sol";
 
-contract LilypadUser is ILilypadUser, Initializable {
+contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
     // Mapping to store user information
     mapping(address => SharedStructs.User) users;
 
@@ -20,10 +21,17 @@ contract LilypadUser is ILilypadUser, Initializable {
     error RoleNotAllowed();
     error RoleNotFound();
 
-    function initialize() external initializer {}
+    function initialize() external initializer {
+        __AccessControl_init();
+        
+        // Grant admin role to deployer (DEFAULT_ADMIN_ROLE is from AccessControlUpgradeable)
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
+    }
 
     function insertUser(address walletAddress, string memory metadataID, string memory url, SharedStructs.UserType role)
         external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
         if (users[walletAddress].userAddress != address(0)) {
@@ -31,7 +39,6 @@ contract LilypadUser is ILilypadUser, Initializable {
         }
 
         users[walletAddress] = SharedStructs.User({userAddress: walletAddress, metadataID: metadataID, url: url});
-
         usersRoles[walletAddress] = 1 << uint256(role);
 
         emit UserManagementEvent(walletAddress, metadataID, url, role);
@@ -41,6 +48,7 @@ contract LilypadUser is ILilypadUser, Initializable {
 
     function updateUserMetadata(address walletAddress, string memory metadataID, string memory url)
         external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
         if (users[walletAddress].userAddress == address(0)) {
@@ -55,7 +63,11 @@ contract LilypadUser is ILilypadUser, Initializable {
         return true;
     }
 
-    function addRole(address walletAddress, SharedStructs.UserType role) external returns (bool) {
+    function addRole(address walletAddress, SharedStructs.UserType role)
+        external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
         SharedStructs.User memory user = users[walletAddress];
         if (user.userAddress == address(0)) {
             revert UserNotFound();
@@ -86,7 +98,11 @@ contract LilypadUser is ILilypadUser, Initializable {
         return true;
     }
 
-    function removeRole(address walletAddress, SharedStructs.UserType role) external returns (bool) {
+    function removeRole(address walletAddress, SharedStructs.UserType role)
+        external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
         if (users[walletAddress].userAddress == address(0)) {
             revert UserNotFound();
         }
