@@ -13,12 +13,9 @@ interface ILilypadUser {
      * @return Returns true if the user is successfully inserted.
      * @notice This function is restricted to the controller role.
      */
-    function insertUser(
-        address walletAddress,
-        string memory metadataID,
-        string memory url,
-        SharedStructs.UserType role
-    ) external returns (bool);
+    function insertUser(address walletAddress, string memory metadataID, string memory url, SharedStructs.UserType role)
+        external
+        returns (bool);
 
     /**
      * @dev updates a user's metadata
@@ -28,11 +25,9 @@ interface ILilypadUser {
      * @return Returns true if the user is successfully updated.
      * @notice This function is restricted to the controller role.
      */
-    function updateUserMetadata(
-        address walletAddress,
-        string memory metadataID,
-        string memory url
-    ) external returns (bool);
+    function updateUserMetadata(address walletAddress, string memory metadataID, string memory url)
+        external
+        returns (bool);
 
     /**
      * @dev Adds a role to a user.
@@ -40,10 +35,7 @@ interface ILilypadUser {
      * @param role The role to add to the user.
      * @return Returns true if the role is successfully added.
      */
-    function addRole(
-        address walletAddress,
-        SharedStructs.UserType role
-    ) external returns (bool);
+    function addRole(address walletAddress, SharedStructs.UserType role) external returns (bool);
 
     /**
      * @dev Removes a role from a user.
@@ -51,19 +43,14 @@ interface ILilypadUser {
      * @param role The role to remove from the user.
      * @return Returns true if the role is successfully removed.
      */
-    function removeRole(
-        address walletAddress,
-        SharedStructs.UserType role
-    ) external returns (bool);
-    
+    function removeRole(address walletAddress, SharedStructs.UserType role) external returns (bool);
+
     /**
      * @dev Retrieves the user details for a given wallet address.
      * @param walletAddress The address of the user to retrieve details for.
      * @return Returns the user's role type.
      */
-    function getUser(
-        address walletAddress
-    ) external view returns (SharedStructs.User memory);
+    function getUser(address walletAddress) external view returns (SharedStructs.User memory);
 
     /**
      * @dev Checks if a user has a specific role.
@@ -71,8 +58,5 @@ interface ILilypadUser {
      * @param role The role type to check for the user.
      * @return Returns true if the user has the specified role.
      */
-    function hasRole(
-        address walletAddress,
-        SharedStructs.UserType role
-    ) external view returns (bool);
+    function hasRole(address walletAddress, SharedStructs.UserType role) external view returns (bool);
 }
