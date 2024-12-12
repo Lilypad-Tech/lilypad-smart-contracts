@@ -282,4 +282,50 @@ contract LilypadUserTest is Test {
         vm.expectRevert(LilypadUser.UserNotFound.selector);
         lilypadUser.removeRole(walletAddress, role);
     }
+
+    function test_MultipleCompatibleRoles() public {
+        // Test adding all compatible roles to a single user
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.ModuleCreator);
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.Admin);
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.Solver);
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.Validator);
+
+        // Verify all roles are present
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.JobCreator));
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.ModuleCreator));
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.Admin));
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.Solver));
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.Validator));
+    }
+
+    function test_RemoveMiddleRole() public {
+        // Test removing a role that's "sandwiched" between other roles
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.ModuleCreator);
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.Admin);
+
+        // Remove middle role
+        lilypadUser.removeRole(ALICE, SharedStructs.UserType.ModuleCreator);
+
+        // Verify correct roles remain
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.JobCreator));
+        assertFalse(lilypadUser.hasRole(ALICE, SharedStructs.UserType.ModuleCreator));
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.Admin));
+    }
+
+    function test_ResourceProviderMultipleRoles() public {
+        // Test ResourceProvider can have multiple compatible roles
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.ResourceProvider);
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.ModuleCreator);
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.Admin);
+
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.ResourceProvider));
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.ModuleCreator));
+        assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.Admin));
+
+        // Verify JobCreator role still can't be added
+        vm.expectRevert(LilypadUser.RoleNotAllowed.selector);
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.JobCreator);
+    }
 }

@@ -9,8 +9,8 @@ contract LilypadUser is ILilypadUser, Initializable {
     // Mapping to store user information
     mapping(address => SharedStructs.User) users;
 
-    // mapping of addresses to roles
-    mapping(address => mapping(SharedStructs.UserType => bool)) usersRoles;
+    // mapping of addresses to roles using bitwise operations to store multiple roles
+    mapping(address => uint256) usersRoles;
 
     event UserManagementEvent(address walletAddress, string metadataID, string url, SharedStructs.UserType role);
 
@@ -32,7 +32,7 @@ contract LilypadUser is ILilypadUser, Initializable {
 
         users[walletAddress] = SharedStructs.User({userAddress: walletAddress, metadataID: metadataID, url: url});
 
-        usersRoles[walletAddress][role] = true;
+        usersRoles[walletAddress] = 1 << uint256(role);
 
         emit UserManagementEvent(walletAddress, metadataID, url, role);
 
@@ -64,18 +64,22 @@ contract LilypadUser is ILilypadUser, Initializable {
         // A resource provider cannot be a job creator and a job creator cannot be a resource provider
         if (
             (
-                usersRoles[walletAddress][SharedStructs.UserType.ResourceProvider] == true
+                usersRoles[walletAddress] & 1 << uint256(SharedStructs.UserType.ResourceProvider) != 0
                     && role == SharedStructs.UserType.JobCreator
             )
                 || (
-                    usersRoles[walletAddress][SharedStructs.UserType.JobCreator] == true
+                    usersRoles[walletAddress] & 1 << uint256(SharedStructs.UserType.JobCreator) != 0
                         && role == SharedStructs.UserType.ResourceProvider
                 )
         ) {
             revert RoleNotAllowed();
         }
 
-        usersRoles[walletAddress][role] = true;
+        // add the role to the user using bitwise operations to avoid overwriting existing roles
+        // Existing roles: 0001
+        // New role:      0100
+        // Result:        0101  (both roles are now set)
+        usersRoles[walletAddress] = usersRoles[walletAddress] | 1 << uint256(role);
 
         emit UserManagementEvent(walletAddress, user.metadataID, user.url, role);
 
@@ -87,11 +91,15 @@ contract LilypadUser is ILilypadUser, Initializable {
             revert UserNotFound();
         }
 
-        if (!usersRoles[walletAddress][role]) {
+        if (usersRoles[walletAddress] & 1 << uint256(role) == 0) {
             revert RoleNotFound();
         }
 
-        usersRoles[walletAddress][role] = false;
+        // remove the role from the user using bitwise operations to avoid overwriting existing roles
+        // Existing roles: 0101
+        // Role to remove: 0100
+        // Result:        0001  (only the new role is removed)
+        usersRoles[walletAddress] = usersRoles[walletAddress] & ~(1 << uint256(role));
 
         emit UserManagementEvent(walletAddress, users[walletAddress].metadataID, users[walletAddress].url, role);
 
@@ -111,6 +119,10 @@ contract LilypadUser is ILilypadUser, Initializable {
             revert UserNotFound();
         }
 
-        return usersRoles[walletAddress][role];
+        // check if the role is set using bitwise operations
+        // Existing roles: 0101
+        // Role to check: 0100
+        // Result:        0101 & 0100 = 0100  (non-zero, so the role is set)
+        return usersRoles[walletAddress] & 1 << uint256(role) != 0;
     }
 }
