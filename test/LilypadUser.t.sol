@@ -41,6 +41,9 @@ contract LilypadUserTest is Test {
     }
 
     function test_updateUserMetadata() public {
+        vm.expectEmit(true, true, true, true);
+        emit UserManagementEvent(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+
         lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
 
         bool success = lilypadUser.updateUserMetadata(ALICE, "metadata2", "http://updated.com");

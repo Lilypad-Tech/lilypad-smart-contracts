@@ -50,6 +50,8 @@ contract LilypadUser is ILilypadUser, Initializable {
         users[walletAddress].metadataID = metadataID;
         users[walletAddress].url = url;
 
+        emit UserManagementEvent(walletAddress, metadataID, url, SharedStructs.UserType.JobCreator);
+
         return true;
     }
 
