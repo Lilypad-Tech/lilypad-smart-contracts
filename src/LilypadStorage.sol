@@ -17,7 +17,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     // Events for important state changes
     event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
-    event ValidationStatusChanged(string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status);
+    event ValidationResultStatusChanged(string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status);
     event ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
     event DealSaved(string indexed dealId, address jobCreator, address resourceProvider);
     event ResultSaved(string indexed resultId, string dealId);
@@ -107,7 +107,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
         require(validationResult.timestamp != 0, "Validation result does not exist");
         validationResult.status = status;
-        emit ValidationStatusChanged(validationResultId, status);
+        emit ValidationResultStatusChanged(validationResultId, status);
         return true;
     }
 
@@ -132,7 +132,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      */
     function getResult(string memory resultId) external view returns (SharedStructs.Result memory) {
         require(bytes(resultId).length > 0, "Result ID cannot be empty");
-        return results[resultId];
+        SharedStructs.Result memory result = results[resultId];
+        require(result.timestamp != 0, "Result does not exist");
+        return result;
     }
 
     /**
@@ -172,6 +174,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         require(bytes(dealId).length > 0, "Deal ID cannot be empty");
         require(deal.jobCreator != address(0), "Invalid job creator address");
         require(deal.resourceProvider != address(0), "Invalid resource provider address");
+        require(deal.jobCreator != deal.resourceProvider, "Job creator and resource provider cannot be the same");
         deals[dealId] = deal;
         emit DealSaved(dealId, deal.jobCreator, deal.resourceProvider);
         return true;
