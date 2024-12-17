@@ -11,11 +11,22 @@ import {SharedStructs} from "./SharedStructs.sol";
  * @dev Implementation of storage contract for Lilypad platform
  */
 contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradeable {
-    using SharedStructs for *;
+    using SharedStructs for SharedStructs.Deal;
+    using SharedStructs for SharedStructs.Result;
+    using SharedStructs for SharedStructs.ValidationResult;
 
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    // Events for important state changes
+    event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
+    event ValidationStatusChanged(string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status);
+    event ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
+    event DealSaved(string indexed dealId, address jobCreator, address resourceProvider);
+    event ResultSaved(string indexed resultId, string dealId);
+    event ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
+    event ControllerRoleGranted(address indexed account, address indexed sender);
+    event ControllerRoleRevoked(address indexed account, address indexed sender);
 
     // Mappings to store deal, validationResult, and result data
+    // TODO: can we make this bytes32 to make it more gas-efficient?
     mapping(string => SharedStructs.Deal) private deals;
     mapping(string => SharedStructs.ValidationResult) private validationResults;
     mapping(string => SharedStructs.Result) private results;
@@ -26,165 +37,207 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     }
 
     /**
-     * @dev Initializes the contract setting the deployer as the initial admin
+     * @dev Initializes the contract setting the deployer as the initial controller
      */
     function initialize() public initializer {
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender);
+        _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
+    }
+
+    /**
+     * @dev Grants the controller role to an account
+     * @param account The address to grant the controller role to
+     * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
+     */
+    function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(account != address(0), "Cannot grant role to zero address");
+        require(!hasRole(SharedStructs.CONTROLLER_ROLE, account), "Account already has controller role");
+        _grantRole(SharedStructs.CONTROLLER_ROLE, account);
+        emit ControllerRoleGranted(account, msg.sender);
+    }
+
+    /**
+     * @dev Revokes the controller role from an account
+     * @param account The address to revoke the controller role from
+     * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
+     */
+    function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(account != address(0), "Cannot revoke role from zero address");
+        require(hasRole(SharedStructs.CONTROLLER_ROLE, account), "Account does not have controller role");
+        require(account != msg.sender, "Cannot revoke own controller role");
+        _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
+        emit ControllerRoleRevoked(account, msg.sender);
+    }
+
+    /**
+     * @dev Checks if an account has the controller role
+     * @param account The address to check
+     * @return bool True if the account has the controller role
+     */
+    function hasControllerRole(address account) external view returns (bool) {
+        return hasRole(SharedStructs.CONTROLLER_ROLE, account);
     }
 
     /**
      * @dev Changes the status of a deal object
-     * @param dealId The unique identifier of the deal to update
-     * @param status The new status to assign to the deal
-     * @return success Returns true if the status change is successful
      */
-    function ChangeDealStatus(string memory dealId, SharedStructs.DealStatusEnum status)
+    function changeDealStatus(string memory dealId, SharedStructs.DealStatusEnum status)
         external
-        onlyRole(ADMIN_ROLE)
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
+        require(bytes(dealId).length > 0, "Deal ID cannot be empty");
         SharedStructs.Deal storage deal = deals[dealId];
+        require(deal.timestamp != 0, "Deal does not exist");
         deal.status = status;
+        emit DealStatusChanged(dealId, status);
         return true;
     }
 
     /**
      * @dev Changes the status of a validation result
-     * @param validationResultId The unique identifier of the validation result to update
-     * @param status The new status to assign to the validation result
-     * @return success Returns true if the status change is successful
      */
-    function ChangeValidationStatus(string memory validationResultId, SharedStructs.ValidationResultStatusEnum status)
+    function changeValidationStatus(string memory validationResultId, SharedStructs.ValidationResultStatusEnum status)
         external
-        onlyRole(ADMIN_ROLE)
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
+        require(bytes(validationResultId).length > 0, "Validation result ID cannot be empty");
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
+        require(validationResult.timestamp != 0, "Validation result does not exist");
         validationResult.status = status;
+        emit ValidationStatusChanged(validationResultId, status);
         return true;
     }
 
     /**
      * @dev Changes the status of a result object
-     * @param resultId The unique identifier of the result to update
-     * @param status The new status to assign to the result
-     * @return success Returns true if the status change is successful
      */
-    function ChangeResultStatus(string memory resultId, SharedStructs.ResultStatusEnum status)
+    function changeResultStatus(string memory resultId, SharedStructs.ResultStatusEnum status)
         external
-        onlyRole(ADMIN_ROLE)
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
+        require(bytes(resultId).length > 0, "Result ID cannot be empty");
         SharedStructs.Result storage result = results[resultId];
+        require(result.timestamp != 0, "Result does not exist");
         result.status = status;
+        emit ResultStatusChanged(resultId, status);
         return true;
     }
 
     /**
-     * @dev Returns the CID of the result of a deal
-     * @param resultId The unique identifier of the result
-     * @return result The Result object associated with the resultId
+     * @dev Returns the Result object associated with the resultId
      */
-    function GetResult(string memory resultId) external view returns (SharedStructs.Result memory) {
+    function getResult(string memory resultId) external view returns (SharedStructs.Result memory) {
+        require(bytes(resultId).length > 0, "Result ID cannot be empty");
         return results[resultId];
     }
 
     /**
      * @dev Saves a Result Object
-     * @param resultId The unique identifier of the result
-     * @param result The Result object to save
-     * @return success Returns true if the save is successful
      */
-    function SaveResult(string memory resultId, SharedStructs.Result memory result)
+    function saveResult(string memory resultId, SharedStructs.Result memory result)
         external
-        onlyRole(ADMIN_ROLE)
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
+        require(bytes(resultId).length > 0, "Result ID cannot be empty");
+        require(bytes(result.dealId).length > 0, "Deal ID cannot be empty");
+        require(bytes(result.resultCID).length > 0, "Result CID cannot be empty");
         results[resultId] = result;
+        emit ResultSaved(resultId, result.dealId);
         return true;
     }
 
     /**
-     * @dev Returns the CID of the Deal object containing both the Job Offer and Resource Offer
-     * @param dealId The unique identifier of the deal
-     * @return deal The Deal object associated with the dealId
+     * @dev Returns the Deal object associated with the dealId
      */
-    function GetDeal(string memory dealId) external view returns (SharedStructs.Deal memory) {
-        return deals[dealId];
+    function getDeal(string memory dealId) external view returns (SharedStructs.Deal memory) {
+        require(bytes(dealId).length > 0, "Deal ID cannot be empty");
+        SharedStructs.Deal memory deal = deals[dealId];
+        require(deal.timestamp != 0, "Deal does not exist");
+        return deal;
     }
 
     /**
      * @dev Saves a Deal Object with a status
-     * @param dealId The unique identifier of the deal
-     * @param deal The Deal object to save
-     * @return success Returns true if the save is successful
      */
-    function SaveDeal(string memory dealId, SharedStructs.Deal memory deal)
+    function saveDeal(string memory dealId, SharedStructs.Deal memory deal)
         external
-        onlyRole(ADMIN_ROLE)
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
+        require(bytes(dealId).length > 0, "Deal ID cannot be empty");
+        require(deal.jobCreator != address(0), "Invalid job creator address");
+        require(deal.resourceProvider != address(0), "Invalid resource provider address");
         deals[dealId] = deal;
+        emit DealSaved(dealId, deal.jobCreator, deal.resourceProvider);
         return true;
     }
 
     /**
      * @dev Gets a validation result object
-     * @param validationResultId The unique identifier of the validation result
-     * @return validationResult The validation result object associated with the validationResultId
      */
-    function GetValidationResult(string memory validationResultId)
+    function getValidationResult(string memory validationResultId)
         external
         view
         returns (SharedStructs.ValidationResult memory)
     {
-        return validationResults[validationResultId];
+        require(bytes(validationResultId).length > 0, "Validation result ID cannot be empty");
+        SharedStructs.ValidationResult memory validationResult = validationResults[validationResultId];
+        require(validationResult.timestamp != 0, "Validation result does not exist");
+        return validationResult;
     }
 
     /**
      * @dev Saves a validation result object with a status
-     * @param validationResultId The unique identifier of the validation result
-     * @param validationResult The validation result object to save
-     * @return success Returns true if the save is successful
      */
-    function SaveValidationResult(
+    function saveValidationResult(
         string memory validationResultId,
         SharedStructs.ValidationResult memory validationResult
-    ) external onlyRole(ADMIN_ROLE) returns (bool) {
+    ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+        require(bytes(validationResultId).length > 0, "Validation result ID cannot be empty");
+        require(bytes(validationResult.resultId).length > 0, "Result ID cannot be empty");
+        require(bytes(validationResult.validationCID).length > 0, "Validation CID cannot be empty");
+        require(validationResult.validator != address(0), "Invalid validator address");
         validationResults[validationResultId] = validationResult;
+        emit ValidationResultSaved(validationResultId, validationResult.resultId, validationResult.validator);
         return true;
     }
 
     /**
      * @dev Check the status of a deal
-     * @param dealId The unique identifier of the deal
-     * @return status The current status of the deal
      */
-    function CheckDealStatus(string memory dealId) external view returns (SharedStructs.DealStatusEnum) {
-        return deals[dealId].status;
+    function checkDealStatus(string memory dealId) external view returns (SharedStructs.DealStatusEnum) {
+        require(bytes(dealId).length > 0, "Deal ID cannot be empty");
+        SharedStructs.Deal storage deal = deals[dealId];
+        require(deal.timestamp != 0, "Deal does not exist");
+        return deal.status;
     }
 
     /**
      * @dev Check the status of a validation result
-     * @param validationResultId The unique identifier of the validation result
-     * @return status The current status of the validation result
      */
-    function CheckValidationStatus(string memory validationResultId)
+    function checkValidationStatus(string memory validationResultId)
         external
         view
         returns (SharedStructs.ValidationResultStatusEnum)
     {
-        return validationResults[validationResultId].status;
+        require(bytes(validationResultId).length > 0, "Validation result ID cannot be empty");
+        SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
+        require(validationResult.timestamp != 0, "Validation result does not exist");
+        return validationResult.status;
     }
 
     /**
      * @dev Check the status of a result
-     * @param resultId The unique identifier of the result
-     * @return status The current status of the result
      */
-    function CheckResultStatus(string memory resultId) external view returns (SharedStructs.ResultStatusEnum) {
-        return results[resultId].status;
+    function checkResultStatus(string memory resultId) external view returns (SharedStructs.ResultStatusEnum) {
+        require(bytes(resultId).length > 0, "Result ID cannot be empty");
+        SharedStructs.Result storage result = results[resultId];
+        require(result.timestamp != 0, "Result does not exist");
+        return result.status;
     }
 }

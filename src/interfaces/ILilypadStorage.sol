@@ -5,13 +5,34 @@ import "../SharedStructs.sol";
 
 interface ILilypadStorage {
     /**
+     * @dev Grants the controller role to an account
+     * @param account The address to grant the controller role to
+     * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
+     */
+    function grantControllerRole(address account) external;
+
+    /**
+     * @dev Revokes the controller role from an account
+     * @param account The address to revoke the controller role from
+     * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
+     */
+    function revokeControllerRole(address account) external;
+
+    /**
+     * @dev Checks if an account has the controller role
+     * @param account The address to check
+     * @return bool True if the account has the controller role
+     */
+    function hasControllerRole(address account) external view returns (bool);
+
+    /**
      * @dev Changes the status of a deal to the specified status.
      * @param dealId The unique identifier of the deal to update.
      * @param status The new status to assign to the deal (enum).
      * @return Returns true if the status change is successful.
      * @notice This function is restricted to the controller role.
      */
-    function ChangeDealStatus(string memory dealId, SharedStructs.DealStatusEnum status) external returns (bool);
+    function changeDealStatus(string memory dealId, SharedStructs.DealStatusEnum status) external returns (bool);
 
     /**
      * @dev Changes the validation result status to the specified status.
@@ -20,7 +41,7 @@ interface ILilypadStorage {
      * @return Returns true if the status change is successful.
      * @notice This function is restricted to the controller role.
      */
-    function ChangeValidationStatus(string memory validationResultId, SharedStructs.ValidationResultStatusEnum status)
+    function changeValidationStatus(string memory validationResultId, SharedStructs.ValidationResultStatusEnum status)
         external
         returns (bool);
 
@@ -31,7 +52,7 @@ interface ILilypadStorage {
      * @return Returns true if the status change is successful.
      * @notice This function is restricted to the controller role.
      */
-    function ChangeResultStatus(string memory resultId, SharedStructs.ResultStatusEnum status)
+    function changeResultStatus(string memory resultId, SharedStructs.ResultStatusEnum status)
         external
         returns (bool);
 
@@ -40,7 +61,7 @@ interface ILilypadStorage {
      * @param resultId The unique identifier of the result.
      * @return Returns the `Result` struct associated with the result ID.
      */
-    function GetResult(string memory resultId) external view returns (SharedStructs.Result memory);
+    function getResult(string memory resultId) external view returns (SharedStructs.Result memory);
 
     /**
      * @dev Saves the result data associated with a specific result ID.
@@ -49,14 +70,14 @@ interface ILilypadStorage {
      * @return Returns true if the result is successfully saved.
      * @notice This function is restricted to the controller role.
      */
-    function SaveResult(string memory resultId, SharedStructs.Result memory result) external returns (bool);
+    function saveResult(string memory resultId, SharedStructs.Result memory result) external returns (bool);
 
     /**
      * @dev Retrieves the deal data associated with a specific deal ID.
      * @param dealId The unique identifier of the deal.
      * @return Returns the `Deal` struct associated with the deal ID.
      */
-    function GetDeal(string memory dealId) external view returns (SharedStructs.Deal memory);
+    function getDeal(string memory dealId) external view returns (SharedStructs.Deal memory);
 
     /**
      * @dev Saves the deal data associated with a specific deal ID.
@@ -65,14 +86,14 @@ interface ILilypadStorage {
      * @return Returns true if the deal is successfully saved.
      * @notice This function is restricted to the controller role.
      */
-    function SaveDeal(string memory dealId, SharedStructs.Deal memory deal) external returns (bool);
+    function saveDeal(string memory dealId, SharedStructs.Deal memory deal) external returns (bool);
 
     /**
      * @dev Retrieves the validation result associated with a specific validation result ID.
      * @param validationResultId The unique identifier of the validation result.
      * @return Returns the `ValidationResult` struct associated with the validation result ID.
      */
-    function GetValidationResult(string memory validationResultId)
+    function getValidationResult(string memory validationResultId)
         external
         view
         returns (SharedStructs.ValidationResult memory);
@@ -84,7 +105,7 @@ interface ILilypadStorage {
      * @return Returns true if the validation result is successfully saved.
      * @notice This function is restricted to the controller role.
      */
-    function SaveValidationResult(
+    function saveValidationResult(
         string memory validationResultId,
         SharedStructs.ValidationResult memory validationResult
     ) external returns (bool);
@@ -94,22 +115,22 @@ interface ILilypadStorage {
      * @param dealId The unique identifier of the deal.
      * @return Returns the Deal Enum type according to the deals current status.
      */
-    function CheckDealStatus(string memory dealId) external view returns (SharedStructs.DealStatusEnum);
+    function checkDealStatus(string memory dealId) external view returns (SharedStructs.DealStatusEnum);
 
     /**
      * @dev Check the status of a validation result.
      * @param validationResultId The unique identifier of the validation result.
      * @return Returns the ValidationResultStatus Enum type according to the validation result's current status.
      */
-    function CheckValidationStatus(string memory validationResultId)
+    function checkValidationStatus(string memory validationResultId)
         external
         view
         returns (SharedStructs.ValidationResultStatusEnum);
 
     /**
      * @dev Check the status of a result.
-     * @param resultId The unique identifier of the result assigned to the result.
+     * @param resultId The unique identifier of the result.
      * @return Returns the Result Enum type according to the result's current status.
      */
-    function CheckResultStatus(string memory resultId) external view returns (SharedStructs.ResultStatusEnum);
+    function checkResultStatus(string memory resultId) external view returns (SharedStructs.ResultStatusEnum);
 }
