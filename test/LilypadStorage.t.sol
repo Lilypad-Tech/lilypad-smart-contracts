@@ -522,7 +522,7 @@ contract LilypadStorageTest is Test {
         vm.assume(jobCreator != address(0));
         vm.assume(resourceProvider != address(0));
         vm.assume(jobCreator != resourceProvider);
-        
+
         vm.startPrank(CONTROLLER);
 
         SharedStructs.Deal memory deal = SharedStructs.Deal({
@@ -532,7 +532,7 @@ contract LilypadStorageTest is Test {
             jobOfferCID: jobOfferCID,
             resourceOfferCID: resourceOfferCID,
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: 0  // Will be set by the contract
+            timestamp: 0 // Will be set by the contract
         });
 
         vm.expectEmit(true, true, true, true);
@@ -540,7 +540,7 @@ contract LilypadStorageTest is Test {
 
         lilypadStorage.saveDeal(dealId, deal);
         SharedStructs.Deal memory retrievedDeal = lilypadStorage.getDeal(dealId);
-        
+
         assertEq(retrievedDeal.dealId, deal.dealId);
         assertEq(retrievedDeal.jobCreator, deal.jobCreator);
         assertEq(retrievedDeal.resourceProvider, deal.resourceProvider);
@@ -549,15 +549,11 @@ contract LilypadStorageTest is Test {
         assertEq(retrievedDeal.timestamp, block.timestamp);
     }
 
-    function testFuzz_SaveAndGetResult(
-        uint8 resultIdSeed,
-        uint8 dealIdSeed,
-        uint8 resultCIDSeed
-    ) public {
+    function testFuzz_SaveAndGetResult(uint8 resultIdSeed, uint8 dealIdSeed, uint8 resultCIDSeed) public {
         string memory resultId = string(abi.encodePacked("result_", uint8(resultIdSeed % 26 + 65)));
         string memory dealId = string(abi.encodePacked("deal_", uint8(dealIdSeed % 26 + 65)));
         string memory resultCID = string(abi.encodePacked("cid_", uint8(resultCIDSeed % 26 + 65)));
-        
+
         vm.startPrank(CONTROLLER);
 
         // Create prerequisite deal
@@ -568,7 +564,7 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobOfferCID",
             resourceOfferCID: "resourceOfferCID",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: 0  // Will be set by the contract
+            timestamp: 0 // Will be set by the contract
         });
         lilypadStorage.saveDeal(dealId, deal);
 
@@ -578,12 +574,12 @@ contract LilypadStorageTest is Test {
             dealId: dealId,
             resultCID: resultCID,
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
-            timestamp: 0  // Will be set by the contract
+            timestamp: 0 // Will be set by the contract
         });
 
         lilypadStorage.saveResult(resultId, result);
         SharedStructs.Result memory retrievedResult = lilypadStorage.getResult(resultId);
-        
+
         assertEq(retrievedResult.resultId, result.resultId);
         assertEq(retrievedResult.dealId, result.dealId);
         assertEq(retrievedResult.resultCID, result.resultCID);
@@ -597,15 +593,16 @@ contract LilypadStorageTest is Test {
         address validator
     ) public {
         vm.assume(validator != address(0));
-        
-        string memory validationResultId = string(abi.encodePacked("validation_", uint8(validationResultIdSeed % 26 + 65)));
+
+        string memory validationResultId =
+            string(abi.encodePacked("validation_", uint8(validationResultIdSeed % 26 + 65)));
         string memory resultId = string(abi.encodePacked("result_", uint8(resultIdSeed % 26 + 65)));
         string memory validationCID = string(abi.encodePacked("cid_", uint8(validationCIDSeed % 26 + 65)));
-        
+
         vm.startPrank(CONTROLLER);
 
         // Create prerequisite deal
-        string memory dealId = "deal_A";  // Fixed ID for prerequisite
+        string memory dealId = "deal_A"; // Fixed ID for prerequisite
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: dealId,
             jobCreator: address(0x1),
@@ -613,7 +610,7 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "job_A",
             resourceOfferCID: "res_A",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: 0  // Will be set by the contract
+            timestamp: 0 // Will be set by the contract
         });
         lilypadStorage.saveDeal(dealId, deal);
 
@@ -623,7 +620,7 @@ contract LilypadStorageTest is Test {
             dealId: dealId,
             resultCID: "cid_A",
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
-            timestamp: 0  // Will be set by the contract
+            timestamp: 0 // Will be set by the contract
         });
         lilypadStorage.saveResult(resultId, result);
 
@@ -633,13 +630,14 @@ contract LilypadStorageTest is Test {
             resultId: resultId,
             validationCID: validationCID,
             status: SharedStructs.ValidationResultStatusEnum.ValidationPending,
-            timestamp: 0,  // Will be set by the contract
+            timestamp: 0, // Will be set by the contract
             validator: validator
         });
 
         lilypadStorage.saveValidationResult(validationResultId, validationResult);
-        SharedStructs.ValidationResult memory retrievedValidation = lilypadStorage.getValidationResult(validationResultId);
-        
+        SharedStructs.ValidationResult memory retrievedValidation =
+            lilypadStorage.getValidationResult(validationResultId);
+
         assertEq(retrievedValidation.validationResultId, validationResult.validationResultId);
         assertEq(retrievedValidation.resultId, validationResult.resultId);
         assertEq(retrievedValidation.validationCID, validationResult.validationCID);
