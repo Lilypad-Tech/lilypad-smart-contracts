@@ -39,7 +39,7 @@ library SharedStructs {
     }
     // // the roles of the user
     // UserType[] roles;
-    
+
     struct Deal {
         string dealId;
         address jobCreator;

@@ -17,7 +17,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     // Events for important state changes
     event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
-    event ValidationResultStatusChanged(string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status);
+    event ValidationResultStatusChanged(
+        string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status
+    );
     event ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
     event DealSaved(string indexed dealId, address jobCreator, address resourceProvider);
     event ResultSaved(string indexed resultId, string dealId);
@@ -98,11 +100,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     /**
      * @dev Changes the status of a validation result
      */
-    function changeValidationStatus(string memory validationResultId, SharedStructs.ValidationResultStatusEnum status)
-        external
-        onlyRole(SharedStructs.CONTROLLER_ROLE)
-        returns (bool)
-    {
+    function changeValidationResultStatus(
+        string memory validationResultId,
+        SharedStructs.ValidationResultStatusEnum status
+    ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
         require(bytes(validationResultId).length > 0, "Validation result ID cannot be empty");
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
         require(validationResult.timestamp != 0, "Validation result does not exist");
@@ -223,7 +224,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     /**
      * @dev Check the status of a validation result
      */
-    function checkValidationStatus(string memory validationResultId)
+    function checkValidationResultStatus(string memory validationResultId)
         external
         view
         returns (SharedStructs.ValidationResultStatusEnum)

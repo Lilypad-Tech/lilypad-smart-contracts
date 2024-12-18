@@ -15,7 +15,9 @@ contract LilypadStorageTest is Test {
 
     // Events
     event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
-    event ValidationResultStatusChanged(string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status);
+    event ValidationResultStatusChanged(
+        string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status
+    );
     event ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
     event DealSaved(string indexed dealId, address jobCreator, address resourceProvider);
     event ResultSaved(string indexed resultId, string dealId);
@@ -26,19 +28,16 @@ contract LilypadStorageTest is Test {
     function setUp() public {
         // Deploy implementation
         LilypadStorage implementation = new LilypadStorage();
-        
+
         // Encode initialization data
         bytes memory initData = abi.encodeWithSelector(LilypadStorage.initialize.selector);
-        
+
         // Deploy proxy
-        ERC1967Proxy proxy = new ERC1967Proxy(
-            address(implementation),
-            initData
-        );
-        
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
+
         // Cast proxy to LilypadStorage
         lilypadStorage = LilypadStorage(address(proxy));
-        
+
         // Grant controller role to CONTROLLER address
         lilypadStorage.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
     }
@@ -46,7 +45,7 @@ contract LilypadStorageTest is Test {
     // Deal Tests
     function test_RevertWhen_NonControllerSavesDeal() public {
         vm.startPrank(ALICE);
-        
+
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: "deal1",
             jobCreator: ALICE,
@@ -57,7 +56,11 @@ contract LilypadStorageTest is Test {
             timestamp: block.timestamp
         });
 
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE
+            )
+        );
         lilypadStorage.saveDeal("deal1", deal);
     }
 
@@ -86,14 +89,14 @@ contract LilypadStorageTest is Test {
         assertEq(retrievedDeal.resourceProvider, deal.resourceProvider);
         assertEq(retrievedDeal.jobOfferCID, deal.jobOfferCID);
         assertEq(retrievedDeal.resourceOfferCID, deal.resourceOfferCID);
-        assertEq(uint(retrievedDeal.status), uint(deal.status));
+        assertEq(uint256(retrievedDeal.status), uint256(deal.status));
         assertEq(retrievedDeal.timestamp, deal.timestamp);
     }
 
     function test_ChangeDealStatus() public {
         // First save a deal
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: "deal1",
             jobCreator: ALICE,
@@ -114,7 +117,7 @@ contract LilypadStorageTest is Test {
         assertTrue(success);
 
         SharedStructs.Deal memory updatedDeal = lilypadStorage.getDeal("deal1");
-        assertEq(uint(updatedDeal.status), uint(SharedStructs.DealStatusEnum.DealCompleted));
+        assertEq(uint256(updatedDeal.status), uint256(SharedStructs.DealStatusEnum.DealCompleted));
     }
 
     // Result Tests
@@ -139,7 +142,7 @@ contract LilypadStorageTest is Test {
         assertEq(retrievedResult.resultId, result.resultId);
         assertEq(retrievedResult.dealId, result.dealId);
         assertEq(retrievedResult.resultCID, result.resultCID);
-        assertEq(uint(retrievedResult.status), uint(result.status));
+        assertEq(uint256(retrievedResult.status), uint256(result.status));
         assertEq(retrievedResult.timestamp, result.timestamp);
     }
 
@@ -165,7 +168,7 @@ contract LilypadStorageTest is Test {
         assertTrue(success);
 
         SharedStructs.Result memory updatedResult = lilypadStorage.getResult("result1");
-        assertEq(uint(updatedResult.status), uint(SharedStructs.ResultStatusEnum.ResultsRejected));
+        assertEq(uint256(updatedResult.status), uint256(SharedStructs.ResultStatusEnum.ResultsRejected));
     }
 
     // Validation Result Tests
@@ -191,12 +194,12 @@ contract LilypadStorageTest is Test {
         assertEq(retrievedValidation.validationResultId, validationResult.validationResultId);
         assertEq(retrievedValidation.resultId, validationResult.resultId);
         assertEq(retrievedValidation.validationCID, validationResult.validationCID);
-        assertEq(uint(retrievedValidation.status), uint(validationResult.status));
+        assertEq(uint256(retrievedValidation.status), uint256(validationResult.status));
         assertEq(retrievedValidation.timestamp, validationResult.timestamp);
         assertEq(retrievedValidation.validator, validationResult.validator);
     }
 
-    function test_ChangeValidationStatus() public {
+    function test_ChangeValidationResultStatus() public {
         vm.startPrank(CONTROLLER);
 
         // First save a validation result
@@ -215,11 +218,15 @@ contract LilypadStorageTest is Test {
         vm.expectEmit(true, true, true, true);
         emit ValidationResultStatusChanged("validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted);
 
-        bool success = lilypadStorage.changeValidationStatus("validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted);
+        bool success = lilypadStorage.changeValidationResultStatus(
+            "validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted
+        );
         assertTrue(success);
 
         SharedStructs.ValidationResult memory updatedValidation = lilypadStorage.getValidationResult("validation1");
-        assertEq(uint(updatedValidation.status), uint(SharedStructs.ValidationResultStatusEnum.ValidationAccepted));
+        assertEq(
+            uint256(updatedValidation.status), uint256(SharedStructs.ValidationResultStatusEnum.ValidationAccepted)
+        );
     }
 
     // Error Tests
@@ -240,7 +247,7 @@ contract LilypadStorageTest is Test {
 
     function test_RevertWhen_SavingDealWithEmptyID() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: "",
             jobCreator: ALICE,
@@ -257,7 +264,7 @@ contract LilypadStorageTest is Test {
 
     function test_RevertWhen_SavingDealWithZeroAddresses() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: "deal1",
             jobCreator: address(0),
@@ -275,10 +282,10 @@ contract LilypadStorageTest is Test {
     // Controller Role Tests
     function test_GrantControllerRole() public {
         address newController = address(0x4);
-        
+
         vm.expectEmit(true, true, true, true);
         emit ControllerRoleGranted(newController, address(this));
-        
+
         lilypadStorage.grantControllerRole(newController);
         assertTrue(lilypadStorage.hasControllerRole(newController));
     }
@@ -286,10 +293,10 @@ contract LilypadStorageTest is Test {
     function test_RevokeControllerRole() public {
         address newController = address(0x4);
         lilypadStorage.grantControllerRole(newController);
-        
+
         vm.expectEmit(true, true, true, true);
         emit ControllerRoleRevoked(newController, address(this));
-        
+
         lilypadStorage.revokeControllerRole(newController);
         assertFalse(lilypadStorage.hasControllerRole(newController));
     }
@@ -317,7 +324,7 @@ contract LilypadStorageTest is Test {
     // Status Check Tests
     function test_CheckDealStatus() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: "deal1",
             jobCreator: ALICE,
@@ -327,14 +334,14 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp
         });
-        
+
         lilypadStorage.saveDeal("deal1", deal);
-        assertEq(uint(lilypadStorage.checkDealStatus("deal1")), uint(SharedStructs.DealStatusEnum.DealAgreed));
+        assertEq(uint256(lilypadStorage.checkDealStatus("deal1")), uint256(SharedStructs.DealStatusEnum.DealAgreed));
     }
 
     function test_CheckValidationStatus() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
             validationResultId: "validation1",
             resultId: "result1",
@@ -343,14 +350,17 @@ contract LilypadStorageTest is Test {
             timestamp: block.timestamp,
             validator: BOB
         });
-        
+
         lilypadStorage.saveValidationResult("validation1", validationResult);
-        assertEq(uint(lilypadStorage.checkValidationStatus("validation1")), uint(SharedStructs.ValidationResultStatusEnum.ValidationPending));
+        assertEq(
+            uint256(lilypadStorage.checkValidationResultStatus("validation1")),
+            uint256(SharedStructs.ValidationResultStatusEnum.ValidationPending)
+        );
     }
 
     function test_CheckResultStatus() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.Result memory result = SharedStructs.Result({
             resultId: "result1",
             dealId: "deal1",
@@ -358,33 +368,50 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        
+
         lilypadStorage.saveResult("result1", result);
-        assertEq(uint(lilypadStorage.checkResultStatus("result1")), uint(SharedStructs.ResultStatusEnum.ResultsAccepted));
+        assertEq(
+            uint256(lilypadStorage.checkResultStatus("result1")),
+            uint256(SharedStructs.ResultStatusEnum.ResultsAccepted)
+        );
     }
 
     // Additional Error Cases
     function test_RevertWhen_NonControllerChangesResultStatus() public {
         vm.startPrank(ALICE);
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE
+            )
+        );
         lilypadStorage.changeResultStatus("result1", SharedStructs.ResultStatusEnum.ResultsRejected);
     }
 
-    function test_RevertWhen_NonControllerChangesValidationStatus() public {
+    function test_RevertWhen_NonControllerChangesValidationResultStatus() public {
         vm.startPrank(ALICE);
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
-        lilypadStorage.changeValidationStatus("validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE
+            )
+        );
+        lilypadStorage.changeValidationResultStatus(
+            "validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted
+        );
     }
 
     function test_RevertWhen_NonControllerChangesDealStatus() public {
         vm.startPrank(ALICE);
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE
+            )
+        );
         lilypadStorage.changeDealStatus("deal1", SharedStructs.DealStatusEnum.DealCompleted);
     }
 
     function test_RevertWhen_SavingResultWithEmptyDealId() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.Result memory result = SharedStructs.Result({
             resultId: "result1",
             dealId: "",
@@ -399,7 +426,7 @@ contract LilypadStorageTest is Test {
 
     function test_RevertWhen_SavingResultWithEmptyResultCID() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.Result memory result = SharedStructs.Result({
             resultId: "result1",
             dealId: "deal1",
@@ -414,7 +441,7 @@ contract LilypadStorageTest is Test {
 
     function test_RevertWhen_SavingValidationWithEmptyResultId() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
             validationResultId: "validation1",
             resultId: "",
@@ -430,7 +457,7 @@ contract LilypadStorageTest is Test {
 
     function test_RevertWhen_SavingValidationWithEmptyValidationCID() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
             validationResultId: "validation1",
             resultId: "result1",
@@ -446,7 +473,7 @@ contract LilypadStorageTest is Test {
 
     function test_RevertWhen_SavingValidationWithZeroValidator() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
             validationResultId: "validation1",
             resultId: "result1",
@@ -462,7 +489,7 @@ contract LilypadStorageTest is Test {
 
     function test_RevertWhen_SavingDealWithSameJobCreatorAndResourceProvider() public {
         vm.startPrank(CONTROLLER);
-        
+
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: "deal1",
             jobCreator: ALICE,
