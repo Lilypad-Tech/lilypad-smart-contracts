@@ -503,4 +503,147 @@ contract LilypadStorageTest is Test {
         vm.expectRevert("Job creator and resource provider cannot be the same");
         lilypadStorage.saveDeal("deal1", deal);
     }
+
+    // Add these fuzz tests after the existing tests
+
+    function testFuzz_SaveAndGetDeal(
+        uint8 dealIdSeed,
+        address jobCreator,
+        address resourceProvider,
+        uint8 jobOfferSeed,
+        uint8 resourceOfferSeed
+    ) public {
+        // Create simple string IDs using ASCII characters
+        string memory dealId = string(abi.encodePacked("deal_", uint8(dealIdSeed % 26 + 65)));
+        string memory jobOfferCID = string(abi.encodePacked("job_", uint8(jobOfferSeed % 26 + 65)));
+        string memory resourceOfferCID = string(abi.encodePacked("res_", uint8(resourceOfferSeed % 26 + 65)));
+
+        // Ensure valid addresses
+        vm.assume(jobCreator != address(0));
+        vm.assume(resourceProvider != address(0));
+        vm.assume(jobCreator != resourceProvider);
+        
+        vm.startPrank(CONTROLLER);
+
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: jobCreator,
+            resourceProvider: resourceProvider,
+            jobOfferCID: jobOfferCID,
+            resourceOfferCID: resourceOfferCID,
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: 0  // Will be set by the contract
+        });
+
+        vm.expectEmit(true, true, true, true);
+        emit DealSaved(dealId, jobCreator, resourceProvider);
+
+        lilypadStorage.saveDeal(dealId, deal);
+        SharedStructs.Deal memory retrievedDeal = lilypadStorage.getDeal(dealId);
+        
+        assertEq(retrievedDeal.dealId, deal.dealId);
+        assertEq(retrievedDeal.jobCreator, deal.jobCreator);
+        assertEq(retrievedDeal.resourceProvider, deal.resourceProvider);
+        assertEq(retrievedDeal.jobOfferCID, deal.jobOfferCID);
+        assertEq(retrievedDeal.resourceOfferCID, deal.resourceOfferCID);
+        assertEq(retrievedDeal.timestamp, block.timestamp);
+    }
+
+    function testFuzz_SaveAndGetResult(
+        uint8 resultIdSeed,
+        uint8 dealIdSeed,
+        uint8 resultCIDSeed
+    ) public {
+        string memory resultId = string(abi.encodePacked("result_", uint8(resultIdSeed % 26 + 65)));
+        string memory dealId = string(abi.encodePacked("deal_", uint8(dealIdSeed % 26 + 65)));
+        string memory resultCID = string(abi.encodePacked("cid_", uint8(resultCIDSeed % 26 + 65)));
+        
+        vm.startPrank(CONTROLLER);
+
+        // Create prerequisite deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: address(0x1),
+            resourceProvider: address(0x2),
+            jobOfferCID: "jobOfferCID",
+            resourceOfferCID: "resourceOfferCID",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: 0  // Will be set by the contract
+        });
+        lilypadStorage.saveDeal(dealId, deal);
+
+        // Create and save result
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: resultId,
+            dealId: dealId,
+            resultCID: resultCID,
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: 0  // Will be set by the contract
+        });
+
+        lilypadStorage.saveResult(resultId, result);
+        SharedStructs.Result memory retrievedResult = lilypadStorage.getResult(resultId);
+        
+        assertEq(retrievedResult.resultId, result.resultId);
+        assertEq(retrievedResult.dealId, result.dealId);
+        assertEq(retrievedResult.resultCID, result.resultCID);
+        assertEq(retrievedResult.timestamp, block.timestamp);
+    }
+
+    function testFuzz_SaveAndGetValidationResult(
+        uint8 validationResultIdSeed,
+        uint8 resultIdSeed,
+        uint8 validationCIDSeed,
+        address validator
+    ) public {
+        vm.assume(validator != address(0));
+        
+        string memory validationResultId = string(abi.encodePacked("validation_", uint8(validationResultIdSeed % 26 + 65)));
+        string memory resultId = string(abi.encodePacked("result_", uint8(resultIdSeed % 26 + 65)));
+        string memory validationCID = string(abi.encodePacked("cid_", uint8(validationCIDSeed % 26 + 65)));
+        
+        vm.startPrank(CONTROLLER);
+
+        // Create prerequisite deal
+        string memory dealId = "deal_A";  // Fixed ID for prerequisite
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: address(0x1),
+            resourceProvider: address(0x2),
+            jobOfferCID: "job_A",
+            resourceOfferCID: "res_A",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: 0  // Will be set by the contract
+        });
+        lilypadStorage.saveDeal(dealId, deal);
+
+        // Create prerequisite result
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: resultId,
+            dealId: dealId,
+            resultCID: "cid_A",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: 0  // Will be set by the contract
+        });
+        lilypadStorage.saveResult(resultId, result);
+
+        // Create validation result
+        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
+            validationResultId: validationResultId,
+            resultId: resultId,
+            validationCID: validationCID,
+            status: SharedStructs.ValidationResultStatusEnum.ValidationPending,
+            timestamp: 0,  // Will be set by the contract
+            validator: validator
+        });
+
+        lilypadStorage.saveValidationResult(validationResultId, validationResult);
+        SharedStructs.ValidationResult memory retrievedValidation = lilypadStorage.getValidationResult(validationResultId);
+        
+        assertEq(retrievedValidation.validationResultId, validationResult.validationResultId);
+        assertEq(retrievedValidation.resultId, validationResult.resultId);
+        assertEq(retrievedValidation.validationCID, validationResult.validationCID);
+        assertEq(retrievedValidation.validator, validationResult.validator);
+        assertEq(retrievedValidation.timestamp, block.timestamp);
+    }
 }

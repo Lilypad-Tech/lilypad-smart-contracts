@@ -149,6 +149,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         require(bytes(resultId).length > 0, "Result ID cannot be empty");
         require(bytes(result.dealId).length > 0, "Deal ID cannot be empty");
         require(bytes(result.resultCID).length > 0, "Result CID cannot be empty");
+        result.timestamp = block.timestamp;
         results[resultId] = result;
         emit ResultSaved(resultId, result.dealId);
         return true;
@@ -176,6 +177,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         require(deal.jobCreator != address(0), "Invalid job creator address");
         require(deal.resourceProvider != address(0), "Invalid resource provider address");
         require(deal.jobCreator != deal.resourceProvider, "Job creator and resource provider cannot be the same");
+        deal.timestamp = block.timestamp;
         deals[dealId] = deal;
         emit DealSaved(dealId, deal.jobCreator, deal.resourceProvider);
         return true;
@@ -206,6 +208,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         require(bytes(validationResult.resultId).length > 0, "Result ID cannot be empty");
         require(bytes(validationResult.validationCID).length > 0, "Validation CID cannot be empty");
         require(validationResult.validator != address(0), "Invalid validator address");
+        validationResult.timestamp = block.timestamp;
         validationResults[validationResultId] = validationResult;
         emit ValidationResultSaved(validationResultId, validationResult.resultId, validationResult.validator);
         return true;
