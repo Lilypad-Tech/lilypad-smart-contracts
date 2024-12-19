@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-interface ILilypadToken is IERC20 {
+interface ILilypadToken {
   
    /**
      * @dev Returns the escrow balance of a specific address.
