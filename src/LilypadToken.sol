@@ -20,16 +20,19 @@
 // internal & private view & pure functions
 // external & public view & pure functions
 
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
-import "./interfaces/ILilypadToken.sol";
 import {SharedStructs} from "./SharedStructs.sol";
 
+/**
+ * @title LilypadToken
+ * @author Lilypad
+ * This is the token contract for the Lilypad Protocol
+ */
 contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
     ////////////////////////////////
     ///////// State Variables //////
@@ -67,6 +70,7 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
         if (initialSupply > MAX_SUPPLY) {
             revert LilypadToken__MaxSupplyReached();
         }
+
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.MINTER_ROLE, msg.sender);
         _grantRole(SharedStructs.PAUSER_ROLE, msg.sender);
@@ -81,6 +85,7 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
         if (hasRole(SharedStructs.MINTER_ROLE, minter)) {
             revert LilypadToken__AlreadyMinter();
         }
+
         _grantRole(SharedStructs.MINTER_ROLE, minter);
         return true;
     }
@@ -92,6 +97,7 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
         if (!hasRole(SharedStructs.MINTER_ROLE, minter)) {
             revert LilypadToken__NotMinter();
         }
+        
         _revokeRole(SharedStructs.MINTER_ROLE, minter);
         return true;
     }
@@ -111,7 +117,7 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
             revert LilypadToken__NotEnoughBalance();
         }
 
-        burn(amount);
+        super.burn(amount);
     }
 
     function pause() external onlyRole(SharedStructs.PAUSER_ROLE) {
