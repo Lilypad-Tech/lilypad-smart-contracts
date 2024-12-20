@@ -42,6 +42,15 @@ contract LilypadStorageTest is Test {
         lilypadStorage.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
     }
 
+    // Version Tests
+    function test_InitialVersion() public view {
+        assertEq(lilypadStorage.version(), "1.0.0");
+    }
+
+    function test_GetVersion() public view {
+        assertEq(lilypadStorage.getVersion(), "1.0.0");
+    }
+
     // Deal Tests
     function test_RevertWhen_NonControllerSavesDeal() public {
         vm.startPrank(ALICE);

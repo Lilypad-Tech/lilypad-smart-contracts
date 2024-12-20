@@ -15,6 +15,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     using SharedStructs for SharedStructs.Result;
     using SharedStructs for SharedStructs.ValidationResult;
 
+    // Version
+    string public version;
+
     // Custom Errors
     error ZeroAddressNotAllowed();
     error RoleAlreadyAssigned();
@@ -68,6 +71,14 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
+        version = "1.0.0";
+    }
+
+    /**
+     * @dev Returns the current version of the contract
+     */
+    function getVersion() external view returns (string memory) {
+        return version;
     }
 
     /**
