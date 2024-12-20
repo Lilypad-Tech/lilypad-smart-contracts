@@ -33,7 +33,6 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     error InvalidAddress(); // For all invalid address checks
     error SameAddressNotAllowed(); // For job creator/provider check
 
-    // Add these new custom errors
     error EmptyResultId();
     error EmptyDealId();
     error EmptyValidationResultId();
@@ -54,7 +53,6 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     event ControllerRoleRevoked(address indexed account, address indexed sender);
 
     // Mappings to store deal, validationResult, and result data
-    // TODO: can we make this bytes32 to make it more gas-efficient?
     mapping(string => SharedStructs.Deal) private deals;
     mapping(string => SharedStructs.ValidationResult) private validationResults;
     mapping(string => SharedStructs.Result) private results;
