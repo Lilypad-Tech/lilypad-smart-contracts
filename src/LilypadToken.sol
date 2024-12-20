@@ -41,7 +41,7 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
     string private constant SYMBOL = "LILY";
 
     // Max supply of 1 billion tokens
-    uint256 private constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18;
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18;
 
     ////////////////////////////////
     ///////// Errors ///////////////
