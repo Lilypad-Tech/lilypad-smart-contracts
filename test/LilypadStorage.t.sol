@@ -231,23 +231,22 @@ contract LilypadStorageTest is Test {
 
     // Error Tests
     function test_RevertWhen_GettingNonexistentDeal() public {
-        vm.expectRevert("Deal does not exist");
+        vm.expectRevert(LilypadStorage.DealNotFound.selector);
         lilypadStorage.getDeal("nonexistent");
     }
 
     function test_RevertWhen_GettingNonexistentResult() public {
-        vm.expectRevert("Result does not exist");
+        vm.expectRevert(LilypadStorage.ResultNotFound.selector);
         lilypadStorage.getResult("nonexistent");
     }
 
     function test_RevertWhen_GettingNonexistentValidation() public {
-        vm.expectRevert("Validation result does not exist");
+        vm.expectRevert(LilypadStorage.ValidationResultNotFound.selector);
         lilypadStorage.getValidationResult("nonexistent");
     }
 
     function test_RevertWhen_SavingDealWithEmptyID() public {
         vm.startPrank(CONTROLLER);
-
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: "",
             jobCreator: ALICE,
@@ -257,14 +256,12 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp
         });
-
-        vm.expectRevert("Deal ID cannot be empty");
+        vm.expectRevert(LilypadStorage.EmptyDealId.selector);
         lilypadStorage.saveDeal("", deal);
     }
 
     function test_RevertWhen_SavingDealWithZeroAddresses() public {
         vm.startPrank(CONTROLLER);
-
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: "deal1",
             jobCreator: address(0),
@@ -274,8 +271,7 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp
         });
-
-        vm.expectRevert("Invalid job creator address");
+        vm.expectRevert(LilypadStorage.InvalidJobCreatorAddress.selector);
         lilypadStorage.saveDeal("deal1", deal);
     }
 
@@ -302,22 +298,22 @@ contract LilypadStorageTest is Test {
     }
 
     function test_RevertWhen_GrantingControllerRoleToZeroAddress() public {
-        vm.expectRevert("Cannot grant role to zero address");
+        vm.expectRevert(LilypadStorage.ZeroAddressNotAllowed.selector);
         lilypadStorage.grantControllerRole(address(0));
     }
 
     function test_RevertWhen_RevokingControllerRoleFromZeroAddress() public {
-        vm.expectRevert("Cannot revoke role from zero address");
+        vm.expectRevert(LilypadStorage.ZeroAddressNotAllowed.selector);
         lilypadStorage.revokeControllerRole(address(0));
     }
 
     function test_RevertWhen_RevokingNonExistentControllerRole() public {
-        vm.expectRevert("Account does not have controller role");
+        vm.expectRevert(LilypadStorage.RoleNotFound.selector);
         lilypadStorage.revokeControllerRole(address(0x4));
     }
 
     function test_RevertWhen_RevokingOwnControllerRole() public {
-        vm.expectRevert("Cannot revoke own controller role");
+        vm.expectRevert(LilypadStorage.CannotRevokeOwnRole.selector);
         lilypadStorage.revokeControllerRole(address(this));
     }
 
@@ -411,7 +407,6 @@ contract LilypadStorageTest is Test {
 
     function test_RevertWhen_SavingResultWithEmptyDealId() public {
         vm.startPrank(CONTROLLER);
-
         SharedStructs.Result memory result = SharedStructs.Result({
             resultId: "result1",
             dealId: "",
@@ -419,14 +414,12 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-
-        vm.expectRevert("Deal ID cannot be empty");
+        vm.expectRevert(LilypadStorage.EmptyDealId.selector);
         lilypadStorage.saveResult("result1", result);
     }
 
     function test_RevertWhen_SavingResultWithEmptyResultCID() public {
         vm.startPrank(CONTROLLER);
-
         SharedStructs.Result memory result = SharedStructs.Result({
             resultId: "result1",
             dealId: "deal1",
@@ -434,14 +427,12 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-
-        vm.expectRevert("Result CID cannot be empty");
+        vm.expectRevert(LilypadStorage.EmptyCID.selector);
         lilypadStorage.saveResult("result1", result);
     }
 
     function test_RevertWhen_SavingValidationWithEmptyResultId() public {
         vm.startPrank(CONTROLLER);
-
         SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
             validationResultId: "validation1",
             resultId: "",
@@ -450,14 +441,12 @@ contract LilypadStorageTest is Test {
             timestamp: block.timestamp,
             validator: BOB
         });
-
-        vm.expectRevert("Result ID cannot be empty");
+        vm.expectRevert(LilypadStorage.EmptyResultId.selector);
         lilypadStorage.saveValidationResult("validation1", validationResult);
     }
 
     function test_RevertWhen_SavingValidationWithEmptyValidationCID() public {
         vm.startPrank(CONTROLLER);
-
         SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
             validationResultId: "validation1",
             resultId: "result1",
@@ -466,14 +455,12 @@ contract LilypadStorageTest is Test {
             timestamp: block.timestamp,
             validator: BOB
         });
-
-        vm.expectRevert("Validation CID cannot be empty");
+        vm.expectRevert(LilypadStorage.EmptyCID.selector);
         lilypadStorage.saveValidationResult("validation1", validationResult);
     }
 
     function test_RevertWhen_SavingValidationWithZeroValidator() public {
         vm.startPrank(CONTROLLER);
-
         SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
             validationResultId: "validation1",
             resultId: "result1",
@@ -482,14 +469,12 @@ contract LilypadStorageTest is Test {
             timestamp: block.timestamp,
             validator: address(0)
         });
-
-        vm.expectRevert("Invalid validator address");
+        vm.expectRevert(LilypadStorage.InvalidValidatorAddress.selector);
         lilypadStorage.saveValidationResult("validation1", validationResult);
     }
 
     function test_RevertWhen_SavingDealWithSameJobCreatorAndResourceProvider() public {
         vm.startPrank(CONTROLLER);
-
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: "deal1",
             jobCreator: ALICE,
@@ -499,8 +484,7 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp
         });
-
-        vm.expectRevert("Job creator and resource provider cannot be the same");
+        vm.expectRevert(LilypadStorage.SameAddressNotAllowed.selector);
         lilypadStorage.saveDeal("deal1", deal);
     }
 
@@ -643,5 +627,47 @@ contract LilypadStorageTest is Test {
         assertEq(retrievedValidation.validationCID, validationResult.validationCID);
         assertEq(retrievedValidation.validator, validationResult.validator);
         assertEq(retrievedValidation.timestamp, block.timestamp);
+    }
+
+    function test_RevertWhen_SavingResultWithEmptyResultId() public {
+        vm.startPrank(CONTROLLER);
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        vm.expectRevert(LilypadStorage.EmptyResultId.selector);
+        lilypadStorage.saveResult("", result);
+    }
+
+    function test_RevertWhen_SavingValidationWithEmptyValidationId() public {
+        vm.startPrank(CONTROLLER);
+        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
+            validationResultId: "validation1",
+            resultId: "result1",
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationPending,
+            timestamp: block.timestamp,
+            validator: BOB
+        });
+        vm.expectRevert(LilypadStorage.EmptyValidationResultId.selector);
+        lilypadStorage.saveValidationResult("", validationResult);
+    }
+
+    function test_RevertWhen_SavingDealWithZeroResourceProvider() public {
+        vm.startPrank(CONTROLLER);
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: address(0),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp
+        });
+        vm.expectRevert(LilypadStorage.InvalidResourceProviderAddress.selector);
+        lilypadStorage.saveDeal("deal1", deal);
     }
 }

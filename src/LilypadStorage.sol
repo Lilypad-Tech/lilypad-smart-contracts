@@ -15,6 +15,29 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     using SharedStructs for SharedStructs.Result;
     using SharedStructs for SharedStructs.ValidationResult;
 
+    // Custom Errors
+    error ZeroAddressNotAllowed();
+    error RoleAlreadyAssigned();
+    error RoleNotFound();
+    error CannotRevokeOwnRole();
+
+    error DealNotFound();
+    error ValidationResultNotFound();
+    error ResultNotFound();
+
+    error EmptyCID(); // For empty CID checks
+
+    error InvalidAddress(); // For all invalid address checks
+    error SameAddressNotAllowed(); // For job creator/provider check
+
+    // Add these new custom errors
+    error EmptyResultId();
+    error EmptyDealId();
+    error EmptyValidationResultId();
+    error InvalidJobCreatorAddress();
+    error InvalidResourceProviderAddress();
+    error InvalidValidatorAddress();
+
     // Events for important state changes
     event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
     event ValidationResultStatusChanged(
@@ -53,8 +76,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
      */
     function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(account != address(0), "Cannot grant role to zero address");
-        require(!hasRole(SharedStructs.CONTROLLER_ROLE, account), "Account already has controller role");
+        if (account == address(0)) revert ZeroAddressNotAllowed();
+        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert RoleAlreadyAssigned();
         _grantRole(SharedStructs.CONTROLLER_ROLE, account);
         emit ControllerRoleGranted(account, msg.sender);
     }
@@ -65,9 +88,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
      */
     function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(account != address(0), "Cannot revoke role from zero address");
-        require(hasRole(SharedStructs.CONTROLLER_ROLE, account), "Account does not have controller role");
-        require(account != msg.sender, "Cannot revoke own controller role");
+        if (account == address(0)) revert ZeroAddressNotAllowed();
+        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert RoleNotFound();
+        if (account == msg.sender) revert CannotRevokeOwnRole();
+
         _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
         emit ControllerRoleRevoked(account, msg.sender);
     }
@@ -89,9 +113,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
-        require(bytes(dealId).length > 0, "Deal ID cannot be empty");
+        if (bytes(dealId).length == 0) revert EmptyDealId();
         SharedStructs.Deal storage deal = deals[dealId];
-        require(deal.timestamp != 0, "Deal does not exist");
+        if (deal.timestamp == 0) revert DealNotFound();
         deal.status = status;
         emit DealStatusChanged(dealId, status);
         return true;
@@ -104,9 +128,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         string memory validationResultId,
         SharedStructs.ValidationResultStatusEnum status
     ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        require(bytes(validationResultId).length > 0, "Validation result ID cannot be empty");
+        if (bytes(validationResultId).length == 0) revert EmptyValidationResultId();
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
-        require(validationResult.timestamp != 0, "Validation result does not exist");
+        if (validationResult.timestamp == 0) revert ValidationResultNotFound();
         validationResult.status = status;
         emit ValidationResultStatusChanged(validationResultId, status);
         return true;
@@ -120,9 +144,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
-        require(bytes(resultId).length > 0, "Result ID cannot be empty");
+        if (bytes(resultId).length == 0) revert EmptyResultId();
         SharedStructs.Result storage result = results[resultId];
-        require(result.timestamp != 0, "Result does not exist");
+        if (result.timestamp == 0) revert ResultNotFound();
         result.status = status;
         emit ResultStatusChanged(resultId, status);
         return true;
@@ -132,9 +156,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * @dev Returns the Result object associated with the resultId
      */
     function getResult(string memory resultId) external view returns (SharedStructs.Result memory) {
-        require(bytes(resultId).length > 0, "Result ID cannot be empty");
+        if (bytes(resultId).length == 0) revert EmptyResultId();
         SharedStructs.Result memory result = results[resultId];
-        require(result.timestamp != 0, "Result does not exist");
+        if (result.timestamp == 0) revert ResultNotFound();
         return result;
     }
 
@@ -146,9 +170,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
-        require(bytes(resultId).length > 0, "Result ID cannot be empty");
-        require(bytes(result.dealId).length > 0, "Deal ID cannot be empty");
-        require(bytes(result.resultCID).length > 0, "Result CID cannot be empty");
+        if (bytes(resultId).length == 0) revert EmptyResultId();
+        if (bytes(result.dealId).length == 0) revert EmptyDealId();
+        if (bytes(result.resultCID).length == 0) revert EmptyCID();
         result.timestamp = block.timestamp;
         results[resultId] = result;
         emit ResultSaved(resultId, result.dealId);
@@ -159,9 +183,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * @dev Returns the Deal object associated with the dealId
      */
     function getDeal(string memory dealId) external view returns (SharedStructs.Deal memory) {
-        require(bytes(dealId).length > 0, "Deal ID cannot be empty");
+        if (bytes(dealId).length == 0) revert EmptyDealId();
         SharedStructs.Deal memory deal = deals[dealId];
-        require(deal.timestamp != 0, "Deal does not exist");
+        if (deal.timestamp == 0) revert DealNotFound();
         return deal;
     }
 
@@ -173,10 +197,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
-        require(bytes(dealId).length > 0, "Deal ID cannot be empty");
-        require(deal.jobCreator != address(0), "Invalid job creator address");
-        require(deal.resourceProvider != address(0), "Invalid resource provider address");
-        require(deal.jobCreator != deal.resourceProvider, "Job creator and resource provider cannot be the same");
+        if (bytes(dealId).length == 0) revert EmptyDealId();
+        if (deal.jobCreator == address(0)) revert InvalidJobCreatorAddress();
+        if (deal.resourceProvider == address(0)) revert InvalidResourceProviderAddress();
+        if (deal.jobCreator == deal.resourceProvider) revert SameAddressNotAllowed();
         deal.timestamp = block.timestamp;
         deals[dealId] = deal;
         emit DealSaved(dealId, deal.jobCreator, deal.resourceProvider);
@@ -191,9 +215,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         view
         returns (SharedStructs.ValidationResult memory)
     {
-        require(bytes(validationResultId).length > 0, "Validation result ID cannot be empty");
+        if (bytes(validationResultId).length == 0) revert EmptyValidationResultId();
         SharedStructs.ValidationResult memory validationResult = validationResults[validationResultId];
-        require(validationResult.timestamp != 0, "Validation result does not exist");
+        if (validationResult.timestamp == 0) revert ValidationResultNotFound();
         return validationResult;
     }
 
@@ -204,10 +228,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         string memory validationResultId,
         SharedStructs.ValidationResult memory validationResult
     ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        require(bytes(validationResultId).length > 0, "Validation result ID cannot be empty");
-        require(bytes(validationResult.resultId).length > 0, "Result ID cannot be empty");
-        require(bytes(validationResult.validationCID).length > 0, "Validation CID cannot be empty");
-        require(validationResult.validator != address(0), "Invalid validator address");
+        if (bytes(validationResultId).length == 0) revert EmptyValidationResultId();
+        if (bytes(validationResult.resultId).length == 0) revert EmptyResultId();
+        if (bytes(validationResult.validationCID).length == 0) revert EmptyCID();
+        if (validationResult.validator == address(0)) revert InvalidValidatorAddress();
         validationResult.timestamp = block.timestamp;
         validationResults[validationResultId] = validationResult;
         emit ValidationResultSaved(validationResultId, validationResult.resultId, validationResult.validator);
@@ -218,9 +242,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * @dev Check the status of a deal
      */
     function checkDealStatus(string memory dealId) external view returns (SharedStructs.DealStatusEnum) {
-        require(bytes(dealId).length > 0, "Deal ID cannot be empty");
+        if (bytes(dealId).length == 0) revert EmptyDealId();
         SharedStructs.Deal storage deal = deals[dealId];
-        require(deal.timestamp != 0, "Deal does not exist");
+        if (deal.timestamp == 0) revert DealNotFound();
         return deal.status;
     }
 
@@ -232,9 +256,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         view
         returns (SharedStructs.ValidationResultStatusEnum)
     {
-        require(bytes(validationResultId).length > 0, "Validation result ID cannot be empty");
+        if (bytes(validationResultId).length == 0) revert EmptyValidationResultId();
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
-        require(validationResult.timestamp != 0, "Validation result does not exist");
+        if (validationResult.timestamp == 0) revert ValidationResultNotFound();
         return validationResult.status;
     }
 
@@ -242,9 +266,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * @dev Check the status of a result
      */
     function checkResultStatus(string memory resultId) external view returns (SharedStructs.ResultStatusEnum) {
-        require(bytes(resultId).length > 0, "Result ID cannot be empty");
+        if (bytes(resultId).length == 0) revert EmptyResultId();
         SharedStructs.Result storage result = results[resultId];
-        require(result.timestamp != 0, "Result does not exist");
+        if (result.timestamp == 0) revert ResultNotFound();
         return result.status;
     }
 }
