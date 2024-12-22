@@ -240,17 +240,17 @@ contract LilypadStorageTest is Test {
 
     // Error Tests
     function test_RevertWhen_GettingNonexistentDeal() public {
-        vm.expectRevert(LilypadStorage.DealNotFound.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__DealNotFound.selector);
         lilypadStorage.getDeal("nonexistent");
     }
 
     function test_RevertWhen_GettingNonexistentResult() public {
-        vm.expectRevert(LilypadStorage.ResultNotFound.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__ResultNotFound.selector);
         lilypadStorage.getResult("nonexistent");
     }
 
     function test_RevertWhen_GettingNonexistentValidation() public {
-        vm.expectRevert(LilypadStorage.ValidationResultNotFound.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__ValidationResultNotFound.selector);
         lilypadStorage.getValidationResult("nonexistent");
     }
 
@@ -265,7 +265,7 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp
         });
-        vm.expectRevert(LilypadStorage.EmptyDealId.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyDealId.selector);
         lilypadStorage.saveDeal("", deal);
     }
 
@@ -280,7 +280,7 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp
         });
-        vm.expectRevert(LilypadStorage.InvalidJobCreatorAddress.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__InvalidJobCreatorAddress.selector);
         lilypadStorage.saveDeal("deal1", deal);
     }
 
@@ -307,22 +307,22 @@ contract LilypadStorageTest is Test {
     }
 
     function test_RevertWhen_GrantingControllerRoleToZeroAddress() public {
-        vm.expectRevert(LilypadStorage.ZeroAddressNotAllowed.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__ZeroAddressNotAllowed.selector);
         lilypadStorage.grantControllerRole(address(0));
     }
 
     function test_RevertWhen_RevokingControllerRoleFromZeroAddress() public {
-        vm.expectRevert(LilypadStorage.ZeroAddressNotAllowed.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__ZeroAddressNotAllowed.selector);
         lilypadStorage.revokeControllerRole(address(0));
     }
 
     function test_RevertWhen_RevokingNonExistentControllerRole() public {
-        vm.expectRevert(LilypadStorage.RoleNotFound.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__RoleNotFound.selector);
         lilypadStorage.revokeControllerRole(address(0x4));
     }
 
     function test_RevertWhen_RevokingOwnControllerRole() public {
-        vm.expectRevert(LilypadStorage.CannotRevokeOwnRole.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__CannotRevokeOwnRole.selector);
         lilypadStorage.revokeControllerRole(address(this));
     }
 
@@ -423,7 +423,7 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        vm.expectRevert(LilypadStorage.EmptyDealId.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyDealId.selector);
         lilypadStorage.saveResult("result1", result);
     }
 
@@ -436,7 +436,7 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        vm.expectRevert(LilypadStorage.EmptyCID.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyCID.selector);
         lilypadStorage.saveResult("result1", result);
     }
 
@@ -450,7 +450,7 @@ contract LilypadStorageTest is Test {
             timestamp: block.timestamp,
             validator: BOB
         });
-        vm.expectRevert(LilypadStorage.EmptyResultId.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyResultId.selector);
         lilypadStorage.saveValidationResult("validation1", validationResult);
     }
 
@@ -464,7 +464,7 @@ contract LilypadStorageTest is Test {
             timestamp: block.timestamp,
             validator: BOB
         });
-        vm.expectRevert(LilypadStorage.EmptyCID.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyCID.selector);
         lilypadStorage.saveValidationResult("validation1", validationResult);
     }
 
@@ -478,7 +478,7 @@ contract LilypadStorageTest is Test {
             timestamp: block.timestamp,
             validator: address(0)
         });
-        vm.expectRevert(LilypadStorage.InvalidValidatorAddress.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__InvalidValidatorAddress.selector);
         lilypadStorage.saveValidationResult("validation1", validationResult);
     }
 
@@ -493,7 +493,7 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp
         });
-        vm.expectRevert(LilypadStorage.SameAddressNotAllowed.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__SameAddressNotAllowed.selector);
         lilypadStorage.saveDeal("deal1", deal);
     }
 
@@ -647,7 +647,7 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        vm.expectRevert(LilypadStorage.EmptyResultId.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyResultId.selector);
         lilypadStorage.saveResult("", result);
     }
 
@@ -661,7 +661,7 @@ contract LilypadStorageTest is Test {
             timestamp: block.timestamp,
             validator: BOB
         });
-        vm.expectRevert(LilypadStorage.EmptyValidationResultId.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyValidationResultId.selector);
         lilypadStorage.saveValidationResult("", validationResult);
     }
 
@@ -676,7 +676,7 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp
         });
-        vm.expectRevert(LilypadStorage.InvalidResourceProviderAddress.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__InvalidResourceProviderAddress.selector);
         lilypadStorage.saveDeal("deal1", deal);
     }
 }
