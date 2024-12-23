@@ -74,6 +74,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Returns the current version of the contract
+     * @return version string of the contract
      */
     function getVersion() external view returns (string memory) {
         return version;
@@ -81,7 +82,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Grants the controller role to an account
-     * @param account The address to grant the controller role to
+     * @param account address to grant the controller role to
      * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
      */
     function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -93,7 +94,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Revokes the controller role from an account
-     * @param account The address to revoke the controller role from
+     * @param account address to revoke the controller role from
      * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
      */
     function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -107,8 +108,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Checks if an account has the controller role
-     * @param account The address to check
-     * @return bool True if the account has the controller role
+     * @param account address to check
+     * @return bool Indicates whether the account has the controller role
      */
     function hasControllerRole(address account) external view returns (bool) {
         return hasRole(SharedStructs.CONTROLLER_ROLE, account);
@@ -116,6 +117,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Changes the status of a deal object
+     * @param dealId unique identifier of the deal to update
+     * @param status new status to assign to the deal (enum)
+     * @return bool Indicates whether the status change was successful
+     * @notice This function is restricted to the controller role
      */
     function changeDealStatus(string memory dealId, SharedStructs.DealStatusEnum status)
         external
@@ -132,6 +137,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Changes the status of a validation result
+     * @param validationResultId unique identifier of the validation result to update
+     * @param status new validation result status to assign (enum)
+     * @return bool Indicates whether the status change was successful
+     * @notice This function is restricted to the controller role
      */
     function changeValidationResultStatus(
         string memory validationResultId,
@@ -147,6 +156,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Changes the status of a result object
+     * @param resultId unique identifier of the result to update
+     * @param status new result status to assign (enum)
+     * @return bool Indicates whether the status change was successful
+     * @notice This function is restricted to the controller role
      */
     function changeResultStatus(string memory resultId, SharedStructs.ResultStatusEnum status)
         external
@@ -163,6 +176,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Returns the Result object associated with the resultId
+     * @param resultId unique identifier of the result
+     * @return Result struct associated with the result ID
      */
     function getResult(string memory resultId) external view returns (SharedStructs.Result memory) {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
@@ -173,6 +188,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Saves a Result Object
+     * @param resultId unique identifier of the result
+     * @param result Result struct to be saved
+     * @return bool Indicates whether the result was successfully saved
+     * @notice This function is restricted to the controller role
      */
     function saveResult(string memory resultId, SharedStructs.Result memory result)
         external
@@ -190,6 +209,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Returns the Deal object associated with the dealId
+     * @param dealId unique identifier of the deal
+     * @return Deal struct associated with the deal ID
      */
     function getDeal(string memory dealId) external view returns (SharedStructs.Deal memory) {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
@@ -200,6 +221,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Saves a Deal Object with a status
+     * @param dealId unique identifier of the deal
+     * @param deal Deal struct to be saved
+     * @return bool Indicates whether the deal was successfully saved
+     * @notice This function is restricted to the controller role
      */
     function saveDeal(string memory dealId, SharedStructs.Deal memory deal)
         external
@@ -218,6 +243,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Gets a validation result object
+     * @param validationResultId unique identifier of the validation result
+     * @return ValidationResult struct associated with the validation result ID
      */
     function getValidationResult(string memory validationResultId)
         external
@@ -232,6 +259,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Saves a validation result object with a status
+     * @param validationResultId unique identifier of the validation result
+     * @param validationResult ValidationResult struct to be saved
+     * @return bool Indicates whether the validation result was successfully saved
+     * @notice This function is restricted to the controller role
      */
     function saveValidationResult(
         string memory validationResultId,
@@ -249,6 +280,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Check the status of a deal
+     * @param dealId unique identifier of the deal
+     * @return DealStatusEnum type according to the deals current status
      */
     function checkDealStatus(string memory dealId) external view returns (SharedStructs.DealStatusEnum) {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
@@ -259,6 +292,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Check the status of a validation result
+     * @param validationResultId unique identifier of the validation result
+     * @return ValidationResultStatusEnum type according to the validation result's current status
      */
     function checkValidationResultStatus(string memory validationResultId)
         external
@@ -273,6 +308,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Check the status of a result
+     * @param resultId unique identifier of the result
+     * @return ResultStatusEnum type according to the result's current status
      */
     function checkResultStatus(string memory resultId) external view returns (SharedStructs.ResultStatusEnum) {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
