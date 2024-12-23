@@ -111,7 +111,7 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
         return true;
     }
 
-    function burn(uint256 amount) public override onlyRole(SharedStructs.MINTER_ROLE) moreThanZero(amount) {
+    function burn(uint256 amount) public override moreThanZero(amount) {
 
         if (amount > balanceOf(msg.sender)) {
             revert LilypadToken__NotEnoughBalance();

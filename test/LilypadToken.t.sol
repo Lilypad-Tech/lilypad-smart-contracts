@@ -102,16 +102,6 @@ contract LilypadTokenTest is Test {
         assertEq(token.balanceOf(minter), mintAmount - burnAmount); // Verify remaining balance
     }
 
-    function test_RevertBurnIfNotMinter() public {
-        uint256 burnAmount = 1000;
-        vm.prank(admin);
-        token.transfer(user, burnAmount);
-
-        vm.prank(user);
-        vm.expectRevert();
-        token.burn(burnAmount);
-    }
-
     function test_RevertBurnIfInsufficientBalance() public {
         vm.startPrank(admin);
         token.addMinter(minter);
