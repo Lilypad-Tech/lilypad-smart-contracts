@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import {LilypadToken} from "../src/LilypadToken.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployLilypadToken is Script {
     function run() external returns (address) {
