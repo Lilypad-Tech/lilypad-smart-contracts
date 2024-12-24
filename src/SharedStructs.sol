@@ -11,6 +11,22 @@ library SharedStructs {
         Admin
     }
 
+    enum DealStatusEnum {
+        DealAgreed,
+        DealCompleted
+    }
+
+    enum ResultStatusEnum {
+        ResultsAccepted,
+        ResultsRejected
+    }
+
+    enum ValidationResultStatusEnum {
+        ValidationPending,
+        ValidationAccepted,
+        ValidationRejected
+    }
+
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -25,4 +41,31 @@ library SharedStructs {
     }
     // // the roles of the user
     // UserType[] roles;
+
+    struct Deal {
+        string dealId;
+        address jobCreator;
+        address resourceProvider;
+        string jobOfferCID;
+        string resourceOfferCID;
+        DealStatusEnum status;
+        uint256 timestamp;
+    }
+
+    struct Result {
+        string resultId;
+        string dealId;
+        string resultCID;
+        ResultStatusEnum status;
+        uint256 timestamp;
+    }
+
+    struct ValidationResult {
+        string validationResultId;
+        string resultId;
+        string validationCID;
+        ValidationResultStatusEnum status;
+        uint256 timestamp;
+        address validator;
+    }
 }
