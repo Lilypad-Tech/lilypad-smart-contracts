@@ -10,11 +10,7 @@ import {SharedStructs} from "./SharedStructs.sol";
  * @title LilypadStorage
  * @dev Implementation of storage contract for Lilypad platform
  */
-contract LilypadStorage is
-    Initializable,
-    ILilypadStorage,
-    AccessControlUpgradeable
-{
+contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradeable {
     // Version
     string public version;
 
@@ -41,37 +37,16 @@ contract LilypadStorage is
     error LilypadStorage__InvalidValidatorAddress();
 
     // Events for important state changes
-    event DealStatusChanged(
-        string indexed dealId,
-        SharedStructs.DealStatusEnum status
-    );
+    event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
     event ValidationResultStatusChanged(
-        string indexed validationResultId,
-        SharedStructs.ValidationResultStatusEnum status
+        string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status
     );
-    event ResultStatusChanged(
-        string indexed resultId,
-        SharedStructs.ResultStatusEnum status
-    );
-    event DealSaved(
-        string indexed dealId,
-        address jobCreator,
-        address resourceProvider
-    );
+    event ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
+    event DealSaved(string indexed dealId, address jobCreator, address resourceProvider);
     event ResultSaved(string indexed resultId, string dealId);
-    event ValidationResultSaved(
-        string indexed validationResultId,
-        string resultId,
-        address validator
-    );
-    event ControllerRoleGranted(
-        address indexed account,
-        address indexed sender
-    );
-    event ControllerRoleRevoked(
-        address indexed account,
-        address indexed sender
-    );
+    event ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
+    event ControllerRoleGranted(address indexed account, address indexed sender);
+    event ControllerRoleRevoked(address indexed account, address indexed sender);
 
     // Mappings to store deal, validationResult, and result data
     mapping(string => SharedStructs.Deal) private deals;
@@ -115,13 +90,13 @@ contract LilypadStorage is
      * - Reverts if the `account` already has the controller role
      * - Emits a `ControllerRoleGranted` event upon successful role assignment
      */
-    function grantControllerRole(
-        address account
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0))
+    function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (account == address(0)) {
             revert LilypadStorage__ZeroAddressNotAllowed();
-        if (hasRole(SharedStructs.CONTROLLER_ROLE, account))
+        }
+        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
             revert LilypadStorage__RoleAlreadyAssigned();
+        }
         _grantRole(SharedStructs.CONTROLLER_ROLE, account);
         emit ControllerRoleGranted(account, msg.sender);
     }
@@ -135,13 +110,13 @@ contract LilypadStorage is
      * - Reverts if trying to revoke own role
      * - Emits a `ControllerRoleRevoked` event upon successful role revocation
      */
-    function revokeControllerRole(
-        address account
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0))
+    function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (account == address(0)) {
             revert LilypadStorage__ZeroAddressNotAllowed();
-        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account))
+        }
+        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
             revert LilypadStorage__RoleNotFound();
+        }
         if (account == msg.sender) revert LilypadStorage__CannotRevokeOwnRole();
 
         _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
@@ -166,10 +141,11 @@ contract LilypadStorage is
      * - Reverts if deal does not exist
      * - Emits a DealStatusChanged event upon successful status update
      */
-    function changeDealStatus(
-        string memory dealId,
-        SharedStructs.DealStatusEnum status
-    ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+    function changeDealStatus(string memory dealId, SharedStructs.DealStatusEnum status)
+        external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
         SharedStructs.Deal storage deal = deals[dealId];
         if (deal.timestamp == 0) revert LilypadStorage__DealNotFound();
@@ -190,12 +166,13 @@ contract LilypadStorage is
         string memory validationResultId,
         SharedStructs.ValidationResultStatusEnum status
     ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (bytes(validationResultId).length == 0)
+        if (bytes(validationResultId).length == 0) {
             revert LilypadStorage__EmptyValidationResultId();
-        SharedStructs.ValidationResult
-            storage validationResult = validationResults[validationResultId];
-        if (validationResult.timestamp == 0)
+        }
+        SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
+        if (validationResult.timestamp == 0) {
             revert LilypadStorage__ValidationResultNotFound();
+        }
         validationResult.status = status;
         emit ValidationResultStatusChanged(validationResultId, status);
         return true;
@@ -209,10 +186,11 @@ contract LilypadStorage is
      * - Reverts if result does not exist
      * - Emits a ResultStatusChanged event upon successful status update
      */
-    function changeResultStatus(
-        string memory resultId,
-        SharedStructs.ResultStatusEnum status
-    ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+    function changeResultStatus(string memory resultId, SharedStructs.ResultStatusEnum status)
+        external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
         SharedStructs.Result storage result = results[resultId];
         if (result.timestamp == 0) revert LilypadStorage__ResultNotFound();
@@ -228,9 +206,7 @@ contract LilypadStorage is
      * - Reverts if resultId is empty
      * - Reverts if result does not exist
      */
-    function getResult(
-        string memory resultId
-    ) external view returns (SharedStructs.Result memory) {
+    function getResult(string memory resultId) external view returns (SharedStructs.Result memory) {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
         SharedStructs.Result memory result = results[resultId];
         if (result.timestamp == 0) revert LilypadStorage__ResultNotFound();
@@ -247,15 +223,18 @@ contract LilypadStorage is
      * - Sets timestamp to current block timestamp
      * - Emits a ResultSaved event upon successful save
      */
-    function saveResult(
-        string memory resultId,
-        SharedStructs.Result memory result
-    ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+    function saveResult(string memory resultId, SharedStructs.Result memory result)
+        external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
-        if (bytes(result.dealId).length == 0)
+        if (bytes(result.dealId).length == 0) {
             revert LilypadStorage__EmptyDealId();
-        if (bytes(result.resultCID).length == 0)
+        }
+        if (bytes(result.resultCID).length == 0) {
             revert LilypadStorage__EmptyCID();
+        }
         result.timestamp = block.timestamp;
         results[resultId] = result;
         emit ResultSaved(resultId, result.dealId);
@@ -269,9 +248,7 @@ contract LilypadStorage is
      * - Reverts if dealId is empty
      * - Reverts if deal does not exist
      */
-    function getDeal(
-        string memory dealId
-    ) external view returns (SharedStructs.Deal memory) {
+    function getDeal(string memory dealId) external view returns (SharedStructs.Deal memory) {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
         SharedStructs.Deal memory deal = deals[dealId];
         if (deal.timestamp == 0) revert LilypadStorage__DealNotFound();
@@ -289,17 +266,21 @@ contract LilypadStorage is
      * - Sets timestamp to current block timestamp
      * - Emits a DealSaved event upon successful save
      */
-    function saveDeal(
-        string memory dealId,
-        SharedStructs.Deal memory deal
-    ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+    function saveDeal(string memory dealId, SharedStructs.Deal memory deal)
+        external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
-        if (deal.jobCreator == address(0))
+        if (deal.jobCreator == address(0)) {
             revert LilypadStorage__InvalidJobCreatorAddress();
-        if (deal.resourceProvider == address(0))
+        }
+        if (deal.resourceProvider == address(0)) {
             revert LilypadStorage__InvalidResourceProviderAddress();
-        if (deal.jobCreator == deal.resourceProvider)
+        }
+        if (deal.jobCreator == deal.resourceProvider) {
             revert LilypadStorage__SameAddressNotAllowed();
+        }
         deal.timestamp = block.timestamp;
         deals[dealId] = deal;
         emit DealSaved(dealId, deal.jobCreator, deal.resourceProvider);
@@ -313,15 +294,18 @@ contract LilypadStorage is
      * - Reverts if validationResultId is empty
      * - Reverts if validation result does not exist
      */
-    function getValidationResult(
-        string memory validationResultId
-    ) external view returns (SharedStructs.ValidationResult memory) {
-        if (bytes(validationResultId).length == 0)
+    function getValidationResult(string memory validationResultId)
+        external
+        view
+        returns (SharedStructs.ValidationResult memory)
+    {
+        if (bytes(validationResultId).length == 0) {
             revert LilypadStorage__EmptyValidationResultId();
-        SharedStructs.ValidationResult
-            memory validationResult = validationResults[validationResultId];
-        if (validationResult.timestamp == 0)
+        }
+        SharedStructs.ValidationResult memory validationResult = validationResults[validationResultId];
+        if (validationResult.timestamp == 0) {
             revert LilypadStorage__ValidationResultNotFound();
+        }
         return validationResult;
     }
 
@@ -340,21 +324,21 @@ contract LilypadStorage is
         string memory validationResultId,
         SharedStructs.ValidationResult memory validationResult
     ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (bytes(validationResultId).length == 0)
+        if (bytes(validationResultId).length == 0) {
             revert LilypadStorage__EmptyValidationResultId();
-        if (bytes(validationResult.resultId).length == 0)
+        }
+        if (bytes(validationResult.resultId).length == 0) {
             revert LilypadStorage__EmptyResultId();
-        if (bytes(validationResult.validationCID).length == 0)
+        }
+        if (bytes(validationResult.validationCID).length == 0) {
             revert LilypadStorage__EmptyCID();
-        if (validationResult.validator == address(0))
+        }
+        if (validationResult.validator == address(0)) {
             revert LilypadStorage__InvalidValidatorAddress();
+        }
         validationResult.timestamp = block.timestamp;
         validationResults[validationResultId] = validationResult;
-        emit ValidationResultSaved(
-            validationResultId,
-            validationResult.resultId,
-            validationResult.validator
-        );
+        emit ValidationResultSaved(validationResultId, validationResult.resultId, validationResult.validator);
         return true;
     }
 
@@ -365,9 +349,7 @@ contract LilypadStorage is
      * - Reverts if dealId is empty
      * - Reverts if deal does not exist
      */
-    function checkDealStatus(
-        string memory dealId
-    ) external view returns (SharedStructs.DealStatusEnum) {
+    function checkDealStatus(string memory dealId) external view returns (SharedStructs.DealStatusEnum) {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
         SharedStructs.Deal storage deal = deals[dealId];
         if (deal.timestamp == 0) revert LilypadStorage__DealNotFound();
@@ -381,15 +363,18 @@ contract LilypadStorage is
      * - Reverts if validationResultId is empty
      * - Reverts if validation result does not exist
      */
-    function checkValidationResultStatus(
-        string memory validationResultId
-    ) external view returns (SharedStructs.ValidationResultStatusEnum) {
-        if (bytes(validationResultId).length == 0)
+    function checkValidationResultStatus(string memory validationResultId)
+        external
+        view
+        returns (SharedStructs.ValidationResultStatusEnum)
+    {
+        if (bytes(validationResultId).length == 0) {
             revert LilypadStorage__EmptyValidationResultId();
-        SharedStructs.ValidationResult
-            storage validationResult = validationResults[validationResultId];
-        if (validationResult.timestamp == 0)
+        }
+        SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
+        if (validationResult.timestamp == 0) {
             revert LilypadStorage__ValidationResultNotFound();
+        }
         return validationResult.status;
     }
 
@@ -400,9 +385,7 @@ contract LilypadStorage is
      * - Reverts if resultId is empty
      * - Reverts if result does not exist
      */
-    function checkResultStatus(
-        string memory resultId
-    ) external view returns (SharedStructs.ResultStatusEnum) {
+    function checkResultStatus(string memory resultId) external view returns (SharedStructs.ResultStatusEnum) {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
         SharedStructs.Result storage result = results[resultId];
         if (result.timestamp == 0) revert LilypadStorage__ResultNotFound();
