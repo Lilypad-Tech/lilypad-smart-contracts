@@ -6,6 +6,10 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {ILilypadUser} from "./interfaces/ILilypadUser.sol";
 import {SharedStructs} from "./SharedStructs.sol";
 
+/**
+ * @title LilypadUser
+ * @dev Implementation of the LilypadUser contract
+ */
 contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
     // Mapping to store user information
     mapping(address => SharedStructs.User) users;
@@ -13,13 +17,16 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
     // mapping of addresses to roles using bitwise operations to store multiple roles
     mapping(address => uint256) usersRoles;
 
+    // Version
+    string public version;
+
     event UserManagementEvent(address walletAddress, string metadataID, string url, SharedStructs.UserType role);
 
-    error UserAlreadyExists();
-    error UserNotFound();
-    error RoleAlreadyAssigned();
-    error RoleNotAllowed();
-    error RoleNotFound();
+    error LilypadUser__UserAlreadyExists();
+    error LilypadUser__UserNotFound();
+    error LilypadUser__RoleAlreadyAssigned();
+    error LilypadUser__RoleNotAllowed();
+    error LilypadUser__RoleNotFound();
 
     function initialize() external initializer {
         __AccessControl_init();
@@ -27,15 +34,32 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
         // Grant admin role to deployer (DEFAULT_ADMIN_ROLE is from AccessControlUpgradeable)
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
+        version = "1.0.0";
     }
 
+    /**
+     * @dev Returns the current version of the contract
+     * @notice
+     * - Returns the semantic version string of the contract
+     */
+    function getVersion() external view returns (string memory) {
+        return version;
+    }
+
+    /**
+     * @dev inserts a user
+     * @notice
+     * - Only accounts with the `CONTROLLER_ROLE` can call this function
+     * - Reverts if the `walletAddress` already exists
+     * - Emits a `UserManagementEvent` event upon successful insertion
+     */
     function insertUser(address walletAddress, string memory metadataID, string memory url, SharedStructs.UserType role)
         external
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
         if (users[walletAddress].userAddress != address(0)) {
-            revert UserAlreadyExists();
+            revert LilypadUser__UserAlreadyExists();
         }
 
         users[walletAddress] = SharedStructs.User({userAddress: walletAddress, metadataID: metadataID, url: url});
@@ -46,13 +70,20 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
         return true;
     }
 
+    /**
+     * @dev updates a user's metadata
+     * @notice
+     * - Only accounts with the `CONTROLLER_ROLE` can call this function
+     * - Reverts if the `walletAddress` does not exist
+     * - Emits a `UserManagementEvent` event upon successful update
+     */
     function updateUserMetadata(address walletAddress, string memory metadataID, string memory url)
         external
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
         if (users[walletAddress].userAddress == address(0)) {
-            revert UserNotFound();
+            revert LilypadUser__UserNotFound();
         }
 
         users[walletAddress].metadataID = metadataID;
@@ -63,6 +94,15 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
         return true;
     }
 
+    /**
+     * @dev adds a role to a user
+     * @notice
+     * - Only accounts with the `CONTROLLER_ROLE` can call this function
+     * - Reverts if the `walletAddress` does not exist
+     * - Reverts if the `role` is not allowed
+     * - A Job Creator cannot be a Resource Provider and a Resource Provider cannot be a Job Creator
+     * - Emits a `UserManagementEvent` event upon successful addition
+     */
     function addRole(address walletAddress, SharedStructs.UserType role)
         external
         onlyRole(SharedStructs.CONTROLLER_ROLE)
@@ -70,7 +110,7 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
     {
         SharedStructs.User memory user = users[walletAddress];
         if (user.userAddress == address(0)) {
-            revert UserNotFound();
+            revert LilypadUser__UserNotFound();
         }
 
         // A resource provider cannot be a job creator and a job creator cannot be a resource provider
@@ -84,7 +124,7 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
                         && role == SharedStructs.UserType.ResourceProvider
                 )
         ) {
-            revert RoleNotAllowed();
+            revert LilypadUser__RoleNotAllowed();
         }
 
         // add the role to the user using bitwise operations to avoid overwriting existing roles
@@ -98,20 +138,28 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
         return true;
     }
 
+    /**
+     * @dev removes a role from a user
+     * @notice
+     * - Only accounts with the `CONTROLLER_ROLE` can call this function
+     * - Reverts if the `walletAddress` does not exist
+     * - Reverts if the `role` is not set
+     * - Emits a `UserManagementEvent` event upon successful removal
+     */
     function removeRole(address walletAddress, SharedStructs.UserType role)
         external
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
         if (users[walletAddress].userAddress == address(0)) {
-            revert UserNotFound();
+            revert LilypadUser__UserNotFound();
         }
 
         if (usersRoles[walletAddress] & 1 << uint256(role) == 0) {
-            revert RoleNotFound();
+            revert LilypadUser__RoleNotFound();
         }
 
-        // remove the role from the user using bitwise operations to avoid overwriting existing roles
+        // Remove the role from the user using bitwise operations to avoid overwriting existing roles
         // Existing roles: 0101
         // Role to remove: 0100
         // Result:        0001  (only the new role is removed)
@@ -122,20 +170,30 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
         return true;
     }
 
+    /**
+     * @dev returns a user
+     * @notice
+     * - Reverts if the `walletAddress` does not exist
+     */
     function getUser(address walletAddress) external view returns (SharedStructs.User memory) {
         if (users[walletAddress].userAddress == address(0)) {
-            revert UserNotFound();
+            revert LilypadUser__UserNotFound();
         }
 
         return users[walletAddress];
     }
 
+    /**
+     * @dev checks if a user has a role
+     * @notice
+     * - Reverts if the `walletAddress` does not exist
+     */
     function hasRole(address walletAddress, SharedStructs.UserType role) external view returns (bool) {
         if (users[walletAddress].userAddress == address(0)) {
-            revert UserNotFound();
+            revert LilypadUser__UserNotFound();
         }
 
-        // check if the role is set using bitwise operations
+        // Check if the role is set using bitwise operations
         // Existing roles: 0101
         // Role to check: 0100
         // Result:        0101 & 0100 = 0100  (non-zero, so the role is set)
