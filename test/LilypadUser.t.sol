@@ -18,15 +18,19 @@ contract LilypadUserTest is Test {
     function setUp() public {
         lilypadUser = new LilypadUser();
         lilypadUser.initialize();
-        
+
         // Grant operator role to OPERATOR address
         lilypadUser.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
     }
 
     function test_RevertWhen_NonAdminInsertsUser() public {
         vm.startPrank(ALICE);
-        
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE
+            )
+        );
         lilypadUser.insertUser(BOB, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
     }
 
@@ -53,7 +57,11 @@ contract LilypadUserTest is Test {
 
         // Update as user
         vm.startPrank(ALICE);
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE
+            )
+        );
         lilypadUser.updateUserMetadata(ALICE, "metadata2", "http://updated.com");
         vm.stopPrank();
 
