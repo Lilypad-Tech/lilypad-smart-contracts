@@ -97,12 +97,17 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
         if (!hasRole(SharedStructs.MINTER_ROLE, minter)) {
             revert LilypadToken__NotMinter();
         }
-        
+
         _revokeRole(SharedStructs.MINTER_ROLE, minter);
         return true;
     }
 
-    function mint(address to, uint256 amount) external onlyRole(SharedStructs.MINTER_ROLE) moreThanZero(amount) returns (bool) {
+    function mint(address to, uint256 amount)
+        external
+        onlyRole(SharedStructs.MINTER_ROLE)
+        moreThanZero(amount)
+        returns (bool)
+    {
         if (totalSupply() + amount > MAX_SUPPLY) {
             revert LilypadToken__MaxSupplyReached();
         }
@@ -112,7 +117,6 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
     }
 
     function burn(uint256 amount) public override moreThanZero(amount) {
-
         if (amount > balanceOf(msg.sender)) {
             revert LilypadToken__NotEnoughBalance();
         }

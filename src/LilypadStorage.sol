@@ -88,7 +88,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     /**
      * @dev Grants the controller role to a specified account
-     * @notice 
+     * @notice
      * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
      * - Reverts if the `account` is the zero address
      * - Reverts if the `account` already has the controller role

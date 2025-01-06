@@ -23,7 +23,7 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
 
     function initialize() external initializer {
         __AccessControl_init();
-        
+
         // Grant admin role to deployer (DEFAULT_ADMIN_ROLE is from AccessControlUpgradeable)
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);

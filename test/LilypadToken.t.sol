@@ -39,9 +39,7 @@ contract LilypadTokenTest is Test {
         assertTrue(token.hasRole(SharedStructs.PAUSER_ROLE, admin));
     }
 
-    function testFuzz_ConstructorRevertsIfInitialSupplyTooHigh(
-        uint256 invalidSupply
-    ) public {
+    function testFuzz_ConstructorRevertsIfInitialSupplyTooHigh(uint256 invalidSupply) public {
         vm.assume(invalidSupply > MAX_SUPPLY);
         vm.expectRevert(LilypadToken.LilypadToken__MaxSupplyReached.selector);
         new LilypadToken(invalidSupply);
@@ -90,7 +88,7 @@ contract LilypadTokenTest is Test {
     // Burning Tests
     function test_Burn() public {
         // Setup minter role
-        uint256 mintAmount = 10000;
+        uint256 mintAmount = 10_000;
         vm.startPrank(admin);
         token.addMinter(minter);
         token.transfer(minter, mintAmount);
