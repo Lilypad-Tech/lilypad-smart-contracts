@@ -18,15 +18,19 @@ contract LilypadUserTest is Test {
     function setUp() public {
         lilypadUser = new LilypadUser();
         lilypadUser.initialize();
-        
+
         // Grant operator role to OPERATOR address
         lilypadUser.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
     }
 
     function test_RevertWhen_NonAdminInsertsUser() public {
         vm.startPrank(ALICE);
-        
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE
+            )
+        );
         lilypadUser.insertUser(BOB, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
     }
 
@@ -53,7 +57,11 @@ contract LilypadUserTest is Test {
 
         // Update as user
         vm.startPrank(ALICE);
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE
+            )
+        );
         lilypadUser.updateUserMetadata(ALICE, "metadata2", "http://updated.com");
         vm.stopPrank();
 
@@ -81,7 +89,7 @@ contract LilypadUserTest is Test {
     function test_RevertWhen_InsertingExistingUser() public {
         lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
 
-        vm.expectRevert(LilypadUser.UserAlreadyExists.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__UserAlreadyExists.selector);
         lilypadUser.insertUser(ALICE, "metadata2", "http://example2.com", SharedStructs.UserType.JobCreator);
     }
 
@@ -100,7 +108,7 @@ contract LilypadUserTest is Test {
     }
 
     function test_RevertWhen_UpdatingNonexistentUser() public {
-        vm.expectRevert(LilypadUser.UserNotFound.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__UserNotFound.selector);
         lilypadUser.updateUserMetadata(ALICE, "metadata1", "http://example.com");
     }
 
@@ -119,7 +127,7 @@ contract LilypadUserTest is Test {
     }
 
     function test_RevertWhen_AddingRoleToNonexistentUser() public {
-        vm.expectRevert(LilypadUser.UserNotFound.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__UserNotFound.selector);
         lilypadUser.addRole(ALICE, SharedStructs.UserType.Admin);
     }
 
@@ -128,7 +136,7 @@ contract LilypadUserTest is Test {
         lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
 
         // Try to add ResourceProvider role - should fail
-        vm.expectRevert(LilypadUser.RoleNotAllowed.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__RoleNotAllowed.selector);
         lilypadUser.addRole(ALICE, SharedStructs.UserType.ResourceProvider);
     }
 
@@ -136,7 +144,7 @@ contract LilypadUserTest is Test {
         // First insert user as JobCreator
         lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
 
-        vm.expectRevert(LilypadUser.RoleNotAllowed.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__RoleNotAllowed.selector);
         lilypadUser.addRole(ALICE, SharedStructs.UserType.ResourceProvider);
     }
 
@@ -144,7 +152,7 @@ contract LilypadUserTest is Test {
         // First insert user as ResourceProvider
         lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.ResourceProvider);
 
-        vm.expectRevert(LilypadUser.RoleNotAllowed.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__RoleNotAllowed.selector);
         lilypadUser.addRole(ALICE, SharedStructs.UserType.JobCreator);
     }
 
@@ -176,7 +184,7 @@ contract LilypadUserTest is Test {
     }
 
     function test_RevertWhen_RemovingRoleFromNonexistentUser() public {
-        vm.expectRevert(LilypadUser.UserNotFound.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__UserNotFound.selector);
         lilypadUser.removeRole(ALICE, SharedStructs.UserType.Admin);
     }
 
@@ -184,7 +192,7 @@ contract LilypadUserTest is Test {
         // First insert user with JobCreator role
         lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
 
-        vm.expectRevert(LilypadUser.RoleNotFound.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__RoleNotFound.selector);
         lilypadUser.removeRole(ALICE, SharedStructs.UserType.Admin);
     }
 
@@ -262,7 +270,7 @@ contract LilypadUserTest is Test {
         lilypadUser.insertUser(walletAddress, metadataID, url, SharedStructs.UserType.JobCreator);
 
         // Should revert when trying to add ResourceProvider
-        vm.expectRevert(LilypadUser.RoleNotAllowed.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__RoleNotAllowed.selector);
         lilypadUser.addRole(walletAddress, SharedStructs.UserType.ResourceProvider);
     }
 
@@ -324,7 +332,7 @@ contract LilypadUserTest is Test {
         SharedStructs.UserType role = SharedStructs.UserType(_role % 6);
 
         // Should revert when user doesn't exist
-        vm.expectRevert(LilypadUser.UserNotFound.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__UserNotFound.selector);
         lilypadUser.removeRole(walletAddress, role);
     }
 
@@ -370,7 +378,7 @@ contract LilypadUserTest is Test {
         assertTrue(lilypadUser.hasRole(ALICE, SharedStructs.UserType.Admin));
 
         // Verify JobCreator role still can't be added
-        vm.expectRevert(LilypadUser.RoleNotAllowed.selector);
+        vm.expectRevert(LilypadUser.LilypadUser__RoleNotAllowed.selector);
         lilypadUser.addRole(ALICE, SharedStructs.UserType.JobCreator);
     }
 }
