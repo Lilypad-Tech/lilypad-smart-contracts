@@ -71,4 +71,12 @@ interface ILilypadModuleDirectory {
         string memory moduleName,
         string memory moduleUrl
     ) external returns (bool);
+
+    /**
+     * @dev Revokes a previously approved transfer for a module
+     * @param moduleOwner The current owner of the module
+     * @param moduleName The name of the module for which to revoke transfer approval
+     * @return bool Indicates whether the revocation was successful
+     */
+    function RevokeTransferApproval(address moduleOwner, string memory moduleName) external returns (bool);
 }

@@ -7,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 // TODO:
-// The contract lacks a way to revoke transfer approvals. An owner might want to cancel an approved transfer.
 // No events are emitted for failed operations.
 // No explicit function to check if a transfer is approved.
 
@@ -37,6 +36,8 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     event ModuleTransferred(
         address indexed newOwner, address indexed previousOwner, string moduleName, string moduleUrl
     );
+
+    event ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
 
     // Mapping from owner address to array of modules
     mapping(address => SharedStructs.Module[]) private _ownedModules;
@@ -232,6 +233,17 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         delete _transferApprovals[moduleOwner][moduleName];
 
         emit ModuleTransferred(newOwner, moduleOwner, moduleName, moduleUrl);
+        return true;
+    }
+
+    function RevokeTransferApproval(address moduleOwner, string memory moduleName)
+        external
+        moduleOwnerOnly(moduleOwner, moduleName)
+        returns (bool)
+    {
+        address approvedAddress = _transferApprovals[moduleOwner][moduleName];
+        delete _transferApprovals[moduleOwner][moduleName];
+        emit ModuleTransferRevoked(moduleOwner, approvedAddress, moduleName);
         return true;
     }
 }
