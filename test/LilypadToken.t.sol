@@ -12,8 +12,8 @@ contract LilypadTokenTest is Test {
     address public pauser;
     address public user;
 
-    uint256 public constant INITIAL_SUPPLY = 1_000_000 * 10**18;
-    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10**18;
+    uint256 public constant INITIAL_SUPPLY = 1_000_000 * 10 ** 18;
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 
@@ -29,7 +29,7 @@ contract LilypadTokenTest is Test {
     }
 
     // Constructor Tests
-    function test_InitialState() public {
+    function test_InitialState() public view {
         assertEq(token.name(), "Lilypad Token");
         assertEq(token.symbol(), "LILY");
         assertEq(token.totalSupply(), INITIAL_SUPPLY);
@@ -39,7 +39,9 @@ contract LilypadTokenTest is Test {
         assertTrue(token.hasRole(SharedStructs.PAUSER_ROLE, admin));
     }
 
-    function testFuzz_ConstructorRevertsIfInitialSupplyTooHigh(uint256 invalidSupply) public {
+    function testFuzz_ConstructorRevertsIfInitialSupplyTooHigh(
+        uint256 invalidSupply
+    ) public {
         vm.assume(invalidSupply > MAX_SUPPLY);
         vm.expectRevert(LilypadToken.LilypadToken__MaxSupplyReached.selector);
         new LilypadToken(invalidSupply);
@@ -67,7 +69,7 @@ contract LilypadTokenTest is Test {
     // Minting Tests
     function testFuzz_Mint(uint256 amount) public {
         vm.assume(amount > 0 && amount <= MAX_SUPPLY - INITIAL_SUPPLY);
-        
+
         vm.prank(admin);
         assertTrue(token.mint(user, amount));
         assertEq(token.balanceOf(user), amount);
@@ -138,7 +140,7 @@ contract LilypadTokenTest is Test {
     // Transfer Tests
     function testFuzz_Transfer(uint256 amount) public {
         vm.assume(amount > 0 && amount <= INITIAL_SUPPLY);
-        
+
         vm.prank(admin);
         token.transfer(user, amount);
         assertEq(token.balanceOf(user), amount);
