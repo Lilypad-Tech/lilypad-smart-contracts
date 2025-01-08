@@ -6,10 +6,6 @@ import {SharedStructs} from "./SharedStructs.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-// TODO:
-// No events are emitted for failed operations.
-// No explicit function to check if a transfer is approved.
-
 contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, AccessControlUpgradeable {
     // Version
     string public version;
@@ -245,5 +241,14 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         delete _transferApprovals[moduleOwner][moduleName];
         emit ModuleTransferRevoked(moduleOwner, approvedAddress, moduleName);
         return true;
+    }
+
+    function IsTransferApproved(address moduleOwner, string memory moduleName, address purchaser)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _transferApprovals[moduleOwner][moduleName] == purchaser;
     }
 }

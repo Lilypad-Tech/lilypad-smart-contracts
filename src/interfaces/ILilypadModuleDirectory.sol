@@ -79,4 +79,16 @@ interface ILilypadModuleDirectory {
      * @return bool Indicates whether the revocation was successful
      */
     function RevokeTransferApproval(address moduleOwner, string memory moduleName) external returns (bool);
+
+    /**
+     * @dev Checks if a transfer is approved for a specific module and purchaser
+     * @param moduleOwner The current owner of the module
+     * @param moduleName The name of the module to check
+     * @param purchaser The address to check approval for
+     * @return bool True if the transfer is approved for the purchaser, false otherwise
+     */
+    function IsTransferApproved(address moduleOwner, string memory moduleName, address purchaser)
+        external
+        view
+        returns (bool);
 }
