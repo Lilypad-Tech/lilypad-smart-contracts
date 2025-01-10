@@ -19,6 +19,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     error LilypadModuleDirectory__ModuleAlreadyExists();
     error LilypadModuleDirectory__SameOwnerAddress();
     error LilypadModuleDirectory__TransferNotApproved();
+    error LilypadModuleDirectory__EmptyModuleUrl();
 
     // Events
     event ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
@@ -96,6 +97,9 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         if (bytes(moduleName).length == 0) {
             revert LilypadModuleDirectory__EmptyModuleName();
         }
+        if (bytes(moduleUrl).length == 0) {
+            revert LilypadModuleDirectory__EmptyModuleUrl();
+        }
         if (_moduleExists[moduleOwner][moduleName]) {
             revert LilypadModuleDirectory__ModuleAlreadyExists();
         }
@@ -151,6 +155,9 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         moduleOwnerOnly(moduleOwner, moduleName)
         returns (bool)
     {
+        if (bytes(newModuleUrl).length == 0) {
+            revert LilypadModuleDirectory__EmptyModuleUrl();
+        }
         uint256 moduleIndex = _moduleIndices[moduleOwner][moduleName];
         SharedStructs.Module[] storage modules = _ownedModules[moduleOwner];
         modules[moduleIndex].moduleUrl = newModuleUrl;
