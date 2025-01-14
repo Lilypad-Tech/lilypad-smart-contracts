@@ -12,6 +12,7 @@ contract LilypadModuleDirectoryTest is Test {
     address public constant ALICE = address(0x1);
     address public constant BOB = address(0x2);
     address public constant CONTROLLER = address(0x3);
+    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 
     // Events
     event ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
@@ -22,6 +23,8 @@ contract LilypadModuleDirectoryTest is Test {
         address indexed newOwner, address indexed previousOwner, string moduleName, string moduleUrl
     );
     event ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
+    event ControllerRoleGranted(address indexed controller, address indexed grantedBy);
+    event ControllerRoleRevoked(address indexed controller, address indexed revokedBy);
 
     function setUp() public {
         // Deploy implementation
@@ -49,23 +52,49 @@ contract LilypadModuleDirectoryTest is Test {
         assertEq(moduleDirectory.getVersion(), "1.0.0");
     }
 
+    function test_InitialRoles() public view {
+        assertTrue(moduleDirectory.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
+        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
+        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER));
+    }
+
     // Revoke Role
     function test_GrantAndRevokeControllerRole() public {
         address newController = address(0x4);
 
-        // Grant role
+        // Test zero address revert
         vm.startPrank(address(this));
-        moduleDirectory.grantRole(SharedStructs.CONTROLLER_ROLE, newController);
+        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__ZeroAddressNotAllowed.selector);
+        moduleDirectory.grantControllerRole(address(0));
+
+        // Test granting role
+        vm.expectEmit(true, true, true, true);
+        emit ControllerRoleGranted(newController, address(this));
+        moduleDirectory.grantControllerRole(newController);
         assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
+
+        // Test already assigned role
+        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__RoleAlreadyAssigned.selector);
+        moduleDirectory.grantControllerRole(newController);
 
         // Test new controller can register
         vm.startPrank(newController);
         moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
 
-        // Revoke role
+        // Test revoking role
         vm.startPrank(address(this));
-        moduleDirectory.revokeRole(SharedStructs.CONTROLLER_ROLE, newController);
+        vm.expectEmit(true, true, true, true);
+        emit ControllerRoleRevoked(newController, address(this));
+        moduleDirectory.revokeControllerRole(newController);
         assertFalse(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
+
+        // Test revoking non-existent role
+        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__RoleNotFound.selector);
+        moduleDirectory.revokeControllerRole(newController);
+
+        // Test cannot revoke own role
+        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__CannotRevokeOwnRole.selector);
+        moduleDirectory.revokeControllerRole(address(this));
 
         // Test revoked controller cannot register
         vm.startPrank(newController);
@@ -117,7 +146,7 @@ contract LilypadModuleDirectoryTest is Test {
         // Register the first module with name "Module1"
         bool success1 = moduleDirectory.RegisterModuleForCreator(ALICE, "Module1", "url1");
         assertTrue(success1);
-        
+
         // Register the second module with name "module1" (different casing)
         bool success2 = moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url2");
         assertTrue(success2);

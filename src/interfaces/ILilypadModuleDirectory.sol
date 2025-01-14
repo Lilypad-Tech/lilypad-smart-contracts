@@ -91,4 +91,18 @@ interface ILilypadModuleDirectory {
         external
         view
         returns (bool);
+
+    /**
+     * @dev Grants the controller role to an account
+     * @param account address to grant the controller role to
+     * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
+     */
+    function grantControllerRole(address account) external;
+
+    /**
+     * @dev Revokes the controller role from an account
+     * @param account address to revoke the controller role from
+     * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
+     */
+    function revokeControllerRole(address account) external;
 }

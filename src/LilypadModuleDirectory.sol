@@ -20,6 +20,10 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     error LilypadModuleDirectory__SameOwnerAddress();
     error LilypadModuleDirectory__TransferNotApproved();
     error LilypadModuleDirectory__EmptyModuleUrl();
+    error LilypadModuleDirectory__ZeroAddressNotAllowed();
+    error LilypadModuleDirectory__RoleAlreadyAssigned();
+    error LilypadModuleDirectory__RoleNotFound();
+    error LilypadModuleDirectory__CannotRevokeOwnRole();
 
     // Events
     event ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
@@ -35,6 +39,10 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     );
 
     event ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
+
+    event ControllerRoleGranted(address indexed account, address indexed sender);
+
+    event ControllerRoleRevoked(address indexed account, address indexed sender);
 
     // Mapping from owner address to array of modules
     mapping(address => SharedStructs.Module[]) private _ownedModules;
@@ -56,6 +64,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     function initialize() public initializer {
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
         version = "1.0.0";
     }
 
@@ -251,5 +260,29 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         returns (bool)
     {
         return _transferApprovals[moduleOwner][moduleName] == purchaser;
+    }
+
+    function grantControllerRole(address account) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (account == address(0)) {
+            revert LilypadModuleDirectory__ZeroAddressNotAllowed();
+        }
+        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
+            revert LilypadModuleDirectory__RoleAlreadyAssigned();
+        }
+        _grantRole(SharedStructs.CONTROLLER_ROLE, account);
+        emit ControllerRoleGranted(account, msg.sender);
+    }
+
+    function revokeControllerRole(address account) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (account == address(0)) {
+            revert LilypadModuleDirectory__ZeroAddressNotAllowed();
+        }
+        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
+            revert LilypadModuleDirectory__RoleNotFound();
+        }
+        if (account == msg.sender) revert LilypadModuleDirectory__CannotRevokeOwnRole();
+
+        _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
+        emit ControllerRoleRevoked(account, msg.sender);
     }
 }

@@ -23,4 +23,4 @@ contract DeployLilypadModuleDirectory is Script {
         // Return the proxy address - this is the address users will interact with
         return address(proxy);
     }
-} 
+}
