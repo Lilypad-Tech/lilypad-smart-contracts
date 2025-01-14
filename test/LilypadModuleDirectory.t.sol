@@ -86,7 +86,8 @@ contract LilypadModuleDirectoryTest is Test {
         vm.expectEmit(true, true, true, true);
         emit ModuleRegistered(ALICE, "module1", "url1");
 
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        bool success = moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        assertTrue(success);
         SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(ALICE);
 
         assertEq(modules.length, 1);
@@ -102,7 +103,8 @@ contract LilypadModuleDirectoryTest is Test {
             "https://this-is-a-very-long-url-that-should-still-work-fine-with-the-contract.com/some/very/long/path";
 
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, longModuleName, longUrl);
+        bool success = moduleDirectory.RegisterModuleForCreator(ALICE, longModuleName, longUrl);
+        assertTrue(success);
 
         SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(ALICE);
         assertEq(modules[0].moduleName, longModuleName);
@@ -113,10 +115,12 @@ contract LilypadModuleDirectoryTest is Test {
         vm.startPrank(CONTROLLER);
 
         // Register the first module with name "Module1"
-        moduleDirectory.RegisterModuleForCreator(ALICE, "Module1", "url1");
+        bool success1 = moduleDirectory.RegisterModuleForCreator(ALICE, "Module1", "url1");
+        assertTrue(success1);
         
         // Register the second module with name "module1" (different casing)
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url2");
+        bool success2 = moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url2");
+        assertTrue(success2);
 
         SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(ALICE);
 
@@ -135,7 +139,8 @@ contract LilypadModuleDirectoryTest is Test {
         string[3] memory urls = ["url1", "url2", "url3"];
 
         for (uint256 i = 0; i < moduleNames.length; i++) {
-            moduleDirectory.RegisterModuleForCreator(ALICE, moduleNames[i], urls[i]);
+            bool success = moduleDirectory.RegisterModuleForCreator(ALICE, moduleNames[i], urls[i]);
+            assertTrue(success);
         }
 
         // Verify all modules
@@ -350,7 +355,8 @@ contract LilypadModuleDirectoryTest is Test {
         vm.expectEmit(true, true, true, true);
         emit ModuleRegistered(owner, moduleName, moduleUrl);
 
-        moduleDirectory.RegisterModuleForCreator(owner, moduleName, moduleUrl);
+        bool success = moduleDirectory.RegisterModuleForCreator(owner, moduleName, moduleUrl);
+        assertTrue(success);
         SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(owner);
 
         assertEq(modules.length, 1);

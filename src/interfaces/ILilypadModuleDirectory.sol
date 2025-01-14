@@ -9,12 +9,12 @@ interface ILilypadModuleDirectory {
      * @param moduleOwner The address of the module owner
      * @param moduleName The name of the module to be registered
      * @param moduleUrl The URL associated with the module
-     * @return User The User struct containing details of the module owner after registration
+     * @return bool Indicates whether the registration was successful
      * @notice This function is restricted to the controller role
      */
     function RegisterModuleForCreator(address moduleOwner, string memory moduleName, string memory moduleUrl)
         external
-        returns (SharedStructs.User memory);
+        returns (bool);
 
     /**
      * @dev Updates a module name for an existing module

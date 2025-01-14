@@ -89,7 +89,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         external
         override
         onlyController
-        returns (SharedStructs.User memory)
+        returns (bool)
     {
         if (moduleOwner == address(0)) {
             revert LilypadModuleDirectory__InvalidAddress();
@@ -114,13 +114,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
 
         emit ModuleRegistered(moduleOwner, moduleName, moduleUrl);
 
-        // Return a User struct as required by the interface
-        // FIXME: returning a partially empty struct here
-        return SharedStructs.User({
-            userAddress: moduleOwner,
-            metadataID: "", // These fields are not relevant for this operation
-            url: "" // but required by the return type
-        });
+        return true;
     }
 
     function UpdateModuleName(address moduleOwner, string memory moduleName, string memory newModuleName)
