@@ -58,6 +58,21 @@ contract LilypadModuleDirectoryTest is Test {
         assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER));
     }
 
+    function test_HasControllerRole() public {
+        // Test initial controller roles
+        assertTrue(moduleDirectory.hasControllerRole(address(this)));
+        assertTrue(moduleDirectory.hasControllerRole(CONTROLLER));
+        assertFalse(moduleDirectory.hasControllerRole(ALICE));
+
+        // Test after granting role
+        moduleDirectory.grantControllerRole(ALICE);
+        assertTrue(moduleDirectory.hasControllerRole(ALICE));
+
+        // Test after revoking role
+        moduleDirectory.revokeControllerRole(ALICE);
+        assertFalse(moduleDirectory.hasControllerRole(ALICE));
+    }
+
     // Revoke Role
     function test_GrantAndRevokeControllerRole() public {
         address newController = address(0x4);

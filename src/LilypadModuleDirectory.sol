@@ -285,4 +285,8 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
         emit ControllerRoleRevoked(account, msg.sender);
     }
+
+    function hasControllerRole(address account) external view override returns (bool) {
+        return hasRole(SharedStructs.CONTROLLER_ROLE, account);
+    }
 }

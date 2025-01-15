@@ -105,4 +105,11 @@ interface ILilypadModuleDirectory {
      * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
      */
     function revokeControllerRole(address account) external;
+
+    /**
+     * @dev Checks if an account has the controller role
+     * @param account address to check
+     * @return bool Indicates whether the account has the controller role
+     */
+    function hasControllerRole(address account) external view returns (bool);
 }
