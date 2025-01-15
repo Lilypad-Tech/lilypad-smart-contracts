@@ -7,6 +7,8 @@ import {SharedStructs} from "../src/SharedStructs.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
+
+
 contract LilypadStorageTest is Test {
     LilypadStorage public lilypadStorage;
     address public constant ALICE = address(0x1);
@@ -62,7 +64,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
 
         vm.expectRevert(
@@ -83,7 +93,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
 
         vm.expectEmit(true, true, true, true);
@@ -113,7 +131,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
 
         lilypadStorage.saveDeal("deal1", deal);
@@ -263,7 +289,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
         vm.expectRevert(LilypadStorage.LilypadStorage__EmptyDealId.selector);
         lilypadStorage.saveDeal("", deal);
@@ -278,7 +312,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
         vm.expectRevert(LilypadStorage.LilypadStorage__InvalidJobCreatorAddress.selector);
         lilypadStorage.saveDeal("deal1", deal);
@@ -337,7 +379,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
 
         lilypadStorage.saveDeal("deal1", deal);
@@ -491,7 +541,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
         vm.expectRevert(LilypadStorage.LilypadStorage__SameAddressNotAllowed.selector);
         lilypadStorage.saveDeal("deal1", deal);
@@ -525,7 +583,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: jobOfferCID,
             resourceOfferCID: resourceOfferCID,
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: 0 // Will be set by the contract
+            timestamp: 0, // Will be set by the contract
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
 
         vm.expectEmit(true, true, true, true);
@@ -557,7 +623,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobOfferCID",
             resourceOfferCID: "resourceOfferCID",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: 0 // Will be set by the contract
+            timestamp: 0, // Will be set by the contract
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
         lilypadStorage.saveDeal(dealId, deal);
 
@@ -603,7 +677,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "job_A",
             resourceOfferCID: "res_A",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: 0 // Will be set by the contract
+            timestamp: 0, // Will be set by the contract
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
         lilypadStorage.saveDeal(dealId, deal);
 
@@ -674,7 +756,15 @@ contract LilypadStorageTest is Test {
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                moduleCreator: address(0),
+                solver: address(0),
+                totalSolverFees: 0,
+                totalProtocolFees: 0,
+                jobPaymentAmount: 0,
+                moduleCreatorPaymentAmount: 0
+            })
         });
         vm.expectRevert(LilypadStorage.LilypadStorage__InvalidResourceProviderAddress.selector);
         lilypadStorage.saveDeal("deal1", deal);
