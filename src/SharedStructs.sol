@@ -89,7 +89,8 @@ library SharedStructs {
      */
      // TODO: Should we add the module name here too?
     struct DealPaymentStructure {
-        uint256 totalSolverFees;
+        uint256 JobCreatorSolverFee;
+        uint256 resourceProviderSolverFee;
         uint256 networkCongestionFee;
         uint256 moduleCreatorFee;
         uint256 priceOfJobWithoutFees;

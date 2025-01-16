@@ -70,7 +70,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
@@ -99,7 +100,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
@@ -139,7 +141,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
@@ -297,7 +300,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
@@ -320,7 +324,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
@@ -387,7 +392,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
@@ -549,9 +555,10 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreatorFee: 0,
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
+                moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
             })
         });
@@ -595,7 +602,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: 0, // Will be set by the contract
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
@@ -616,7 +624,8 @@ contract LilypadStorageTest is Test {
         assertEq(retrievedDeal.jobOfferCID, deal.jobOfferCID);
         assertEq(retrievedDeal.resourceOfferCID, deal.resourceOfferCID);
         assertEq(retrievedDeal.timestamp, block.timestamp);
-        assertEq(retrievedDeal.paymentStructure.totalSolverFees, deal.paymentStructure.totalSolverFees);
+        assertEq(retrievedDeal.paymentStructure.JobCreatorSolverFee, deal.paymentStructure.JobCreatorSolverFee);
+        assertEq(retrievedDeal.paymentStructure.resourceProviderSolverFee, deal.paymentStructure.resourceProviderSolverFee);
         assertEq(retrievedDeal.paymentStructure.networkCongestionFee, deal.paymentStructure.networkCongestionFee);
         assertEq(retrievedDeal.paymentStructure.moduleCreatorFee, deal.paymentStructure.moduleCreatorFee);
         assertEq(retrievedDeal.paymentStructure.priceOfJobWithoutFees, deal.paymentStructure.priceOfJobWithoutFees);
@@ -641,7 +650,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: 0, // Will be set by the contract
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
@@ -695,7 +705,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: 0, // Will be set by the contract
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
@@ -774,7 +785,8 @@ contract LilypadStorageTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                totalSolverFees: 0,
+                JobCreatorSolverFee: 0,
+                resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
                 priceOfJobWithoutFees: 0
