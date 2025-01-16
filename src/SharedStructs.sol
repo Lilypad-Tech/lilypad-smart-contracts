@@ -79,27 +79,28 @@ library SharedStructs {
     /**
      * @dev This struct is used to store the payment structure for a deal
      * @notice
-     * - The totalPrortocolFees are the sum of the fees for all the actors paid towards the protocol
-     * - The job payment amount is the amount that the job creator pays an RP to run the job
-     * - The module creator payment amount is the amount that the Job Creator pays to the Module Creator for running the module
+     * - The priceOfJobWithoutFees is the price of the job from the Job Creator's perspective i.e how much they pay to run the job
+     * - The moduleCreatorFee is the fee that the Job Creator pays to the Module Creator for running the module
+     * - The totalSolverFees are the total fees paid by the Resource Provider and Job Creator to the Solver for preforming the work to match them on a job
+     * - The networkCongestionFee is the fee that the Job Creator pays to the network for the congestion of the network
      * - The moduleCreator is the address of the Module Creator
      * - The solver is the address of the Solver
-     * - The totalSolverFees are the total fees paid by the Resource Provider and Job Creator to the Solver for preforming the work to match them on a job
-     * - The total Cost of a job from a Job Creator perspective is the sum of the cost to run the job, the cost to run the module, the Solver fee and the network congestion fee
+     * - The total cost of a job from a Job Creator perspective is the sum of the priceOfJobWithoutFees, the moduleCreatorFee, the totalSolverFees/2 and the networkCongestionFee
      */
+     // TODO: Should we add the module name here too?
     struct DealPaymentStructure {
-        address moduleCreator;
-        address solver;
         uint256 totalSolverFees;
-        uint256 totalProtocolFees;
-        uint256 jobPaymentAmount;
-        uint256 moduleCreatorPaymentAmount;
+        uint256 networkCongestionFee;
+        uint256 moduleCreatorFee;
+        uint256 priceOfJobWithoutFees;
     }
 
     struct Deal {
         string dealId;
         address jobCreator;
         address resourceProvider;
+        address moduleCreator;
+        address solver;
         string jobOfferCID;
         string resourceOfferCID;
         DealStatusEnum status;

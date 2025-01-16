@@ -39,6 +39,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     error LilypadStorage__InvalidJobCreatorAddress();
     error LilypadStorage__InvalidResourceProviderAddress();
     error LilypadStorage__InvalidValidatorAddress();
+    error LilypadStorage__InvalidModuleCreatorAddress();
+    error LilypadStorage__InvalidSolverAddress();
 
     // Events for important state changes
     event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
@@ -250,6 +252,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * - Reverts if dealId is empty
      * - Reverts if jobCreator address is zero
      * - Reverts if resourceProvider address is zero
+     * - Reverts if moduleCreator address is zero
+     * - Reverts if solver address is zero
      * - Reverts if jobCreator and resourceProvider are the same address
      * - Sets timestamp to current block timestamp
      * - Emits a DealSaved event upon successful save
@@ -262,6 +266,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
         if (deal.jobCreator == address(0)) revert LilypadStorage__InvalidJobCreatorAddress();
         if (deal.resourceProvider == address(0)) revert LilypadStorage__InvalidResourceProviderAddress();
+        if (deal.moduleCreator == address(0)) revert LilypadStorage__InvalidModuleCreatorAddress();
+        if (deal.solver == address(0)) revert LilypadStorage__InvalidSolverAddress();
         if (deal.jobCreator == deal.resourceProvider) revert LilypadStorage__SameAddressNotAllowed();
         deal.timestamp = block.timestamp;
         deals[dealId] = deal;

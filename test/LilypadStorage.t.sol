@@ -13,6 +13,8 @@ contract LilypadStorageTest is Test {
     LilypadStorage public lilypadStorage;
     address public constant ALICE = address(0x1);
     address public constant BOB = address(0x2);
+    address public constant CHARLIE = address(0x3);
+    address public constant DAVE = address(0x4);
     address public constant CONTROLLER = address(0x3);
 
     // Events
@@ -61,17 +63,17 @@ contract LilypadStorageTest is Test {
             dealId: "deal1",
             jobCreator: ALICE,
             resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
 
@@ -90,17 +92,17 @@ contract LilypadStorageTest is Test {
             dealId: "deal1",
             jobCreator: ALICE,
             resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
 
@@ -114,6 +116,8 @@ contract LilypadStorageTest is Test {
         assertEq(retrievedDeal.dealId, deal.dealId);
         assertEq(retrievedDeal.jobCreator, deal.jobCreator);
         assertEq(retrievedDeal.resourceProvider, deal.resourceProvider);
+        assertEq(retrievedDeal.moduleCreator, deal.moduleCreator);
+        assertEq(retrievedDeal.solver, deal.solver);
         assertEq(retrievedDeal.jobOfferCID, deal.jobOfferCID);
         assertEq(retrievedDeal.resourceOfferCID, deal.resourceOfferCID);
         assertEq(uint256(retrievedDeal.status), uint256(deal.status));
@@ -128,17 +132,17 @@ contract LilypadStorageTest is Test {
             dealId: "deal1",
             jobCreator: ALICE,
             resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
 
@@ -286,17 +290,17 @@ contract LilypadStorageTest is Test {
             dealId: "",
             jobCreator: ALICE,
             resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
         vm.expectRevert(LilypadStorage.LilypadStorage__EmptyDealId.selector);
@@ -309,17 +313,17 @@ contract LilypadStorageTest is Test {
             dealId: "deal1",
             jobCreator: address(0),
             resourceProvider: address(0),
+            moduleCreator: address(0),
+            solver: address(0),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
         vm.expectRevert(LilypadStorage.LilypadStorage__InvalidJobCreatorAddress.selector);
@@ -376,17 +380,17 @@ contract LilypadStorageTest is Test {
             dealId: "deal1",
             jobCreator: ALICE,
             resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
 
@@ -538,17 +542,17 @@ contract LilypadStorageTest is Test {
             dealId: "deal1",
             jobCreator: ALICE,
             resourceProvider: ALICE,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
+                moduleCreatorFee: 0,
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
         vm.expectRevert(LilypadStorage.LilypadStorage__SameAddressNotAllowed.selector);
@@ -561,6 +565,8 @@ contract LilypadStorageTest is Test {
         uint8 dealIdSeed,
         address jobCreator,
         address resourceProvider,
+        address moduleCreator,
+        address solver,
         uint8 jobOfferSeed,
         uint8 resourceOfferSeed
     ) public {
@@ -573,6 +579,8 @@ contract LilypadStorageTest is Test {
         vm.assume(jobCreator != address(0));
         vm.assume(resourceProvider != address(0));
         vm.assume(jobCreator != resourceProvider);
+        vm.assume(moduleCreator != address(0));
+        vm.assume(solver != address(0));
 
         vm.startPrank(CONTROLLER);
 
@@ -580,17 +588,17 @@ contract LilypadStorageTest is Test {
             dealId: dealId,
             jobCreator: jobCreator,
             resourceProvider: resourceProvider,
+            moduleCreator: moduleCreator,
+            solver: solver,
             jobOfferCID: jobOfferCID,
             resourceOfferCID: resourceOfferCID,
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: 0, // Will be set by the contract
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
 
@@ -603,9 +611,15 @@ contract LilypadStorageTest is Test {
         assertEq(retrievedDeal.dealId, deal.dealId);
         assertEq(retrievedDeal.jobCreator, deal.jobCreator);
         assertEq(retrievedDeal.resourceProvider, deal.resourceProvider);
+        assertEq(retrievedDeal.moduleCreator, deal.moduleCreator);
+        assertEq(retrievedDeal.solver, deal.solver);
         assertEq(retrievedDeal.jobOfferCID, deal.jobOfferCID);
         assertEq(retrievedDeal.resourceOfferCID, deal.resourceOfferCID);
         assertEq(retrievedDeal.timestamp, block.timestamp);
+        assertEq(retrievedDeal.paymentStructure.totalSolverFees, deal.paymentStructure.totalSolverFees);
+        assertEq(retrievedDeal.paymentStructure.networkCongestionFee, deal.paymentStructure.networkCongestionFee);
+        assertEq(retrievedDeal.paymentStructure.moduleCreatorFee, deal.paymentStructure.moduleCreatorFee);
+        assertEq(retrievedDeal.paymentStructure.priceOfJobWithoutFees, deal.paymentStructure.priceOfJobWithoutFees);
     }
 
     function testFuzz_SaveAndGetResult(uint8 resultIdSeed, uint8 dealIdSeed, uint8 resultCIDSeed) public {
@@ -620,17 +634,17 @@ contract LilypadStorageTest is Test {
             dealId: dealId,
             jobCreator: address(0x1),
             resourceProvider: address(0x2),
+            moduleCreator: address(0x3),
+            solver: address(0x4),
             jobOfferCID: "jobOfferCID",
             resourceOfferCID: "resourceOfferCID",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: 0, // Will be set by the contract
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
         lilypadStorage.saveDeal(dealId, deal);
@@ -674,17 +688,17 @@ contract LilypadStorageTest is Test {
             dealId: dealId,
             jobCreator: address(0x1),
             resourceProvider: address(0x2),
+            moduleCreator: address(0x3),
+            solver: address(0x4),
             jobOfferCID: "job_A",
             resourceOfferCID: "res_A",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: 0, // Will be set by the contract
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
         lilypadStorage.saveDeal(dealId, deal);
@@ -753,17 +767,17 @@ contract LilypadStorageTest is Test {
             dealId: "deal1",
             jobCreator: ALICE,
             resourceProvider: address(0),
+            moduleCreator: address(0x3),
+            solver: address(0x4),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                moduleCreator: address(0),
-                solver: address(0),
                 totalSolverFees: 0,
-                totalProtocolFees: 0,
-                jobPaymentAmount: 0,
-                moduleCreatorPaymentAmount: 0
+                networkCongestionFee: 0,
+                moduleCreatorFee: 0,
+                priceOfJobWithoutFees: 0
             })
         });
         vm.expectRevert(LilypadStorage.LilypadStorage__InvalidResourceProviderAddress.selector);
