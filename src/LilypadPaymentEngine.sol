@@ -72,10 +72,10 @@ contract LilypadPaymentEngine is
     p: The percentage of total fees that go towads the protocol
     (1-p): The percentage of total fees that go towards the value based rewards
     
-    p1: Percentage allocated to burn token
-    p2: Percentage allocated to go to grants and airdrops
-    p3: Percentage allocated to the validation pool
-    Note: p = p1 + p2 + p3
+    p1: Percentage of P allocated to burn token
+    p2: Percentage of P allocated to go to grants and airdrops
+    p3: Percentage of P allocated to the validation pool
+    Note:  p1 + p2 + p3 must equal 10000 (100%)
 
     m: The percentage of module creator fees that go towards protocol revenue
     
@@ -152,8 +152,12 @@ contract LilypadPaymentEngine is
         string dealId
     );
 
-    error LilypadPayment__insufficientEscrowAmount();
-    error LilypadPayment__escrowDepositMustBeGreaterThanZero();
+    event LilypadPayment__ZeroAmountPayout(address indexed intended_recipient);
+    
+    error LilypadPayment__amountMustBeNonNegative(bytes4 functionSelector, uint256 amount);
+    error LilypadPayment__insufficientEscrowAmount(uint256 escrowAmount, uint256 requiredAmount);
+    error LilypadPayment__insufficientActiveEscrowAmount();
+    error LilypadPayment__amountMustBeGreaterThanZero(bytes4 functionSelector, uint256 amount);
     error LilypadPayment__escrowSlashAmountTooLarge();
     error LilypadPayment__insufficientEscrowBalanceForWithdrawal();
     error LilypadPayment__transferFailed();
@@ -162,7 +166,7 @@ contract LilypadPaymentEngine is
     error LilypadPayment__escrowNotWithdrawable();
     error LilypadPayment__escrowNotWithdrawableForActor(address actor);
     error LilypadPayment__DealNotFound();
-    error LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts();
+    error LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts(uint256 pValue, uint256 p1Value, uint256 p2Value, uint256 p3Value);
     error LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(string dealId, uint256 jobCreatorActiveEscrow, uint256 resourceProviderActiveEscrow, uint256 totalCostOfJob, uint256 resourceProviderRequiredActiveEscrow);
     error LilypadPayment__unauthorizedWithdrawal();
 
@@ -172,18 +176,32 @@ contract LilypadPaymentEngine is
 
     modifier moreThanZero(uint256 amount) {
         if (amount <= 0) {
-            revert LilypadPayment__escrowDepositMustBeGreaterThanZero();
+            revert LilypadPayment__amountMustBeGreaterThanZero(msg.sig, amount);
+        }
+        _;
+    }
+
+    modifier nonNegative(uint256 amount) {
+        if (amount < 0) {
+            revert LilypadPayment__amountMustBeNonNegative(msg.sig, amount);
         }
         _;
     }
 
     modifier hasEnoughEscrow(address _address, uint256 _amount) {
         if (escrowBalances[_address] < _amount) {
-            revert LilypadPayment__insufficientEscrowAmount();
+            revert LilypadPayment__insufficientEscrowAmount(escrowBalances[_address], _amount);
         }
         _;
     }
-
+    
+    modifier hasEnoughActiveEscrow(address _address, uint256 _amount) {
+        if (activeEscrow[_address] < _amount) {
+            revert LilypadPayment__insufficientActiveEscrowAmount();
+        }
+        _;
+    }
+    
     ////////////////////////////////
     ///////// Constructor //////////
     ////////////////////////////////
@@ -208,8 +226,10 @@ contract LilypadPaymentEngine is
 
         version = "1.0.0";
 
-        // Protocol Revenue, P = P1 + P2 + P3
+        // Protocol Revenue, P, represented as a basis point
         p = 0;
+
+        // P is further broken down into 3 parts represented as a basis points (each of which should sum to 10000 representing 100% of P)
 
         // Burn amount represented as a basis point
         p1 = 0;
@@ -228,8 +248,8 @@ contract LilypadPaymentEngine is
         v1 = 2;
         v2 = 1;
 
-        // TODO: Double check this is the right value
-        resourceProviderActiveEscrowScaler = 110;
+        // Set to 11000 (representing 110% in basis points, or a 10% increase)
+        resourceProviderActiveEscrowScaler = 11000;
 
         totalActiveEscrow = 0;
         totalEscrow = 0;
@@ -242,7 +262,7 @@ contract LilypadPaymentEngine is
     function checkEscrowBalanceForAmount(
         address _address,
         uint256 _amount
-    ) public view moreThanZero(_amount) returns (bool) {
+    ) public view returns (bool) {
         return escrowBalances[_address] >= _amount;
     }
 
@@ -264,6 +284,7 @@ contract LilypadPaymentEngine is
         return block.timestamp >= depositTimestamps[_address];
     }
 
+    // TODO: In the case of a resource provider, we need to check if they meet the minimum collateral requirement
     function payEscrow(
         address _payee,
         SharedStructs.UserType _actor,
@@ -363,7 +384,7 @@ contract LilypadPaymentEngine is
 
         escrowBalances[_withdrawer] -= _amount;
 
-        bool success = token.transferFrom(address(this), _withdrawer, _amount);
+        bool success = token.transfer(_withdrawer, _amount);
         if (!success) {
             revert LilypadPayment__transferFailed();
         }
@@ -381,17 +402,23 @@ contract LilypadPaymentEngine is
      * @param _to The address receiving the payout.
      * @param _amount The amount to transfer as a payout.
      * @return Returns true if the payout operation is successful.
-     * @notice This function is restricted to the CONTROLLER_ROLE.
+     * @notice 
+        - This function is restricted to the CONTROLLER_ROLE.
+        - If the amount is 0, it will emit an event and return false (this is to avoid reverts when the amount is 0)
      */
     function payoutJob(
         address _to,
         uint256 _amount
-    ) private onlyRole(SharedStructs.CONTROLLER_ROLE) moreThanZero(_amount) returns (bool) {
+    ) private onlyRole(SharedStructs.CONTROLLER_ROLE) nonNegative(_amount) returns (bool) {
+        if (_amount == 0) {
+            emit LilypadPayment__ZeroAmountPayout(_to);
+            return false;
+        }
+        
         bool success = token.transfer(_to, _amount);
         if (!success) {
             revert LilypadPayment__transferFailed();
         }
-
         return true;
     }
 
@@ -403,7 +430,10 @@ contract LilypadPaymentEngine is
         uint256 resourceProviderCollateralLockupAmount
     )
         external
-        hasEnoughEscrow(jobCreator, cost)
+        hasEnoughEscrow(
+            jobCreator,
+            cost
+        )
         hasEnoughEscrow(
             resourceProvider,
             resourceProviderCollateralLockupAmount
@@ -444,19 +474,27 @@ contract LilypadPaymentEngine is
         uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.networkCongestionFee;
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
         
-        uint256 resoureProviderRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * resourceProviderActiveEscrowScaler;
+        uint256 resoureProviderRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
         uint256 resourceProviderActiveEscrow = activeEscrow[deal.resourceProvider];
 
         // Check the accounting to ensure both parties have enough active escrow locked in to complete the job agreement
         if (resourceProviderActiveEscrow < resoureProviderRequiredActiveEscrow || jobCreatorActiveEscrow < totalCostOfJob) {
-            revert LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(_dealId,jobCreatorActiveEscrow, resourceProviderActiveEscrow, totalCostOfJob, resoureProviderRequiredActiveEscrow);
+            revert LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(_dealId, jobCreatorActiveEscrow, resourceProviderActiveEscrow, totalCostOfJob, resoureProviderRequiredActiveEscrow);
         }
 
-        // Calculate the total protocol fees
-        uint256 totalProtocolFees = deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee + deal.paymentStructure.networkCongestionFee + (deal.paymentStructure.moduleCreatorFee * m)/10000;
+        // Calculate the total protocol fees - includes m% of module creator fee
+        uint256 totalProtocolFees = deal.paymentStructure.networkCongestionFee + (deal.paymentStructure.moduleCreatorFee * m)/10000;
 
         // P: Protocol Revenue
         uint256 TreasuryPaymentTotalAmount = (totalProtocolFees * p)/10000;
+
+        // Value Based Rewards = total fees - treasury amount
+        // Simplifiying the equation, we get : valueBasedRewardsAmount = totalProtocolFees - (totalProtocolFees * p)/10000 = totalProtocolFees(1-p)/10000
+        uint256 valueBasedRewardsAmount = totalProtocolFees - TreasuryPaymentTotalAmount;
+
+        // Calculate module creator payment (total fee minus the protocol's portion)
+        // Simplifiying the equation, we get : moduleCreatorPaymentAmount = moduleCreatorFee(1-m)/10000
+        uint256 moduleCreatorPaymentAmount = deal.paymentStructure.moduleCreatorFee - (deal.paymentStructure.moduleCreatorFee * m)/10000;
 
         // p1
         uint256 burnAmount = (TreasuryPaymentTotalAmount * (p1))/10000;
@@ -464,40 +502,19 @@ contract LilypadPaymentEngine is
         // p2
         uint256 grantsAndAirdropsAmount = (TreasuryPaymentTotalAmount * (p2))/10000;
 
-        // p3
-        uint256 validationPoolAmount = (TreasuryPaymentTotalAmount * (p3))/10000;
+        // p3 - calculate as remainder to avoid rounding errors
+        uint256 validationPoolAmount = TreasuryPaymentTotalAmount - burnAmount - grantsAndAirdropsAmount;
 
         // Check that Treasury total amount equals sum of burn, grants/airdrops and validation pool amounts
         if (TreasuryPaymentTotalAmount != burnAmount + grantsAndAirdropsAmount + validationPoolAmount) {
-            revert LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts();
+            revert LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts(TreasuryPaymentTotalAmount, burnAmount, grantsAndAirdropsAmount, validationPoolAmount);
         }
-
-        // P-1: Value Based Rewards
-        uint256 valueBasedRewardsAmount = ((totalProtocolFees * (1 - p))/10000);
-
-        // m-1: Module Creator Payment
-        uint256 moduleCreatorPaymentAmount = (deal.paymentStructure.moduleCreatorFee * (1-m))/10000;
 
         // Only burn if the burn amount is greater than 0
         if (burnAmount > 0) {
             // Burn the amount
             token.burn(burnAmount);
         }
-        
-        // Pay the resource provider
-        payoutJob(deal.resourceProvider, deal.paymentStructure.priceOfJobWithoutFees);
-
-        // Pay the module creator
-        payoutJob(deal.moduleCreator, moduleCreatorPaymentAmount);
-
-        // Pay the solver
-        payoutJob(deal.solver, deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
-
-        // Pay the treasury
-        payoutJob(treasuryWallet, TreasuryPaymentTotalAmount);
-
-        // Pay the value based rewards
-        payoutJob(valueBasedRewardsWallet, valueBasedRewardsAmount);
 
         // Remove the active escrow for the job creator and resource provider
         activeEscrow[deal.jobCreator] -= totalCostOfJob;
@@ -505,6 +522,23 @@ contract LilypadPaymentEngine is
 
         // Return the resource provider's active escrow to their balance
         escrowBalances[deal.resourceProvider] += resoureProviderRequiredActiveEscrow;
+        
+        // Pay the resource provider
+        payoutJob(deal.resourceProvider, deal.paymentStructure.priceOfJobWithoutFees);
+
+        // Pay the module creator their portion
+        payoutJob(deal.moduleCreator, moduleCreatorPaymentAmount);
+
+        // Pay the solver
+        payoutJob(deal.solver, deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
+
+        // Pay the treasury
+        payoutJob(treasuryWallet, TreasuryPaymentTotalAmount + grantsAndAirdropsAmount); // TODO: This is being calculated to 0 and reverting becasue of that.  Thought: should the payout return false instead of reverting?
+
+        // Pay the value based rewards
+        payoutJob(valueBasedRewardsWallet, valueBasedRewardsAmount);
+
+        // TODO: Didn't distribute the validation pool amount or the the grants/airdrops amount
         
         // Add the amount to the total active escrow for running jobs
         totalActiveEscrow -= totalCostOfJob + resoureProviderRequiredActiveEscrow;
@@ -540,41 +574,47 @@ contract LilypadPaymentEngine is
     ) external returns (bool) {
         return true;
     }
-
+    
     /**
-     * @notice Sets the p parameter (total platform fee)
-     * @param _p New p value
-     */
-    function setP(uint256 _p) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        p = _p;
-        emit TokenomicsParameterUpdated("p", _p);
-    }
-
-    /**
-     * @notice Sets the p1 parameter (module creator fee)
+     * @notice Sets the p1 parameter (burn amount)
      * @param _p1 New p1 value
+     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
      */
     function setP1(uint256 _p1) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_p1 + p2 + p3 == 10000, "Parameters must sum to 10000");
         p1 = _p1;
         emit TokenomicsParameterUpdated("p1", _p1);
     }
 
     /**
-     * @notice Sets the p2 parameter (validation pool fee)
+     * @notice Sets the p2 parameter (grants/ecosystem pool fee)
      * @param _p2 New p2 value
+     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
      */
     function setP2(uint256 _p2) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(p1 + _p2 + p3 == 10000, "Parameters must sum to 10000");
         p2 = _p2;
         emit TokenomicsParameterUpdated("p2", _p2);
     }
 
     /**
-     * @notice Sets the p3 parameter (grants/ecosystem pool fee)
+     * @notice Sets the p3 parameter (validation pool fee)
      * @param _p3 New p3 value
+     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
      */
     function setP3(uint256 _p3) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(p1 + p2 + _p3 == 10000, "Parameters must sum to 10000");
         p3 = _p3;
         emit TokenomicsParameterUpdated("p3", _p3);
+    }
+
+    /**
+     * @notice Sets the p parameter (total fee)
+     * @param _p New p value
+     */
+    function setP(uint256 _p) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        p = _p;
+        emit TokenomicsParameterUpdated("p", _p);
     }
 
     /**

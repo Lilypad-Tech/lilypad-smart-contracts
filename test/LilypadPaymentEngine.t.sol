@@ -1,0 +1,452 @@
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.13;
+
+import "forge-std/Test.sol";
+import "../src/LilypadPaymentEngine.sol";
+import "../src/LilypadToken.sol";
+import "../src/LilypadStorage.sol";
+import "../src/LilypadUser.sol";
+import {SharedStructs} from "../src/SharedStructs.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+
+contract LilypadPaymentEngineTest is Test {
+    LilypadPaymentEngine public paymentEngine;
+    LilypadToken public token;
+    LilypadStorage public lilypadStorage;
+    LilypadUser public user;
+
+    address public constant ALICE = address(0x1);  // Job Creator
+    address public constant BOB = address(0x2);    // Resource Provider
+    address public constant CHARLIE = address(0x3); // Module Creator
+    address public constant DAVE = address(0x4);    // Solver
+    address public constant EVE = address(0x5);     // Validator
+    address public constant TREASURY = address(0x6);
+    address public constant VALUE_REWARDS = address(0x7);
+
+    uint256 public constant INITIAL_BALANCE = 1000 * 10**18;
+    uint256 public constant INITIAL_TREASURY_BALANCE = 10000 * 10**18;
+    uint256 public constant INITIAL_VALUE_REWARDS_BALANCE = 10000 * 10**18;
+
+    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+
+    event LilypadPayment__escrowPaid(
+        address indexed payee,
+        SharedStructs.UserType indexed actor,
+        SharedStructs.PaymentReason indexed paymentReason,
+        uint256 amount
+    );
+    event LilypadPayment__escrowWithdrawn(
+        address indexed withdrawer,
+        uint256 amount
+    );
+    event LilypadPayment__ActiveEscrowLockedForJob(
+        address indexed jobCreator,
+        address indexed resourceProvider,
+        string indexed dealId,
+        uint256 cost
+    );
+    event LilypadPayment__JobCompleted(
+        address indexed jobCreator,
+        address indexed resourceProvider,
+        string dealId
+    );
+
+    function setUp() public {
+        // Deploy token with initial supply (using 1 million instead of 1 billion for initial supply)
+        uint256 initialSupply = 1_000_000 * 10**18; // 1 million tokens
+        token = new LilypadToken(initialSupply);
+
+        // Deploy and initialize storage
+        LilypadStorage storageImpl = new LilypadStorage();
+        bytes memory storageInitData = abi.encodeWithSelector(LilypadStorage.initialize.selector);
+        ERC1967Proxy storageProxy = new ERC1967Proxy(address(storageImpl), storageInitData);
+        lilypadStorage = LilypadStorage(address(storageProxy));
+
+        // Deploy and initialize user
+        LilypadUser userImpl = new LilypadUser();
+        bytes memory userInitData = abi.encodeWithSelector(LilypadUser.initialize.selector);
+        ERC1967Proxy userProxy = new ERC1967Proxy(address(userImpl), userInitData);
+        user = LilypadUser(address(userProxy));
+
+        // Deploy and initialize payment engine
+        LilypadPaymentEngine engineImpl = new LilypadPaymentEngine();
+        bytes memory engineInitData = abi.encodeWithSelector(
+            LilypadPaymentEngine.initialize.selector,
+            address(token),
+            address(lilypadStorage),
+            address(user),
+            TREASURY,
+            VALUE_REWARDS
+        );
+        ERC1967Proxy engineProxy = new ERC1967Proxy(address(engineImpl), engineInitData);
+        paymentEngine = LilypadPaymentEngine(address(engineProxy));
+
+        // Setup roles
+        token.grantRole(SharedStructs.MINTER_ROLE, address(this));
+        user.grantRole(SharedStructs.CONTROLLER_ROLE, address(this));
+        user.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
+        lilypadStorage.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
+        paymentEngine.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
+        paymentEngine.grantRole(bytes32(0x00), address(this));
+        
+        // Setup test accounts
+        token.mint(ALICE, INITIAL_BALANCE);
+        token.mint(BOB, INITIAL_BALANCE);
+        token.mint(CHARLIE, INITIAL_BALANCE);
+        token.mint(DAVE, INITIAL_BALANCE);
+        token.mint(EVE, INITIAL_BALANCE);
+        token.mint(TREASURY, INITIAL_TREASURY_BALANCE);
+        token.mint(VALUE_REWARDS, INITIAL_VALUE_REWARDS_BALANCE);
+
+        // Register users and add roles
+        user.insertUser(ALICE, "metadata", "url", SharedStructs.UserType.JobCreator);
+        user.insertUser(BOB, "metadata", "url", SharedStructs.UserType.ResourceProvider);
+        user.insertUser(CHARLIE, "metadata", "url", SharedStructs.UserType.ModuleCreator);
+        user.insertUser(DAVE, "metadata", "url", SharedStructs.UserType.Solver);
+        user.insertUser(EVE, "metadata", "url", SharedStructs.UserType.Validator);
+        user.insertUser(address(this), "metadata", "url", SharedStructs.UserType.Admin);
+
+        // For fuzz tests, we need to modify the test functions to use valid users
+        vm.label(ALICE, "Job Creator");
+        vm.label(BOB, "Resource Provider");
+        vm.label(CHARLIE, "Module Creator");
+        vm.label(DAVE, "Solver");
+        vm.label(EVE, "Validator");
+
+        // Set initial parameters
+        paymentEngine.setP(0); // 0 protocol revenue
+        paymentEngine.setP1(0); // 50%    
+        paymentEngine.setP2(5000); // 50%
+        paymentEngine.setP3(5000); // 50%
+        paymentEngine.setM(200);   // 2%
+        paymentEngine.setAlpha(150); // 1.5x
+        paymentEngine.setV1(200);    // 2x
+        paymentEngine.setV2(150);    // 1.5x
+    }
+
+    // Basic Functionality Tests
+    function test_InitialState() public {
+        assertEq(paymentEngine.version(), "1.0.0");
+        assertEq(paymentEngine.treasuryWallet(), TREASURY);
+        assertEq(paymentEngine.valueBasedRewardsWallet(), VALUE_REWARDS);
+    }
+
+    function test_PayEscrow() public {
+        uint256 amount = 100 * 10**18;
+        
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), amount);
+        
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__escrowPaid(
+            ALICE,
+            SharedStructs.UserType.JobCreator,
+            SharedStructs.PaymentReason.JobFee,
+            amount
+        );
+
+        bool success = paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.UserType.JobCreator,
+            SharedStructs.PaymentReason.JobFee,
+            amount
+        );
+        
+        assertTrue(success);
+        assertEq(paymentEngine.escrowBalanceOf(ALICE), amount);
+        vm.stopPrank();
+    }
+
+    // Fuzz Tests
+    function testFuzz_PayEscrow(uint256 amount) public {
+        // Bound amount to reasonable values and use ALICE (known JobCreator)
+        amount = bound(amount, 1, INITIAL_BALANCE);
+        
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), amount);
+        
+        bool success = paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.UserType.JobCreator,
+            SharedStructs.PaymentReason.JobFee,
+            amount
+        );
+        
+        assertTrue(success);
+        assertEq(paymentEngine.escrowBalanceOf(ALICE), amount);
+        vm.stopPrank();
+    }
+
+    function testFuzz_WithdrawEscrow(uint256 depositAmount, uint256 withdrawAmount) public {
+        // Bound amounts and use BOB (known ResourceProvider)
+        depositAmount = bound(depositAmount, 1 * 10**18, INITIAL_BALANCE);
+        withdrawAmount = bound(withdrawAmount, 1, depositAmount);
+        
+        // Setup initial deposit
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), depositAmount);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.UserType.ResourceProvider,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            depositAmount
+        );
+        vm.stopPrank();
+        
+        // Wait for lock period
+        vm.warp(block.timestamp + paymentEngine.COLLATERAL_LOCK_DURATION() + 1);
+        
+        // Withdraw as BOB - no need for token approvals since BOB is receiving tokens
+        vm.startPrank(BOB);
+        bool success = paymentEngine.withdrawEscrow(BOB, withdrawAmount);
+        assertTrue(success);
+        assertEq(paymentEngine.escrowBalanceOf(BOB), depositAmount - withdrawAmount);
+        vm.stopPrank();
+    }
+
+    // Error Cases
+    function test_RevertWhen_WithdrawingBeforeLockPeriod() public {
+        uint256 amount = 100 * 10**18;
+        
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), amount);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.UserType.ResourceProvider,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            amount
+        );
+        
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__escrowNotWithdrawable.selector);
+        paymentEngine.withdrawEscrow(BOB, amount);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_WithdrawingMoreThanBalance() public {
+        uint256 amount = 100 * 10**18;
+        
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), amount);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.UserType.ResourceProvider,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            amount
+        );
+        
+        vm.warp(block.timestamp + paymentEngine.COLLATERAL_LOCK_DURATION() + 1);
+        
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__insufficientEscrowBalanceForWithdrawal.selector);
+        paymentEngine.withdrawEscrow(BOB, amount + 1);
+        vm.stopPrank();
+    }
+
+    // Job Completion Tests
+    function test_HandleJobCompletion() public {
+        uint256 jobCreatorSolverFee = 1 * 10**18;
+        uint256 resourceProviderSolverFee = 1 * 10**18;
+        uint256 moduleCreatorFee = 1 * 10**18;
+        uint256 networkCongestionFee = 1 * 10**18;
+        uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
+        uint256 basePayment = 5 * 10**18;  // Base payment without fees
+        uint256 jobCost = basePayment + totalFees;
+        uint256 rpCollateral = 10 * 10**18;
+        
+        // Setup escrow for job creator and resource provider
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.UserType.JobCreator,
+            SharedStructs.PaymentReason.JobFee,
+            jobCost
+        );
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.UserType.ResourceProvider,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            rpCollateral
+        );
+        vm.stopPrank();
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                JobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment  // Use the base payment amount
+            })
+        });
+        
+        vm.startPrank(address(this));
+        lilypadStorage.saveDeal("deal1", deal);
+
+        // Lock escrow for job
+        uint256 rpRequiredEscrow = (basePayment + resourceProviderSolverFee) * (paymentEngine.resourceProviderActiveEscrowScaler() / 10000);
+        paymentEngine.initiateLockupOfEscrowForJob(
+            ALICE,
+            BOB,
+            "deal1",
+            jobCost,
+            rpRequiredEscrow
+        );
+
+        // Switch to payment engine to approve token transfers
+        vm.stopPrank();
+        vm.startPrank(address(paymentEngine));
+        // Complete job
+        bool success = paymentEngine.HandleJobCompletion("deal1");
+        
+        assertTrue(success);
+        
+        // Assert final balances
+        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
+        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), 0);
+        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
+        assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
+        assertEq(token.balanceOf(CHARLIE), INITIAL_BALANCE + (deal.paymentStructure.moduleCreatorFee - (deal.paymentStructure.moduleCreatorFee * paymentEngine.m())/10000));
+        assertEq(token.balanceOf(DAVE), INITIAL_BALANCE + deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
+
+        // Calculate expected treasury amount
+        uint256 protocolFees = deal.paymentStructure.networkCongestionFee + 
+            (deal.paymentStructure.moduleCreatorFee * paymentEngine.m())/10000;
+        uint256 expectedTreasuryAmount = (protocolFees * paymentEngine.p())/10000;
+
+        assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE + expectedTreasuryAmount);
+
+        // Calculate expected value based rewards amount
+        uint256 expectedValueBasedRewardsAmount = protocolFees - expectedTreasuryAmount;
+        assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
+
+        vm.stopPrank();
+    }
+
+    // Parameter Update Tests
+    function test_UpdateTokenomicsParameters() public {
+        vm.startPrank(address(this)); // Default admin role
+        paymentEngine.setP(0); // 0 protocol revenue
+        paymentEngine.setP1(0); // 0%
+        paymentEngine.setP2(5000); // 50%
+        paymentEngine.setP3(5000); // 50% validation pool fee
+        paymentEngine.setM(200);   // 2%
+        paymentEngine.setAlpha(150); // 1.5x
+        paymentEngine.setV1(200);    // 2x
+        paymentEngine.setV2(150);    // 1.5x
+
+        assertEq(paymentEngine.p1(), 0);
+        assertEq(paymentEngine.p2(), 5000);
+        assertEq(paymentEngine.p3(), 5000);
+        assertEq(paymentEngine.p(), 0);
+        assertEq(paymentEngine.m(), 200);
+        assertEq(paymentEngine.alpha(), 150);
+        assertEq(paymentEngine.v1(), 200);
+        assertEq(paymentEngine.v2(), 150);
+        
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_NonAdminUpdatesParameters() public {
+        vm.startPrank(ALICE);
+        
+        vm.expectRevert();
+        paymentEngine.setM(5000);
+        
+        vm.expectRevert();
+        paymentEngine.setP1(5000);
+        
+        vm.stopPrank();
+    }
+
+    // Escrow Locking Tests
+    function test_LockEscrowForJob() public {
+        uint256 jobCost = 100 * 10**18;
+        uint256 rpCollateral = jobCost * 110 / 100;
+
+        // Setup escrow
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.UserType.JobCreator,
+            SharedStructs.PaymentReason.JobFee,
+            jobCost
+        );
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.UserType.ResourceProvider,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            rpCollateral
+        );
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        bool success = paymentEngine.initiateLockupOfEscrowForJob(
+            ALICE,
+            BOB,
+            "deal1",
+            jobCost,
+            rpCollateral
+        );
+
+        assertTrue(success);
+        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), jobCost);
+        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), rpCollateral);
+        assertEq(paymentEngine.escrowBalanceOf(ALICE), 0);
+        assertEq(paymentEngine.escrowBalanceOf(BOB), 0);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_LockingInsufficientEscrow() public {
+        uint256 jobCost = 100 * 10**18;
+        uint256 rpCollateral = jobCost * 110 / 100;
+
+        // Only fund job creator, not resource provider
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.UserType.JobCreator,
+            SharedStructs.PaymentReason.JobFee,
+            jobCost
+        );
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        // Update expectRevert to match the new error format with parameters
+        vm.expectRevert(abi.encodeWithSelector(
+            LilypadPaymentEngine.LilypadPayment__insufficientEscrowAmount.selector,
+            0,  // BOB's current escrow balance
+            rpCollateral  // required amount
+        ));
+        paymentEngine.initiateLockupOfEscrowForJob(
+            ALICE,
+            BOB,
+            "deal1",
+            jobCost,
+            rpCollateral
+        );
+        vm.stopPrank();
+    }
+
+    // Add more complex scenario tests...
+} 
