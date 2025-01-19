@@ -465,16 +465,19 @@ contract LilypadPaymentEngine is
     function HandleJobCompletion(
         string memory _dealId
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+        // Get the deal from the storage contract, if it doesn't exist, revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(_dealId);
 
-        if (deal.timestamp == 0) {
-            revert LilypadPayment__DealNotFound();
-        }
-
+        // Calculate the total cost of the job
         uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.networkCongestionFee;
+
+        // Get the active escrow for the job creator
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
         
+        // Calculate the required active escrow for the resource provider
         uint256 resoureProviderRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
+
+        // Get the active escrow for the resource provider
         uint256 resourceProviderActiveEscrow = activeEscrow[deal.resourceProvider];
 
         // Check the accounting to ensure both parties have enough active escrow locked in to complete the job agreement
@@ -505,12 +508,7 @@ contract LilypadPaymentEngine is
         // p3 - calculate as remainder to avoid rounding errors
         uint256 validationPoolAmount = TreasuryPaymentTotalAmount - burnAmount - grantsAndAirdropsAmount;
 
-        // Check that Treasury total amount equals sum of burn, grants/airdrops and validation pool amounts
-        if (TreasuryPaymentTotalAmount != burnAmount + grantsAndAirdropsAmount + validationPoolAmount) {
-            revert LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts(TreasuryPaymentTotalAmount, burnAmount, grantsAndAirdropsAmount, validationPoolAmount);
-        }
-
-        // Only burn if the burn amount is greater than 0
+        // Only burn if the burn amount is greater than 0 to avoid reverting
         if (burnAmount > 0) {
             // Burn the amount
             token.burn(burnAmount);
@@ -651,5 +649,10 @@ contract LilypadPaymentEngine is
     function setV2(uint256 _v2) external onlyRole(DEFAULT_ADMIN_ROLE) {
         v2 = _v2;
         emit TokenomicsParameterUpdated("v2", _v2);
+    }
+
+    function setResourceProviderActiveEscrowScaler(uint256 _resourceProviderActiveEscrowScaler) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        resourceProviderActiveEscrowScaler = _resourceProviderActiveEscrowScaler;
+        emit TokenomicsParameterUpdated("resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler);
     }
 }
