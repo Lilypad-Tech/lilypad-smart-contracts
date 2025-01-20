@@ -7,17 +7,17 @@ interface ILilypadPaymentEngine {
 
     /**
      * @dev This method will encompass the business logic related to handling a job completion and sending/releasing funds to the appropriate actors
-     * @param _dealId The ID of the deal containg all the information about the job
+     * @param _result The result struct of the job that is passed from the Solver
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
     function HandleJobCompletion(
-        string memory _dealId
+        SharedStructs.Result memory _result
     ) external returns (bool);
 
     /**
      * @dev This method will encompass the business logic related to handling a job completion and sending/releasing funds to the appropriate actors
-     * @param _result The result struct of the job
+     * @param _result The result struct of the job that is passed from the Solver
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
@@ -27,36 +27,22 @@ interface ILilypadPaymentEngine {
 
     /**
      * @dev This method will encompass the business logic related to handling a successful validation completion and sending/releasing funds to the appropriate actors (i.e. the validation run successfully completed)
-     * @param jobCreator The address of the Job Creator
-     * @param resourceProvider The address of the resource provider.
-     * @param moduleCreator The address of the module creator.
-     * @param validatorAddress The address of the validator.
-     * @param state The enum indicating the staus of the validation
+     * @param _validationResult The validation result struct of the job that is passed from the Solver
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
     function HandleValidationPassed(
-        address jobCreator,
-        address resourceProvider,
-        address moduleCreator,
-        address validatorAddress,
-        SharedStructs.ValidationResultStatusEnum state
+        SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool);
 
     /**
      * @dev This method will encompass the business logic related to handling a failed validation and sending/releasing funds to the appropriate actors (i.e. the validation run failed to complete)
-     * @param jobCreator The address of the Job Creator
-     * @param resourceProvider The address of the resource provider.
-     * @param moduleCreator The address of the module creator.
-     * @param validatorAddress The address of the validator.
+     * @param _validationResult The validation result struct of the job that is passed from the Sovler
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
     function HandleValidationFailed(
-        address jobCreator,
-        address resourceProvider,
-        address moduleCreator,
-        address validatorAddress
+        SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool);
 
     /**

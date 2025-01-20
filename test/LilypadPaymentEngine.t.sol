@@ -313,8 +313,16 @@ contract LilypadPaymentEngineTest is Test {
         // Switch to payment engine to approve token transfers
         vm.stopPrank();
         vm.startPrank(address(paymentEngine));
+        
         // Complete job
-        bool success = paymentEngine.HandleJobCompletion("deal1");
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        bool success = paymentEngine.HandleJobCompletion(result);
         
         assertTrue(success);
         
@@ -409,7 +417,14 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.stopPrank();
         vm.startPrank(address(paymentEngine));
-        bool success = paymentEngine.HandleJobCompletion("deal1");
+         SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        bool success = paymentEngine.HandleJobCompletion(result);
         
         assertTrue(success);
         assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
@@ -495,7 +510,14 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.stopPrank();
         vm.startPrank(address(paymentEngine));
-        bool success = paymentEngine.HandleJobCompletion("deal1");
+         SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        bool success = paymentEngine.HandleJobCompletion(result);
         
         assertTrue(success);
         assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
@@ -581,7 +603,14 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.stopPrank();
         vm.startPrank(address(paymentEngine));
-        bool success = paymentEngine.HandleJobCompletion("deal1");
+         SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        bool success = paymentEngine.HandleJobCompletion(result);
         
         assertTrue(success);
         // Verify minimal payments were processed correctly
@@ -615,8 +644,14 @@ contract LilypadPaymentEngineTest is Test {
             "deal1"
         );
         vm.expectRevert(expectedError);
-        
-        paymentEngine.HandleJobCompletion("deal1");
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        paymentEngine.HandleJobCompletion(result);
         vm.stopPrank();
     }
 
@@ -790,7 +825,15 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.stopPrank();
         vm.startPrank(address(paymentEngine));
-        bool success = paymentEngine.HandleJobCompletion("deal1");
+
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        bool success = paymentEngine.HandleJobCompletion(result);
         
         assertTrue(success);
         // Verify only base payment was processed
@@ -865,7 +908,15 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.stopPrank();
         vm.startPrank(address(paymentEngine));
-        bool success = paymentEngine.HandleJobCompletion("deal1");
+
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        bool success = paymentEngine.HandleJobCompletion(result);
         
         assertTrue(success);
         // Verify mixed fee scenario worked correctly
@@ -932,7 +983,14 @@ contract LilypadPaymentEngineTest is Test {
             jobCost,
             rpRequiredEscrow
         ));
-        paymentEngine.HandleJobCompletion("deal1");
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsRejected,
+            timestamp: block.timestamp
+        });
+        paymentEngine.HandleJobCompletion(result);
         vm.stopPrank();
     }
 

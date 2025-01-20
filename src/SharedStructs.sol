@@ -73,8 +73,6 @@ library SharedStructs {
         // the url of the user's metadata
         string url;
     }
-    // // the roles of the user
-    // UserType[] roles;
 
     /**
      * @dev This struct is used to store the payment structure for a deal
@@ -87,7 +85,6 @@ library SharedStructs {
      * - The solver is the address of the Solver
      * - The total cost of a job from a Job Creator perspective is the sum of the priceOfJobWithoutFees, the moduleCreatorFee, the totalSolverFees/2 and the networkCongestionFee
      */
-     // TODO: Should we add the module name here too?
     struct DealPaymentStructure {
         uint256 JobCreatorSolverFee;
         uint256 resourceProviderSolverFee;

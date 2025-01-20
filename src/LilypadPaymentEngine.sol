@@ -469,10 +469,10 @@ contract LilypadPaymentEngine is
     }
 
     function HandleJobCompletion(
-        string memory _dealId
+        SharedStructs.Result memory result
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
         // Get the deal from the storage contract, if it doesn't exist, revert
-        SharedStructs.Deal memory deal = lilypadStorage.getDeal(_dealId);
+        SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
         // Calculate the total cost of the job
         uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.networkCongestionFee;
@@ -488,7 +488,7 @@ contract LilypadPaymentEngine is
 
         // Check the accounting to ensure both parties have enough active escrow locked in to complete the job agreement
         if (resourceProviderActiveEscrow < resoureProviderRequiredActiveEscrow || jobCreatorActiveEscrow < totalCostOfJob) {
-            revert LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(_dealId, jobCreatorActiveEscrow, resourceProviderActiveEscrow, totalCostOfJob, resoureProviderRequiredActiveEscrow);
+            revert LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(deal.dealId, jobCreatorActiveEscrow, resourceProviderActiveEscrow, totalCostOfJob, resoureProviderRequiredActiveEscrow);
         }
 
         // Calculate the total protocol fees - includes m% of module creator fee
@@ -578,20 +578,13 @@ contract LilypadPaymentEngine is
 
     // You should just be able to 
     function HandleValidationPassed(
-        address jobCreator,
-        address resourceProvider,
-        address moduleCreator,
-        address validatorAddress,
-        SharedStructs.ValidationResultStatusEnum state
+        SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool) {
         return true;
     }
 
     function HandleValidationFailed(
-        address jobCreator,
-        address resourceProvider,
-        address moduleCreator,
-        address validatorAddress
+        SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool) {
         return true;
     }
