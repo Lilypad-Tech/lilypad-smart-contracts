@@ -17,22 +17,13 @@ interface ILilypadPaymentEngine {
 
     /**
      * @dev This method will encompass the business logic related to handling a job completion and sending/releasing funds to the appropriate actors
-     * @param jobCreator The address of the Job Creator
-     * @param resourceProvider The address of the resource provider.
-     * @param moduleCreator The address of the module creator.
+     * @param _result The result struct of the job
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
     function HandleJobFailure(
-        address jobCreator,
-        address resourceProvider,
-        address moduleCreator
-    )
-        external
-        returns (
-            // Add a state here for why it failed (also check proxy to see if you can pass the state down)
-            bool
-        );
+        SharedStructs.Result memory _result
+    ) external returns (bool);
 
     /**
      * @dev This method will encompass the business logic related to handling a successful validation completion and sending/releasing funds to the appropriate actors (i.e. the validation run successfully completed)

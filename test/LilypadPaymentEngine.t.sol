@@ -50,6 +50,11 @@ contract LilypadPaymentEngineTest is Test {
         address indexed resourceProvider,
         string dealId
     );
+    event LilypadPayment__JobFailed(
+        address indexed jobCreator,
+        address indexed resourceProvider,
+        string resultId
+    );
 
     function setUp() public {
         // Deploy token with initial supply (using 1 million instead of 1 billion for initial supply)
@@ -606,7 +611,8 @@ contract LilypadPaymentEngineTest is Test {
         
         // The error comes from LilypadStorage, and includes a string parameter
         bytes memory expectedError = abi.encodeWithSignature(
-            "LilypadStorage__DealNotFound()"
+            "LilypadStorage__DealNotFound(string)",
+            "deal1"
         );
         vm.expectRevert(expectedError);
         
@@ -927,6 +933,208 @@ contract LilypadPaymentEngineTest is Test {
             rpRequiredEscrow
         ));
         paymentEngine.HandleJobCompletion("deal1");
+        vm.stopPrank();
+    }
+
+    function test_HandleJobFailure() public {
+        // Setup initial state
+        uint256 basePayment = 5 * 10**18;
+        uint256 jobCreatorSolverFee = 1 * 10**18;
+        uint256 resourceProviderSolverFee = 1 * 10**18;
+        uint256 moduleCreatorFee = 1 * 10**18;
+        uint256 networkCongestionFee = 1 * 10**18;
+        uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
+        uint256 jobCost = basePayment + totalFees;
+        uint256 rpCollateral = 20 * 10**18; // Large enough to cover slashing
+        
+        // Setup escrow for both parties
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.PaymentReason.JobFee,
+            jobCost
+        );
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            rpCollateral
+        );
+        vm.stopPrank();
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                JobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment
+            })
+        });
+        
+        vm.startPrank(address(this));
+        lilypadStorage.saveDeal("deal1", deal);
+
+        // Lock escrow
+        uint256 rpRequiredEscrow = (basePayment + resourceProviderSolverFee) * (paymentEngine.resourceProviderActiveEscrowScaler() / 10000);
+        paymentEngine.initiateLockupOfEscrowForJob(
+            ALICE,
+            BOB,
+            "deal1",
+            jobCost,
+            rpRequiredEscrow
+        );
+        vm.stopPrank();
+
+        // Create result
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsRejected,
+            timestamp: block.timestamp
+        });
+
+        // Test job failure
+        vm.startPrank(address(paymentEngine));
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__JobFailed(ALICE, BOB, "result1");
+
+        uint256 initialTotalEscrow = paymentEngine.totalEscrow();
+        uint256 initialActiveEscrow = paymentEngine.totalActiveEscrow();
+        bool success = paymentEngine.HandleJobFailure(result);
+        assertTrue(success);
+
+        // Verify escrow was slashed for the resource provider
+        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral - rpRequiredEscrow);
+        assertEq(paymentEngine.totalEscrow(), initialTotalEscrow - rpRequiredEscrow);
+        assertEq(paymentEngine.totalActiveEscrow(), initialActiveEscrow - rpRequiredEscrow); // Need to update for the job creator active escorw
+
+        // // Verify job creator's escrow is returned
+        // assertEq(paymentEngine.escrowBalanceOf(ALICE), jobCost);
+        // assertEq(token.balanceOf(ALICE), INITIAL_BALANCE - jobCost);
+
+        vm.stopPrank();
+    }
+
+    function test_HandleJobFailure_RevertWhen_DealNotFound() public {
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "nonexistent",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsRejected,
+            timestamp: block.timestamp
+        });
+
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert(abi.encodeWithSignature(
+            "LilypadStorage__DealNotFound(string)",
+            "nonexistent"
+        ));
+        paymentEngine.HandleJobFailure(result);
+        vm.stopPrank();
+    }
+
+    function test_HandleJobFailure_RevertWhen_ResultSaveFails() public {
+        // Setup initial state
+        uint256 basePayment = 5 * 10**18;
+        uint256 jobCreatorSolverFee = 1 * 10**18;
+        uint256 resourceProviderSolverFee = 1 * 10**18;
+        uint256 moduleCreatorFee = 1 * 10**18;
+        uint256 networkCongestionFee = 1 * 10**18;
+        uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
+        uint256 jobCost = basePayment + totalFees;
+        uint256 rpCollateral = 20 * 10**18;
+        
+        // Setup escrow for both parties
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.PaymentReason.JobFee,
+            jobCost
+        );
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            rpCollateral
+        );
+        vm.stopPrank();
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                JobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment
+            })
+        });
+        
+        vm.startPrank(address(this));
+        lilypadStorage.saveDeal("deal1", deal);
+
+        // Lock escrow
+        uint256 rpRequiredEscrow = (basePayment + resourceProviderSolverFee) * (paymentEngine.resourceProviderActiveEscrowScaler() / 10000);
+        paymentEngine.initiateLockupOfEscrowForJob(
+            ALICE,
+            BOB,
+            "deal1",
+            jobCost,
+            rpRequiredEscrow
+        );
+        vm.stopPrank();
+
+        // Create result with empty resultId which will cause save to fail
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "", // Empty resultId will cause save to fail
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsRejected,
+            timestamp: block.timestamp
+        });
+
+        // Test job failure with invalid result
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyResultId.selector);
+        paymentEngine.HandleJobFailure(result);
+        
+        // Verify escrow state hasn't changed
+        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral - rpRequiredEscrow);
+        assertEq(paymentEngine.activeEscrow(BOB), rpRequiredEscrow);
+
+        // TODO: uncomment once you figure out what happens to the job creator's escrow
+        // assertEq(paymentEngine.escrowBalanceOf(ALICE), 0);
+        // assertEq(paymentEngine.activeEscrow(ALICE), jobCost);
         vm.stopPrank();
     }
 

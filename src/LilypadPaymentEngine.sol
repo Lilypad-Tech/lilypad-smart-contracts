@@ -148,6 +148,11 @@ contract LilypadPaymentEngine is
         address indexed resourceProvider,
         string dealId
     );
+    event LilypadPayment__JobFailed(
+        address indexed jobCreator,
+        address indexed resourceProvider,
+        string resultId
+    );
     event LilypadPayment__ZeroAmountPayout(address indexed intended_recipient);
     
     error LilypadPayment__amountMustBeNonNegative(bytes4 functionSelector, uint256 amount);
@@ -340,10 +345,6 @@ contract LilypadPaymentEngine is
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
-        if (activeEscrow[_address] < _amount) {
-            revert LilypadPayment__escrowSlashAmountTooLarge();
-        }
-
         activeEscrow[_address] -= _amount;
 
         // When an actor is slashed their active collateral, it is sent to the treasury wallet
@@ -375,7 +376,7 @@ contract LilypadPaymentEngine is
                 revert LilypadPayment__escrowNotWithdrawable();
             }
         } else {
-            //  If we enter this block, it means a non-RP or Validator is trying to withdraw their escrow
+            //  If we enter this block, it means a non-RP or non-Validator is trying to withdraw their escrow
             revert LilypadPayment__escrowNotWithdrawableForActor(_withdrawer);
         }
 
@@ -383,6 +384,8 @@ contract LilypadPaymentEngine is
             revert LilypadPayment__insufficientEscrowBalanceForWithdrawal();
         }
 
+        // Remove the amount from the actor's escrow balance
+        // Note: We do not remove the active collateral from the actor's active escrow since that will be used for the completion of a currently active job
         escrowBalances[_withdrawer] -= _amount;
 
         bool success = token.transfer(_withdrawer, _amount);
@@ -423,7 +426,6 @@ contract LilypadPaymentEngine is
         return true;
     }
 
-    // TODO:Do you need dealid here?
     function initiateLockupOfEscrowForJob(
         address jobCreator,
         address resourceProvider,
@@ -436,10 +438,12 @@ contract LilypadPaymentEngine is
             jobCreator,
             cost
         )
+        moreThanZero(cost)
         hasEnoughEscrow(
             resourceProvider,
             resourceProviderCollateralLockupAmount
         )
+        moreThanZero(resourceProviderCollateralLockupAmount)
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
@@ -552,13 +556,27 @@ contract LilypadPaymentEngine is
     }
 
     function HandleJobFailure(
-        address jobCreator,
-        address resourceProvider,
-        address moduleCreator
-    ) external returns (bool) {
+        SharedStructs.Result memory result
+    ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+        // Get the deal from the storage contract, if it doesn't exist, revert
+        SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
+    
+        // Calculate the required active collateral for the resource provider to be slashed
+        uint256 resoureProviderRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
+
+        // Slash the resource provider
+        slashEscrow(deal.resourceProvider, SharedStructs.UserType.ResourceProvider, resoureProviderRequiredActiveEscrow);
+
+        //TODO: What happens to the job creator's escrow?
+
+        // Save the result
+        lilypadStorage.saveResult(result.resultId, result);
+
+        emit LilypadPayment__JobFailed(deal.jobCreator, deal.resourceProvider, result.resultId);
         return true;
     }
 
+    // You should just be able to 
     function HandleValidationPassed(
         address jobCreator,
         address resourceProvider,
