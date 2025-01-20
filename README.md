@@ -77,3 +77,9 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+### Gas Reports
+
+```shell
+$ forge test --gas-report
+```
