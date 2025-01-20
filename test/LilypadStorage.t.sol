@@ -273,17 +273,26 @@ contract LilypadStorageTest is Test {
 
     // Error Tests
     function test_RevertWhen_GettingNonexistentDeal() public {
-        vm.expectRevert(LilypadStorage.LilypadStorage__DealNotFound.selector);
+        vm.expectRevert(abi.encodeWithSignature(
+            "LilypadStorage__DealNotFound(string)",
+            "nonexistent"
+        ));
         lilypadStorage.getDeal("nonexistent");
     }
 
     function test_RevertWhen_GettingNonexistentResult() public {
-        vm.expectRevert(LilypadStorage.LilypadStorage__ResultNotFound.selector);
+        vm.expectRevert(abi.encodeWithSignature(
+            "LilypadStorage__ResultNotFound(string)",
+            "nonexistent"
+        ));
         lilypadStorage.getResult("nonexistent");
     }
 
     function test_RevertWhen_GettingNonexistentValidation() public {
-        vm.expectRevert(LilypadStorage.LilypadStorage__ValidationResultNotFound.selector);
+        vm.expectRevert(abi.encodeWithSignature(
+            "LilypadStorage__ValidationResultNotFound(string)",
+            "nonexistent"
+        ));
         lilypadStorage.getValidationResult("nonexistent");
     }
 
