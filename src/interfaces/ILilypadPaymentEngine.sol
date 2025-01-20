@@ -99,7 +99,6 @@ interface ILilypadPaymentEngine {
     /**
      * @dev This will allow a user to deposit escrow into the contract
      * @param _payee The address to deposit escrow for.
-     * @param _actor The actor type of the payee.
      * @param _paymentReason The reason for the payment.
      * @param _amount The amount to be added to escrow.
      * @return Returns true if the operation is successful.
@@ -107,7 +106,6 @@ interface ILilypadPaymentEngine {
      */
     function payEscrow(
         address _payee,
-        SharedStructs.UserType _actor,
         SharedStructs.PaymentReason _paymentReason,
         uint256 _amount
     ) external returns (bool);

@@ -51,6 +51,7 @@ contract LilypadPaymentEngine is
     LilypadToken private token;
     LilypadStorage private lilypadStorage;
     LilypadUser private lilypadUser;
+    //TODO: Add Validation cntracr when complete
 
     string public version;
 
@@ -122,7 +123,6 @@ contract LilypadPaymentEngine is
 
     event LilypadPayment__escrowPaid(
         address indexed payee,
-        SharedStructs.UserType indexed actor,
         SharedStructs.PaymentReason indexed paymentReason,
         uint256 amount
     );
@@ -135,23 +135,19 @@ contract LilypadPaymentEngine is
         SharedStructs.UserType indexed actor,
         uint256 amount
     );
-
     event LilypadPayment__ActiveEscrowLockedForJob(
         address indexed jobCreator,
         address indexed resourceProvider,
         string indexed dealId,
         uint256 cost
     );
-
-    event TokenomicsParameterUpdated(string parameter, uint256 value);
+    event TokenomicsParameterUpdated(string indexed parameter, uint256 value);
     event ActiveCollateralLockupPercentageUpdated(uint256 percentage);
-
     event LilypadPayment__JobCompleted(
         address indexed jobCreator,
         address indexed resourceProvider,
         string dealId
     );
-
     event LilypadPayment__ZeroAmountPayout(address indexed intended_recipient);
     
     error LilypadPayment__amountMustBeNonNegative(bytes4 functionSelector, uint256 amount);
@@ -169,6 +165,7 @@ contract LilypadPaymentEngine is
     error LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts(uint256 pValue, uint256 p1Value, uint256 p2Value, uint256 p3Value);
     error LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(string dealId, uint256 jobCreatorActiveEscrow, uint256 resourceProviderActiveEscrow, uint256 totalCostOfJob, uint256 resourceProviderRequiredActiveEscrow);
     error LilypadPayment__unauthorizedWithdrawal();
+    error LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet();
 
     ////////////////////////////////
     ///////// Modifiers ///////////
@@ -284,13 +281,20 @@ contract LilypadPaymentEngine is
         return block.timestamp >= depositTimestamps[_address];
     }
 
-    // TODO: In the case of a resource provider, we need to check if they meet the minimum collateral requirement
     function payEscrow(
         address _payee,
-        SharedStructs.UserType _actor,
         SharedStructs.PaymentReason _paymentReason,
         uint256 _amount
     ) external moreThanZero(_amount) returns (bool) {
+        bool isResourceProviderOrValidator = lilypadUser.hasRole(_payee, SharedStructs.UserType.ResourceProvider) || lilypadUser.hasRole(_payee, SharedStructs.UserType.Validator);
+
+        if (isResourceProviderOrValidator) {
+            // Check if the resource provider has enough escrow to cover the amount
+            if (_amount < MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT) {
+                revert LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet();
+            }
+        }
+
         // Do the accounting to bump the escrow balance of the account
         escrowBalances[_payee] += _amount;
 
@@ -299,9 +303,7 @@ contract LilypadPaymentEngine is
             revert LilypadPayment__transferFailed();
         }
 
-        if (
-            lilypadUser.hasRole(_payee, SharedStructs.UserType.ResourceProvider) || lilypadUser.hasRole(_payee, SharedStructs.UserType.Validator)
-        ) {
+        if (isResourceProviderOrValidator) {
             // In the case of a Resource Provider or Validator, set the time when the deposit can be withdrawn by the account
             // Note: If the account continueously tops up their escrow balance, the withdrawl time will be extended to 30 days from the last deposit
             depositTimestamps[_payee] =
@@ -314,7 +316,6 @@ contract LilypadPaymentEngine is
 
         emit LilypadPayment__escrowPaid(
             _payee,
-            _actor,
             _paymentReason,
             _amount
         );
@@ -422,6 +423,7 @@ contract LilypadPaymentEngine is
         return true;
     }
 
+    // TODO:Do you need dealid here?
     function initiateLockupOfEscrowForJob(
         address jobCreator,
         address resourceProvider,
@@ -531,15 +533,18 @@ contract LilypadPaymentEngine is
         payoutJob(deal.solver, deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
 
         // Pay the treasury
-        payoutJob(treasuryWallet, TreasuryPaymentTotalAmount + grantsAndAirdropsAmount); // TODO: This is being calculated to 0 and reverting becasue of that.  Thought: should the payout return false instead of reverting?
+        payoutJob(treasuryWallet, TreasuryPaymentTotalAmount + grantsAndAirdropsAmount);
 
         // Pay the value based rewards
         payoutJob(valueBasedRewardsWallet, valueBasedRewardsAmount);
 
-        // TODO: Didn't distribute the validation pool amount or the the grants/airdrops amount
+        // TODO: send the validation pool amount to the validation contract when complete
         
         // Add the amount to the total active escrow for running jobs
         totalActiveEscrow -= totalCostOfJob + resoureProviderRequiredActiveEscrow;
+
+        // Subtract the amount from the total escrow for tracking
+        totalEscrow -= totalCostOfJob;
 
         emit LilypadPayment__JobCompleted(deal.jobCreator, deal.resourceProvider, deal.dealId);
 

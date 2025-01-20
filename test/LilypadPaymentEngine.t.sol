@@ -32,7 +32,6 @@ contract LilypadPaymentEngineTest is Test {
 
     event LilypadPayment__escrowPaid(
         address indexed payee,
-        SharedStructs.UserType indexed actor,
         SharedStructs.PaymentReason indexed paymentReason,
         uint256 amount
     );
@@ -141,20 +140,19 @@ contract LilypadPaymentEngineTest is Test {
         vm.expectEmit(true, true, true, true);
         emit LilypadPayment__escrowPaid(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             amount
         );
 
         bool success = paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             amount
         );
         
         assertTrue(success);
         assertEq(paymentEngine.escrowBalanceOf(ALICE), amount);
+        assertEq(paymentEngine.totalEscrow(), amount);
         vm.stopPrank();
     }
 
@@ -168,19 +166,19 @@ contract LilypadPaymentEngineTest is Test {
         
         bool success = paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             amount
         );
         
         assertTrue(success);
         assertEq(paymentEngine.escrowBalanceOf(ALICE), amount);
+        assertEq(paymentEngine.totalEscrow(), amount);
         vm.stopPrank();
     }
 
     function testFuzz_WithdrawEscrow(uint256 depositAmount, uint256 withdrawAmount) public {
         // Bound amounts and use BOB (known ResourceProvider)
-        depositAmount = bound(depositAmount, 1 * 10**18, INITIAL_BALANCE);
+        depositAmount = bound(depositAmount, paymentEngine.MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT(), INITIAL_BALANCE);
         withdrawAmount = bound(withdrawAmount, 1, depositAmount);
         
         // Setup initial deposit
@@ -188,21 +186,21 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), depositAmount);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             depositAmount
         );
         vm.stopPrank();
         
         // Wait for lock period
-        vm.warp(block.timestamp + paymentEngine.COLLATERAL_LOCK_DURATION() + 1);
+        vm.warp(block.timestamp + paymentEngine.COLLATERAL_LOCK_DURATION());
         
-        // Withdraw as BOB - no need for token approvals since BOB is receiving tokens
+        // Withdraw
         vm.startPrank(BOB);
-        bool success = paymentEngine.withdrawEscrow(BOB, withdrawAmount);
-        assertTrue(success);
-        assertEq(paymentEngine.escrowBalanceOf(BOB), depositAmount - withdrawAmount);
+        paymentEngine.withdrawEscrow(BOB, withdrawAmount);
         vm.stopPrank();
+        
+        assertEq(paymentEngine.escrowBalanceOf(BOB), depositAmount - withdrawAmount);
+        assertEq(paymentEngine.totalEscrow(), depositAmount - withdrawAmount);
     }
 
     // Error Cases
@@ -213,7 +211,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), amount);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             amount
         );
@@ -221,6 +218,7 @@ contract LilypadPaymentEngineTest is Test {
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__escrowNotWithdrawable.selector);
         paymentEngine.withdrawEscrow(BOB, amount);
         vm.stopPrank();
+        assertEq(paymentEngine.totalEscrow(), amount);
     }
 
     function test_RevertWhen_WithdrawingMoreThanBalance() public {
@@ -230,7 +228,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), amount);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             amount
         );
@@ -240,6 +237,7 @@ contract LilypadPaymentEngineTest is Test {
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__insufficientEscrowBalanceForWithdrawal.selector);
         paymentEngine.withdrawEscrow(BOB, amount + 1);
         vm.stopPrank();
+        assertEq(paymentEngine.totalEscrow(), amount);
     }
 
     // Job Completion Tests
@@ -258,7 +256,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), jobCost);
         paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             jobCost
         );
@@ -268,7 +265,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), rpCollateral);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             rpCollateral
         );
@@ -306,6 +302,8 @@ contract LilypadPaymentEngineTest is Test {
             jobCost,
             rpRequiredEscrow
         );
+        // At this point, the total active escrow should be the sum of the job creator's escrow and the resource provider's escrow
+        assertEq(paymentEngine.totalActiveEscrow(), jobCost + rpRequiredEscrow);
 
         // Switch to payment engine to approve token transfers
         vm.stopPrank();
@@ -334,6 +332,12 @@ contract LilypadPaymentEngineTest is Test {
         uint256 expectedValueBasedRewardsAmount = protocolFees - expectedTreasuryAmount;
         assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
 
+        // Verify that the total active escrow is reset to 0
+        assertEq(paymentEngine.totalActiveEscrow(), 0);
+
+        // Only the resource provider's collateral should be left
+        assertEq(paymentEngine.totalEscrow(), rpCollateral);
+
         vm.stopPrank();
     }
 
@@ -352,7 +356,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), jobCost);
         paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             jobCost
         );
@@ -362,7 +365,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), rpCollateral);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             rpCollateral
         );
@@ -405,7 +407,23 @@ contract LilypadPaymentEngineTest is Test {
         bool success = paymentEngine.HandleJobCompletion("deal1");
         
         assertTrue(success);
+        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
+        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), 0);
+        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
+        assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
         assertEq(token.balanceOf(CHARLIE), INITIAL_BALANCE); // Should remain unchanged
+        assertEq(token.balanceOf(DAVE), INITIAL_BALANCE + jobCreatorSolverFee + resourceProviderSolverFee);
+
+        // Calculate expected protocol fees
+        uint256 protocolFees = networkCongestionFee + (moduleCreatorFee * paymentEngine.m())/10000;
+        uint256 expectedTreasuryAmount = (protocolFees * paymentEngine.p())/10000;
+        uint256 expectedValueBasedRewardsAmount = protocolFees - expectedTreasuryAmount;
+
+        assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE + expectedTreasuryAmount);
+        assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
+
+        assertEq(paymentEngine.totalEscrow(), rpCollateral);
+        assertEq(paymentEngine.totalActiveEscrow(), 0);
         vm.stopPrank();
     }
 
@@ -424,7 +442,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), jobCost);
         paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             jobCost
         );
@@ -434,7 +451,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), rpCollateral);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             rpCollateral
         );
@@ -463,7 +479,7 @@ contract LilypadPaymentEngineTest is Test {
         vm.startPrank(address(this));
         lilypadStorage.saveDeal("deal1", deal);
 
-        uint256 rpRequiredEscrow = (basePayment + resourceProviderSolverFee) * paymentEngine.resourceProviderActiveEscrowScaler() / 10000;
+        uint256 rpRequiredEscrow = (basePayment + resourceProviderSolverFee) * (paymentEngine.resourceProviderActiveEscrowScaler() / 10000);
         paymentEngine.initiateLockupOfEscrowForJob(
             ALICE,
             BOB,
@@ -477,30 +493,41 @@ contract LilypadPaymentEngineTest is Test {
         bool success = paymentEngine.HandleJobCompletion("deal1");
         
         assertTrue(success);
-        // Verify protocol fee calculations still work with zero network congestion fee
-        uint256 protocolFees = (moduleCreatorFee * paymentEngine.m())/10000;
+        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
+        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), 0);
+        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
+        assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
+        assertEq(token.balanceOf(CHARLIE), INITIAL_BALANCE + (moduleCreatorFee - (moduleCreatorFee * paymentEngine.m())/10000));
+        assertEq(token.balanceOf(DAVE), INITIAL_BALANCE + jobCreatorSolverFee + resourceProviderSolverFee);
+
+        // Calculate expected protocol fees
+        uint256 protocolFees = networkCongestionFee + (moduleCreatorFee * paymentEngine.m())/10000;
         uint256 expectedTreasuryAmount = (protocolFees * paymentEngine.p())/10000;
+        uint256 expectedValueBasedRewardsAmount = protocolFees - expectedTreasuryAmount;
+
         assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE + expectedTreasuryAmount);
+        assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
+        
+        assertEq(paymentEngine.totalActiveEscrow(), 0);
+        assertEq(paymentEngine.totalEscrow(), rpCollateral);
         vm.stopPrank();
     }
 
     function test_HandleJobCompletion_MinimalPayments() public {
-        // Test with minimum possible amounts that still work
-        uint256 jobCreatorSolverFee = 1;
-        uint256 resourceProviderSolverFee = 1;
-        uint256 moduleCreatorFee = 1;
-        uint256 networkCongestionFee = 1;
+        uint256 jobCreatorSolverFee = 0;
+        uint256 resourceProviderSolverFee = 0;
+        uint256 moduleCreatorFee = 0;
+        uint256 networkCongestionFee = 0;
+        uint256 basePayment = 5 * 10**18;
         uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
-        uint256 basePayment = 1;
         uint256 jobCost = basePayment + totalFees;
-        uint256 rpCollateral = 10;
+        uint256 rpCollateral = paymentEngine.MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT();
         
         // Setup escrow
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
         paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             jobCost
         );
@@ -510,7 +537,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), rpCollateral);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             rpCollateral
         );
@@ -539,7 +565,7 @@ contract LilypadPaymentEngineTest is Test {
         vm.startPrank(address(this));
         lilypadStorage.saveDeal("deal1", deal);
 
-        uint256 rpRequiredEscrow = (basePayment + resourceProviderSolverFee) * paymentEngine.resourceProviderActiveEscrowScaler() / 10000;
+        uint256 rpRequiredEscrow = (basePayment + resourceProviderSolverFee) * (paymentEngine.resourceProviderActiveEscrowScaler() / 10000);
         paymentEngine.initiateLockupOfEscrowForJob(
             ALICE,
             BOB,
@@ -568,6 +594,8 @@ contract LilypadPaymentEngineTest is Test {
 
         assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE + expectedTreasuryAmount);
         assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
+        assertEq(paymentEngine.totalActiveEscrow(), 0);
+        assertEq(paymentEngine.totalEscrow(), rpCollateral);
         vm.stopPrank();
     }
 
@@ -632,7 +660,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), jobCost);
         paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             jobCost
         );
@@ -642,7 +669,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), rpCollateral);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             rpCollateral
         );
@@ -674,7 +700,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), jobCost);
         paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             jobCost
         );
@@ -712,7 +737,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), jobCost);
         paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             jobCost
         );
@@ -722,7 +746,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), rpCollateral);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             rpCollateral
         );
@@ -789,7 +812,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), jobCost);
         paymentEngine.payEscrow(
             ALICE,
-            SharedStructs.UserType.JobCreator,
             SharedStructs.PaymentReason.JobFee,
             jobCost
         );
@@ -799,7 +821,6 @@ contract LilypadPaymentEngineTest is Test {
         token.approve(address(paymentEngine), rpCollateral);
         paymentEngine.payEscrow(
             BOB,
-            SharedStructs.UserType.ResourceProvider,
             SharedStructs.PaymentReason.ResourceProviderCollateral,
             rpCollateral
         );
