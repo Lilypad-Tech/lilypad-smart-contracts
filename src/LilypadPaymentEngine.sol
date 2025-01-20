@@ -474,25 +474,44 @@ contract LilypadPaymentEngine is
         // Get the deal from the storage contract, if it doesn't exist, revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
-        // Calculate the total cost of the job
-        uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.networkCongestionFee;
+        // Calculate fees and payments in a separate internal function
+        _processJobCompletion(deal);
 
-        // Get the active escrow for the job creator
-        uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
-        
-        // Calculate the required active escrow for the resource provider
+        // Save the result
+        lilypadStorage.saveResult(result.resultId, result);
+
+        emit LilypadPayment__JobCompleted(deal.jobCreator, deal.resourceProvider, deal.dealId);
+        return true;
+    }
+
+    function _processJobCompletion(SharedStructs.Deal memory deal) private {
+        // Calculate the total cost of the job
+        uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + 
+            deal.paymentStructure.JobCreatorSolverFee + 
+            deal.paymentStructure.moduleCreatorFee + 
+            deal.paymentStructure.networkCongestionFee;
+
+        // Calculate the required active collateral for the resource provider
         uint256 resoureProviderRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
 
-        // Get the active escrow for the resource provider
+        // Get the active escrow for both parties
+        uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
         uint256 resourceProviderActiveEscrow = activeEscrow[deal.resourceProvider];
 
         // Check the accounting to ensure both parties have enough active escrow locked in to complete the job agreement
         if (resourceProviderActiveEscrow < resoureProviderRequiredActiveEscrow || jobCreatorActiveEscrow < totalCostOfJob) {
-            revert LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(deal.dealId, jobCreatorActiveEscrow, resourceProviderActiveEscrow, totalCostOfJob, resoureProviderRequiredActiveEscrow);
+            revert LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(
+                deal.dealId, 
+                jobCreatorActiveEscrow, 
+                resourceProviderActiveEscrow, 
+                totalCostOfJob, 
+                resoureProviderRequiredActiveEscrow
+            );
         }
 
-        // Calculate the total protocol fees - includes m% of module creator fee
-        uint256 totalProtocolFees = deal.paymentStructure.networkCongestionFee + (deal.paymentStructure.moduleCreatorFee * m)/10000;
+        // Calculate protocol fees
+        uint256 totalProtocolFees = deal.paymentStructure.networkCongestionFee + 
+            (deal.paymentStructure.moduleCreatorFee * m)/10000;
 
         // P: Protocol Revenue
         uint256 TreasuryPaymentTotalAmount = (totalProtocolFees * p)/10000;
@@ -549,10 +568,6 @@ contract LilypadPaymentEngine is
 
         // Subtract the amount from the total escrow for tracking
         totalEscrow -= totalCostOfJob;
-
-        emit LilypadPayment__JobCompleted(deal.jobCreator, deal.resourceProvider, deal.dealId);
-
-        return true;
     }
 
     function HandleJobFailure(
