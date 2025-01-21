@@ -77,13 +77,13 @@ library SharedStructs {
     /**
      * @dev This struct is used to store the payment structure for a deal
      * @notice
-     * - The priceOfJobWithoutFees is the price of the job from the Job Creator's perspective i.e how much they pay to run the job
-     * - The moduleCreatorFee is the fee that the Job Creator pays to the Module Creator for running the module
-     * - The totalSolverFees are the total fees paid by the Resource Provider and Job Creator to the Solver for preforming the work to match them on a job
+     * - The JobCreatorSolverFee is the fee that the Job Creator pays to the Solver for preforming the work to match them on a job
+     * - The resourceProviderSolverFee is the fee that the Resource Provider pays to the Solver for preforming the work to match them on a job
      * - The networkCongestionFee is the fee that the Job Creator pays to the network for the congestion of the network
-     * - The moduleCreator is the address of the Module Creator
-     * - The solver is the address of the Solver
-     * - The total cost of a job from a Job Creator perspective is the sum of the priceOfJobWithoutFees, the moduleCreatorFee, the totalSolverFees/2 and the networkCongestionFee
+     * - The moduleCreatorFee is the fee that the Job Creator pays to the Module Creator for running the module
+     * - The priceOfJobWithoutFees is the price of the job from the Job Creator's perspective i.e how much they pay to run the job
+     * - The total cost of a job from a Job Creator perspective is the sum of the priceOfJobWithoutFees, the moduleCreatorFee, the JobCreatorSolverFee, and the networkCongestionFee
+     * - The total cost of a job from a Resource Provider perspective is the sum of the priceOfJobWithoutFees and the resourceProviderSolverFee multiple by the resourceProviderActiveEscrowScaler (in the Payment Engine Contract)
      */
     struct DealPaymentStructure {
         uint256 JobCreatorSolverFee;

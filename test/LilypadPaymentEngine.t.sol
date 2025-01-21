@@ -942,7 +942,6 @@ contract LilypadPaymentEngineTest is Test {
         uint256 basePayment = 5 * 10**18;
         uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
         uint256 jobCost = basePayment + totalFees;
-        uint256 rpCollateral = 10 * 10**18;
 
         // Create and save deal
         SharedStructs.Deal memory deal = SharedStructs.Deal({

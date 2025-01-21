@@ -154,7 +154,9 @@ contract LilypadPaymentEngine is
         string resultId
     );
     event LilypadPayment__ZeroAmountPayout(address indexed intended_recipient);
-    
+    event LilypadPayment__ValidationPassed(address indexed jobCreator, address indexed resourceProvider, address indexed validator, uint256 amount);
+    event LilypadPayment__ValidationFailed(address indexed jobCreator, address indexed resourceProvider, address indexed validator, uint256 amount);
+
     error LilypadPayment__amountMustBeNonNegative(bytes4 functionSelector, uint256 amount);
     error LilypadPayment__insufficientEscrowAmount(uint256 escrowAmount, uint256 requiredAmount);
     error LilypadPayment__insufficientActiveEscrowAmount();
@@ -561,7 +563,7 @@ contract LilypadPaymentEngine is
         // Pay the value based rewards
         payoutJob(valueBasedRewardsWallet, valueBasedRewardsAmount);
 
-        // TODO: send the validation pool amount to the validation contract when complete
+        // TODO: send the validationPoolAmount to the validation contract when complete
         
         // Add the amount to the total active escrow for running jobs
         totalActiveEscrow -= totalCostOfJob + resoureProviderRequiredActiveEscrow;
@@ -591,16 +593,46 @@ contract LilypadPaymentEngine is
         return true;
     }
 
-    // You should just be able to 
+    
     function HandleValidationPassed(
         SharedStructs.ValidationResult memory _validationResult
-    ) external returns (bool) {
+    ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+        SharedStructs.Result memory result = lilypadStorage.getResult(_validationResult.resultId);
+        SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
+
+        // Calculate the required active collateral for the resource provider
+        uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + 
+            deal.paymentStructure.JobCreatorSolverFee + 
+            deal.paymentStructure.moduleCreatorFee + 
+            deal.paymentStructure.networkCongestionFee;
+
+        require(activeEscrow[deal.jobCreator] >= totalCostOfJob, "Active escrow is less than the total cost of the job");
+        
+        // Deduct the active escrow for the job creator
+        activeEscrow[deal.jobCreator] -= totalCostOfJob;
+
+        // Subtract the amount from the total active escrow for running jobs
+        totalActiveEscrow -= totalCostOfJob;
+        
+        // Pay the validator
+        payoutJob(_validationResult.validator, totalCostOfJob);
+
+        emit LilypadPayment__ValidationPassed(deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalCostOfJob);
         return true;
     }
 
     function HandleValidationFailed(
         SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool) {
+
+        /**
+            Resource Provider acted dishonestly
+            - Deduct an amount from the resource provider (where TBD)
+            - Send a percentage to the job creator and a percentage to the validation pool
+            - update the active escrow and total escrow
+            - emit event
+         */
+        
         return true;
     }
     
@@ -682,6 +714,10 @@ contract LilypadPaymentEngine is
         emit TokenomicsParameterUpdated("v2", _v2);
     }
 
+    /**
+     * @notice Sets the resource provider active escrow scaler
+     * @param _resourceProviderActiveEscrowScaler New resource provider active escrow scaler
+     */
     function setResourceProviderActiveEscrowScaler(uint256 _resourceProviderActiveEscrowScaler) external onlyRole(DEFAULT_ADMIN_ROLE) {
         resourceProviderActiveEscrowScaler = _resourceProviderActiveEscrowScaler;
         emit TokenomicsParameterUpdated("resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler);
