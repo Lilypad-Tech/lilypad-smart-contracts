@@ -98,4 +98,22 @@ interface ILilypadPaymentEngine {
         address _withdrawer,
         uint256 _amount
     ) external returns (bool);
+
+    /**
+     * @dev This method will encompass the business logic related to initiating the lockup of escrow for a job
+     * @param _jobCreator The address of the job creator.
+     * @param _resourceProvider The address of the resource provider.
+     * @param _dealId The unique identifier of the deal.
+     * @param _cost The cost of the job.
+     * @param _resourceProviderCollateralLockupAmount The amount of collateral lockup for the resource provider.
+     * @return Returns true if the operation is successful.
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
+    function initiateLockupOfEscrowForJob(
+        address _jobCreator,
+        address _resourceProvider,
+        string memory _dealId,
+        uint256 _cost,
+        uint256 _resourceProviderCollateralLockupAmount
+    ) external returns (bool);
 }

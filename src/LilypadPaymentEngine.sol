@@ -84,7 +84,7 @@ contract LilypadPaymentEngine is
     
     v1: The scaling factor for determining value based rewards for RPs based on total fees geenrated by the RP
     v2: The scaling factor for determining value based rewards for RPs based on total average collateral locked up
-    Note: v1 > v2
+    Note: v1 > v2 to scaoe the importance of fees over collateral
     */
     uint256 public p;
     uint256 public p1;
@@ -180,6 +180,7 @@ contract LilypadPaymentEngine is
     error LilypadPayment__RoleNotFound();
     error LilypadPayment__CannotRevokeOwnRole();
     error LilypadPayment__RoleAlreadyAssigned();
+
     ////////////////////////////////
     ///////// Modifiers ///////////
     ////////////////////////////////
@@ -236,6 +237,7 @@ contract LilypadPaymentEngine is
         token = LilypadToken(_tokenAddress);
         lilypadStorage = LilypadStorage(_lilypadStorageAddress);
         lilypadUser = LilypadUser(_lilypadUserAddress);
+        //TODO: Add validation contract
 
         treasuryWallet = _treasuryWallet;
         valueBasedRewardsWallet = _valueBasedRewardsWallet;
@@ -259,9 +261,13 @@ contract LilypadPaymentEngine is
         // Setting is as a basis point representation of the percentage
         m = 200;
         
+        // The stimulent factor for future growth of the token
         alpha = 0;
         
+        // expoential weight for scaling fees
         v1 = 2;
+
+        // exponential weight for scaling collateral
         v2 = 1;
 
         // Set to 11000 (representing 110% in basis points, or a 10% increase)
@@ -342,6 +348,10 @@ contract LilypadPaymentEngine is
         emit LilypadPayment__ControllerRoleRevoked(account, msg.sender);
     }
 
+    /**
+     * @dev Pays an escrow for a given address
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
     function payEscrow(
         address _payee,
         SharedStructs.PaymentReason _paymentReason,
@@ -387,10 +397,6 @@ contract LilypadPaymentEngine is
 
     /**
      * @dev Deducts (slashes) a specified amount from an escrow balance as a penalty.
-     * @param _address The address whose escrow balance will be deducted.
-     * @param _actor The actor type of the address whose escrow balance will be deducted.
-     * @param _amount The amount to deduct as a penalty.
-     * @return Returns true if the slash operation is successful.
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
     function slashEscrow(
@@ -423,6 +429,10 @@ contract LilypadPaymentEngine is
         return true;
     }
 
+    /**
+     * @dev Withdraws a specified amount from an escrow balance.
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
     function withdrawEscrow(
         address _withdrawer,
         uint256 _amount
@@ -465,9 +475,6 @@ contract LilypadPaymentEngine is
     /**
      * @dev Processes a payout for a job, transferring a specified amount from one address's escrow
      * to another.
-     * @param _to The address receiving the payout.
-     * @param _amount The amount to transfer as a payout.
-     * @return Returns true if the payout operation is successful.
      * @notice 
         - This function is restricted to the CONTROLLER_ROLE.
         - If the amount is 0, it will emit an event and return false (this is to avoid reverts when the amount is 0)
@@ -492,6 +499,10 @@ contract LilypadPaymentEngine is
         return true;
     }
 
+    /**
+     * @dev Initiates the lockup of escrow for a job
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
     function initiateLockupOfEscrowForJob(
         address jobCreator,
         address resourceProvider,
@@ -537,6 +548,10 @@ contract LilypadPaymentEngine is
         return true;
     }
 
+    /**
+     * @dev Handles the completion of a job
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
     function HandleJobCompletion(
         SharedStructs.Result memory result
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
@@ -554,6 +569,10 @@ contract LilypadPaymentEngine is
         return true;
     }
 
+    /**
+     * @dev Processes the completion of a job by calculating payments for various parties involved in a deal
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
     function _processJobCompletion(SharedStructs.Deal memory deal) private {
         // Calculate the total cost of the job
         uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + 
@@ -640,6 +659,10 @@ contract LilypadPaymentEngine is
         totalEscrow -= totalCostOfJob;
     }
 
+    /**
+     * @dev Handles the failure of a job
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
     function HandleJobFailure(
         SharedStructs.Result memory result
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
@@ -663,7 +686,10 @@ contract LilypadPaymentEngine is
         return true;
     }
 
-    
+    /**
+     * @dev Handles the passing of a validation
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
     function HandleValidationPassed(
         SharedStructs.ValidationResult memory _validationResult
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
@@ -693,6 +719,10 @@ contract LilypadPaymentEngine is
         return true;
     }
 
+    /**
+     * @dev Handles the failure of a validation
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
     function HandleValidationFailed(
         SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool) {
@@ -742,7 +772,7 @@ contract LilypadPaymentEngine is
     }
 
     /**
-     * @notice Sets the p parameter (total fee)
+     * @notice Sets the p parameter (the amount of fees to be paid to the treasury)
      * @param _p New p value
      */
     function setP(uint256 _p) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -751,7 +781,7 @@ contract LilypadPaymentEngine is
     }
 
     /**
-     * @notice Sets the m parameter (solver fee)
+     * @notice Sets the m parameter (The module creator fee)
      * @param _m New m value
      */
     function setM(uint256 _m) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -760,7 +790,7 @@ contract LilypadPaymentEngine is
     }
 
     /**
-     * @notice Sets the alpha parameter (value based rewards pool fee)
+     * @notice Sets the alpha parameter ()
      * @param _alpha New alpha value
      */
     function setAlpha(uint256 _alpha) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -769,19 +799,21 @@ contract LilypadPaymentEngine is
     }
 
     /**
-     * @notice Sets the v1 parameter (job creator burn rate)
+     * @notice Sets the v1 parameter ()
      * @param _v1 New v1 value
      */
     function setV1(uint256 _v1) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_v1 > v2, "v1 must be greater than v2");
         v1 = _v1;
         emit TokenomicsParameterUpdated("v1", _v1);
     }
 
     /**
-     * @notice Sets the v2 parameter (resource provider burn rate)
+     * @notice Sets the v2 parameter ()
      * @param _v2 New v2 value
      */
     function setV2(uint256 _v2) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_v2 < v1, "v2 must be less than v1");
         v2 = _v2;
         emit TokenomicsParameterUpdated("v2", _v2);
     }
