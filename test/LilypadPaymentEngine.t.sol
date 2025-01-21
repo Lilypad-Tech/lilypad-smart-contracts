@@ -55,6 +55,12 @@ contract LilypadPaymentEngineTest is Test {
         address indexed resourceProvider,
         string resultId
     );
+    event LilypadPayment__ValidationPassed(
+        address indexed jobCreator,
+        address indexed resourceProvider,
+        address indexed validator,
+        uint256 amount
+    );
 
     function setUp() public {
         // Deploy token with initial supply (using 1 million instead of 1 billion for initial supply)
@@ -245,6 +251,114 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.totalEscrow(), amount);
     }
 
+    // Parameter Update Tests
+    function test_UpdateTokenomicsParameters() public {
+        vm.startPrank(address(this)); // Default admin role
+        paymentEngine.setP(0); // 0 protocol revenue
+        paymentEngine.setP1(0); // 0%
+        paymentEngine.setP2(5000); // 50%
+        paymentEngine.setP3(5000); // 50% validation pool fee
+        paymentEngine.setM(200);   // 2%
+        paymentEngine.setAlpha(150); // 1.5x
+        paymentEngine.setV1(200);    // 2x
+        paymentEngine.setV2(150);    // 1.5x
+        paymentEngine.setResourceProviderActiveEscrowScaler(10000);
+        assertEq(paymentEngine.p1(), 0);
+        assertEq(paymentEngine.p2(), 5000);
+        assertEq(paymentEngine.p3(), 5000);
+        assertEq(paymentEngine.p(), 0);
+        assertEq(paymentEngine.m(), 200);
+        assertEq(paymentEngine.alpha(), 150);
+        assertEq(paymentEngine.v1(), 200);
+        assertEq(paymentEngine.v2(), 150);
+        assertEq(paymentEngine.resourceProviderActiveEscrowScaler(), 10000);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_NonAdminUpdatesParameters() public {
+        vm.startPrank(ALICE);
+        
+        vm.expectRevert();
+        paymentEngine.setM(5000);
+        
+        vm.expectRevert();
+        paymentEngine.setP1(5000);
+        
+        vm.stopPrank();
+    }
+
+    // Escrow Locking Tests
+    function test_LockEscrowForJob() public {
+        uint256 jobCost = 100 * 10**18;
+        uint256 rpCollateral = jobCost * 110 / 100;
+
+        // Setup escrow
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.PaymentReason.JobFee,
+            jobCost
+        );
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            rpCollateral
+        );
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        bool success = paymentEngine.initiateLockupOfEscrowForJob(
+            ALICE,
+            BOB,
+            "deal1",
+            jobCost,
+            rpCollateral
+        );
+
+        assertTrue(success);
+        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), jobCost);
+        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), rpCollateral);
+        assertEq(paymentEngine.escrowBalanceOf(ALICE), 0);
+        assertEq(paymentEngine.escrowBalanceOf(BOB), 0);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_LockingInsufficientEscrow() public {
+        uint256 jobCost = 100 * 10**18;
+        uint256 rpCollateral = jobCost * 110 / 100;
+
+        // Only fund job creator, not resource provider
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.PaymentReason.JobFee,
+            jobCost
+        );
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        // Update expectRevert to match the new error format with parameters
+        vm.expectRevert(abi.encodeWithSelector(
+            LilypadPaymentEngine.LilypadPayment__insufficientEscrowAmount.selector,
+            0,  // BOB's current escrow balance
+            rpCollateral  // required amount
+        ));
+        paymentEngine.initiateLockupOfEscrowForJob(
+            ALICE,
+            BOB,
+            "deal1",
+            jobCost,
+            rpCollateral
+        );
+        vm.stopPrank();
+    }
+
     // Job Completion Tests
     function test_HandleJobCompletion() public {
         uint256 jobCreatorSolverFee = 1 * 10**18;
@@ -350,6 +464,14 @@ contract LilypadPaymentEngineTest is Test {
 
         // Only the resource provider's collateral should be left
         assertEq(paymentEngine.totalEscrow(), rpCollateral);
+
+        // Verify that the result was saved
+        SharedStructs.Result memory savedResult = lilypadStorage.getResult("result1");
+        assertEq(savedResult.resultId, result.resultId);
+        assertEq(savedResult.dealId, result.dealId);
+        assertEq(savedResult.resultCID, result.resultCID);
+        assertEq(uint(savedResult.status), uint(result.status));
+        assertEq(savedResult.timestamp, result.timestamp);
 
         vm.stopPrank();
     }
@@ -655,111 +777,19 @@ contract LilypadPaymentEngineTest is Test {
         vm.stopPrank();
     }
 
-    // Parameter Update Tests
-    function test_UpdateTokenomicsParameters() public {
-        vm.startPrank(address(this)); // Default admin role
-        paymentEngine.setP(0); // 0 protocol revenue
-        paymentEngine.setP1(0); // 0%
-        paymentEngine.setP2(5000); // 50%
-        paymentEngine.setP3(5000); // 50% validation pool fee
-        paymentEngine.setM(200);   // 2%
-        paymentEngine.setAlpha(150); // 1.5x
-        paymentEngine.setV1(200);    // 2x
-        paymentEngine.setV2(150);    // 1.5x
-        paymentEngine.setResourceProviderActiveEscrowScaler(10000);
-        assertEq(paymentEngine.p1(), 0);
-        assertEq(paymentEngine.p2(), 5000);
-        assertEq(paymentEngine.p3(), 5000);
-        assertEq(paymentEngine.p(), 0);
-        assertEq(paymentEngine.m(), 200);
-        assertEq(paymentEngine.alpha(), 150);
-        assertEq(paymentEngine.v1(), 200);
-        assertEq(paymentEngine.v2(), 150);
-        assertEq(paymentEngine.resourceProviderActiveEscrowScaler(), 10000);
-        vm.stopPrank();
-    }
+    function test_HandleJobCompletion_RevertWhen_InvalidStatus() public {
+        // Create result with wrong status
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsRejected, // Wrong status
+            timestamp: block.timestamp
+        });
 
-    function test_RevertWhen_NonAdminUpdatesParameters() public {
-        vm.startPrank(ALICE);
-        
-        vm.expectRevert();
-        paymentEngine.setM(5000);
-        
-        vm.expectRevert();
-        paymentEngine.setP1(5000);
-        
-        vm.stopPrank();
-    }
-
-    // Escrow Locking Tests
-    function test_LockEscrowForJob() public {
-        uint256 jobCost = 100 * 10**18;
-        uint256 rpCollateral = jobCost * 110 / 100;
-
-        // Setup escrow
-        vm.startPrank(ALICE);
-        token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(
-            ALICE,
-            SharedStructs.PaymentReason.JobFee,
-            jobCost
-        );
-        vm.stopPrank();
-
-        vm.startPrank(BOB);
-        token.approve(address(paymentEngine), rpCollateral);
-        paymentEngine.payEscrow(
-            BOB,
-            SharedStructs.PaymentReason.ResourceProviderCollateral,
-            rpCollateral
-        );
-        vm.stopPrank();
-
-        vm.startPrank(address(this));
-        bool success = paymentEngine.initiateLockupOfEscrowForJob(
-            ALICE,
-            BOB,
-            "deal1",
-            jobCost,
-            rpCollateral
-        );
-
-        assertTrue(success);
-        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), jobCost);
-        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), rpCollateral);
-        assertEq(paymentEngine.escrowBalanceOf(ALICE), 0);
-        assertEq(paymentEngine.escrowBalanceOf(BOB), 0);
-        vm.stopPrank();
-    }
-
-    function test_RevertWhen_LockingInsufficientEscrow() public {
-        uint256 jobCost = 100 * 10**18;
-        uint256 rpCollateral = jobCost * 110 / 100;
-
-        // Only fund job creator, not resource provider
-        vm.startPrank(ALICE);
-        token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(
-            ALICE,
-            SharedStructs.PaymentReason.JobFee,
-            jobCost
-        );
-        vm.stopPrank();
-
-        vm.startPrank(address(this));
-        // Update expectRevert to match the new error format with parameters
-        vm.expectRevert(abi.encodeWithSelector(
-            LilypadPaymentEngine.LilypadPayment__insufficientEscrowAmount.selector,
-            0,  // BOB's current escrow balance
-            rpCollateral  // required amount
-        ));
-        paymentEngine.initiateLockupOfEscrowForJob(
-            ALICE,
-            BOB,
-            "deal1",
-            jobCost,
-            rpCollateral
-        );
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert("Invalid result status");
+        paymentEngine.HandleJobCompletion(result);
         vm.stopPrank();
     }
 
@@ -842,6 +872,15 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(token.balanceOf(DAVE), INITIAL_BALANCE); // Unchanged
         assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE); // Unchanged
         assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE); // Unchanged
+
+        // Verify result was saved
+        SharedStructs.Result memory savedResult = lilypadStorage.getResult("result1");
+        assertEq(savedResult.resultId, result.resultId);
+        assertEq(savedResult.dealId, result.dealId);
+        assertEq(savedResult.resultCID, result.resultCID);
+        assertEq(uint(savedResult.status), uint(result.status));
+        assertEq(savedResult.timestamp, result.timestamp);
+
         vm.stopPrank();
     }
 
@@ -930,6 +969,15 @@ contract LilypadPaymentEngineTest is Test {
         
         assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE + expectedTreasuryAmount);
         assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
+
+        // Verify result was saved
+        SharedStructs.Result memory savedResult = lilypadStorage.getResult("result1");
+        assertEq(savedResult.resultId, result.resultId);
+        assertEq(savedResult.dealId, result.dealId);
+        assertEq(savedResult.resultCID, result.resultCID);
+        assertEq(uint(savedResult.status), uint(result.status));
+        assertEq(savedResult.timestamp, result.timestamp);
+
         vm.stopPrank();
     }
 
@@ -1082,7 +1130,15 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.totalEscrow(), initialTotalEscrow - rpRequiredEscrow);
         assertEq(paymentEngine.totalActiveEscrow(), initialActiveEscrow - rpRequiredEscrow); // Need to update for the job creator active escorw
 
-        // // Verify job creator's escrow is returned
+        // Verify result was saved
+        SharedStructs.Result memory savedResult = lilypadStorage.getResult("result1");
+        assertEq(savedResult.resultId, result.resultId);
+        assertEq(savedResult.dealId, result.dealId);
+        assertEq(savedResult.resultCID, result.resultCID);
+        assertEq(uint(savedResult.status), uint(result.status));
+        assertEq(savedResult.timestamp, result.timestamp);
+
+        // TODO: uncomment once you figure out what happens to the job creator's escrow
         // assertEq(paymentEngine.escrowBalanceOf(ALICE), jobCost);
         // assertEq(token.balanceOf(ALICE), INITIAL_BALANCE - jobCost);
 
@@ -1195,5 +1251,220 @@ contract LilypadPaymentEngineTest is Test {
         vm.stopPrank();
     }
 
-    // Add more complex scenario tests...
+     function test_HandleJobFailure_RevertWhen_InvalidStatus() public {
+        // Create result with wrong status
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted, // Wrong status
+            timestamp: block.timestamp
+        });
+
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert("Invalid result status");
+        paymentEngine.HandleJobFailure(result);
+        vm.stopPrank();
+    }
+
+    function test_HandleValidationPassed() public {
+        // Setup initial state
+        uint256 basePayment = 5 * 10**18;
+        uint256 jobCreatorSolverFee = 1 * 10**18;
+        uint256 resourceProviderSolverFee = 1 * 10**18;
+        uint256 moduleCreatorFee = 1 * 10**18;
+        uint256 networkCongestionFee = 1 * 10**18;
+        uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
+        uint256 jobCost = basePayment + totalFees;
+        uint256 rpCollateral = 20 * 10**18;
+        
+        // Setup escrow for both parties
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(
+            ALICE,
+            SharedStructs.PaymentReason.JobFee,
+            jobCost
+        );
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            rpCollateral
+        );
+        vm.stopPrank();
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                JobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment
+            })
+        });
+        
+        vm.startPrank(address(this));
+        lilypadStorage.saveDeal("deal1", deal);
+
+        // Lock escrow
+        uint256 rpRequiredEscrow = (basePayment + resourceProviderSolverFee) * (paymentEngine.resourceProviderActiveEscrowScaler() / 10000);
+        paymentEngine.initiateLockupOfEscrowForJob(
+            ALICE,
+            BOB,
+            "deal1",
+            jobCost,
+            rpRequiredEscrow
+        );
+
+        // Create and save result
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        lilypadStorage.saveResult("result1", result);
+        vm.stopPrank();
+
+        // Create validation result
+        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
+            validationResultId: "validation1",
+            resultId: "result1",
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationAccepted,
+            timestamp: block.timestamp,
+            validator: EVE
+        });
+
+        // Test validation passed
+        vm.startPrank(address(paymentEngine));
+        
+        uint256 initialValidatorBalance = token.balanceOf(EVE);
+        uint256 initialTotalEscrow = paymentEngine.totalEscrow();
+        uint256 initialActiveEscrow = paymentEngine.totalActiveEscrow();
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__ValidationPassed(ALICE, BOB, EVE, jobCost);
+        
+        bool success = paymentEngine.HandleValidationPassed(validationResult);
+        assertTrue(success);
+
+        // Verify escrow and payment state
+        assertEq(paymentEngine.activeEscrow(ALICE), 0);
+        assertEq(paymentEngine.totalActiveEscrow(), initialActiveEscrow - jobCost);
+        assertEq(token.balanceOf(EVE), initialValidatorBalance + jobCost);
+
+        // Verify validation result was saved
+        SharedStructs.ValidationResult memory savedValidation = lilypadStorage.getValidationResult("validation1");
+        assertEq(savedValidation.validationResultId, validationResult.validationResultId);
+        assertEq(savedValidation.resultId, validationResult.resultId);
+        assertEq(savedValidation.validationCID, validationResult.validationCID);
+        assertEq(uint(savedValidation.status), uint(validationResult.status));
+        assertEq(savedValidation.validator, validationResult.validator);
+
+        vm.stopPrank();
+    }
+
+    function test_HandleValidationPassed_RevertWhen_ResultNotFound() public {
+        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
+            validationResultId: "validation1",
+            resultId: "nonexistent",
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationAccepted,
+            timestamp: block.timestamp,
+            validator: EVE
+        });
+
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert(abi.encodeWithSignature(
+            "LilypadStorage__ResultNotFound(string)",
+            "nonexistent"
+        ));
+        paymentEngine.HandleValidationPassed(validationResult);
+        vm.stopPrank();
+    }
+
+    function test_HandleValidationPassed_RevertWhen_InsufficientEscrow() public {
+        // Create and save deal with no escrow
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                JobCreatorSolverFee: 1 * 10**18,
+                resourceProviderSolverFee: 1 * 10**18,
+                networkCongestionFee: 1 * 10**18,
+                moduleCreatorFee: 1 * 10**18,
+                priceOfJobWithoutFees: 5 * 10**18
+            })
+        });
+        
+        vm.startPrank(address(this));
+        lilypadStorage.saveDeal("deal1", deal);
+
+        // Create and save result
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        lilypadStorage.saveResult("result1", result);
+        vm.stopPrank();
+
+        // Create validation result
+        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
+            validationResultId: "validation1",
+            resultId: "result1",
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationAccepted,
+            timestamp: block.timestamp,
+            validator: EVE
+        });
+
+        // Test validation with insufficient escrow
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert("Active escrow is less than the total cost of the job");
+        paymentEngine.HandleValidationPassed(validationResult);
+        vm.stopPrank();
+    }
+
+    function test_HandleValidationPassed_RevertWhen_InvalidStatus() public {
+        // Create validation result with wrong status
+        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
+            validationResultId: "validation1",
+            resultId: "result1",
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationPending, // Wrong status
+            timestamp: block.timestamp,
+            validator: EVE
+        });
+
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert("Invalid validation result status");
+        paymentEngine.HandleValidationPassed(validationResult);
+        vm.stopPrank();
+    }
 } 

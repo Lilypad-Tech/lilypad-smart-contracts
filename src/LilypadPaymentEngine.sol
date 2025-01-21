@@ -715,6 +715,9 @@ contract LilypadPaymentEngine is
         // Pay the validator
         payoutJob(_validationResult.validator, totalCostOfJob);
 
+        // Save the validation result
+        lilypadStorage.saveValidationResult(_validationResult.validationResultId, _validationResult);
+
         emit LilypadPayment__ValidationPassed(deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalCostOfJob);
         return true;
     }
