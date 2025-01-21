@@ -986,7 +986,7 @@ contract LilypadPaymentEngineTest is Test {
             resultId: "result1",
             dealId: "deal1",
             resultCID: "resultCID1",
-            status: SharedStructs.ResultStatusEnum.ResultsRejected,
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
         paymentEngine.HandleJobCompletion(result);

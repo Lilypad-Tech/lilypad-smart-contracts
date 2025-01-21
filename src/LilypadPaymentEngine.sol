@@ -156,6 +156,9 @@ contract LilypadPaymentEngine is
     event LilypadPayment__ZeroAmountPayout(address indexed intended_recipient);
     event LilypadPayment__ValidationPassed(address indexed jobCreator, address indexed resourceProvider, address indexed validator, uint256 amount);
     event LilypadPayment__ValidationFailed(address indexed jobCreator, address indexed resourceProvider, address indexed validator, uint256 amount);
+    event LilypadPayment__ControllerRoleGranted(address indexed account, address indexed sender);
+    event LilypadPayment__ControllerRoleRevoked(address indexed account, address indexed sender);
+    event LilypadPayment__escrowPayout(address indexed to, uint256 amount);
 
     error LilypadPayment__amountMustBeNonNegative(bytes4 functionSelector, uint256 amount);
     error LilypadPayment__insufficientEscrowAmount(uint256 escrowAmount, uint256 requiredAmount);
@@ -173,7 +176,10 @@ contract LilypadPaymentEngine is
     error LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(string dealId, uint256 jobCreatorActiveEscrow, uint256 resourceProviderActiveEscrow, uint256 totalCostOfJob, uint256 resourceProviderRequiredActiveEscrow);
     error LilypadPayment__unauthorizedWithdrawal();
     error LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet();
-
+    error LilypadPayment__ZeroAddressNotAllowed();
+    error LilypadPayment__RoleNotFound();
+    error LilypadPayment__CannotRevokeOwnRole();
+    error LilypadPayment__RoleAlreadyAssigned();
     ////////////////////////////////
     ///////// Modifiers ///////////
     ////////////////////////////////
@@ -217,6 +223,12 @@ contract LilypadPaymentEngine is
         address _treasuryWallet,
         address _valueBasedRewardsWallet
     ) public initializer {
+        require(_tokenAddress != address(0), "Token address cannot be zero");
+        require(_lilypadStorageAddress != address(0), "Lilypad Storage address cannot be zero");
+        require(_lilypadUserAddress != address(0), "Lilypad User address cannot be zero");
+        require(_treasuryWallet != address(0), "Treasury wallet address cannot be zero");
+        require(_valueBasedRewardsWallet != address(0), "Value based rewards wallet address cannot be zero");
+
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
@@ -263,6 +275,15 @@ contract LilypadPaymentEngine is
     ///////// Functions ////////////
     ////////////////////////////////
 
+    /**
+     * @dev Returns the current version of the contract
+     * @notice
+     * - Returns the semantic version string of the contract
+     */
+    function getVersion() external view returns (string memory) {
+        return version;
+    }
+
     function checkEscrowBalanceForAmount(
         address _address,
         uint256 _amount
@@ -288,11 +309,46 @@ contract LilypadPaymentEngine is
         return block.timestamp >= depositTimestamps[_address];
     }
 
+    /**
+     * @dev Grants the controller role to a specified account
+     * @notice
+     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
+     * - Reverts if the `account` is the zero address
+     * - Reverts if the `account` already has the controller role
+     * - Emits a `ControllerRoleGranted` event upon successful role assignment
+     */
+    function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (account == address(0)) revert LilypadPayment__ZeroAddressNotAllowed();
+        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert LilypadPayment__RoleAlreadyAssigned();
+        _grantRole(SharedStructs.CONTROLLER_ROLE, account);
+        emit LilypadPayment__ControllerRoleGranted(account, msg.sender);
+    }
+
+    /**
+     * @dev Revokes the controller role from an account
+     * @notice
+     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
+     * - Reverts if the `account` is the zero address
+     * - Reverts if the `account` does not have the controller role
+     * - Reverts if trying to revoke own role
+     * - Emits a `ControllerRoleRevoked` event upon successful role revocation
+     */
+    function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (account == address(0)) revert LilypadPayment__ZeroAddressNotAllowed();
+        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert LilypadPayment__RoleNotFound();
+        if (account == msg.sender) revert LilypadPayment__CannotRevokeOwnRole();
+
+        _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
+        emit LilypadPayment__ControllerRoleRevoked(account, msg.sender);
+    }
+
     function payEscrow(
         address _payee,
         SharedStructs.PaymentReason _paymentReason,
         uint256 _amount
     ) external moreThanZero(_amount) returns (bool) {
+        require(_payee != address(0), "Payee cannot be zero address");
+
         bool isResourceProviderOrValidator = lilypadUser.hasRole(_payee, SharedStructs.UserType.ResourceProvider) || lilypadUser.hasRole(_payee, SharedStructs.UserType.Validator);
 
         if (isResourceProviderOrValidator) {
@@ -347,6 +403,8 @@ contract LilypadPaymentEngine is
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
+        require(_address != address(0), "Address cannot be zero address");
+
         activeEscrow[_address] -= _amount;
 
         // When an actor is slashed their active collateral, it is sent to the treasury wallet
@@ -369,6 +427,8 @@ contract LilypadPaymentEngine is
         address _withdrawer,
         uint256 _amount
     ) external nonReentrant moreThanZero(_amount) returns (bool) {
+        require(_withdrawer != address(0), "Withdrawer cannot be zero address");
+
         if (msg.sender != _withdrawer) {
             revert LilypadPayment__unauthorizedWithdrawal();
         }
@@ -416,6 +476,8 @@ contract LilypadPaymentEngine is
         address _to,
         uint256 _amount
     ) private onlyRole(SharedStructs.CONTROLLER_ROLE) nonNegative(_amount) returns (bool) {
+        require(_to != address(0), "Payout address cannot be zero address");
+
         if (_amount == 0) {
             emit LilypadPayment__ZeroAmountPayout(_to);
             return false;
@@ -425,6 +487,8 @@ contract LilypadPaymentEngine is
         if (!success) {
             revert LilypadPayment__transferFailed();
         }
+
+        emit LilypadPayment__escrowPayout(_to, _amount);
         return true;
     }
 
@@ -449,6 +513,9 @@ contract LilypadPaymentEngine is
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
+        require(jobCreator != address(0), "Job creator cannot be zero address");
+        require(resourceProvider != address(0), "Resource provider cannot be zero address");
+
         // Deduct the escrow balances for the job creator and resource provider
         escrowBalances[jobCreator] -= cost;
         escrowBalances[resourceProvider] -= resourceProviderCollateralLockupAmount;
@@ -473,6 +540,7 @@ contract LilypadPaymentEngine is
     function HandleJobCompletion(
         SharedStructs.Result memory result
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+        require(result.status == SharedStructs.ResultStatusEnum.ResultsAccepted, "Invalid result status");
         // Get the deal from the storage contract, if it doesn't exist, revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
@@ -575,6 +643,8 @@ contract LilypadPaymentEngine is
     function HandleJobFailure(
         SharedStructs.Result memory result
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+        require(result.status == SharedStructs.ResultStatusEnum.ResultsRejected, "Invalid result status");
+
         // Get the deal from the storage contract, if it doesn't exist, revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
     
@@ -597,6 +667,8 @@ contract LilypadPaymentEngine is
     function HandleValidationPassed(
         SharedStructs.ValidationResult memory _validationResult
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+        require(_validationResult.status == SharedStructs.ValidationResultStatusEnum.ValidationAccepted, "Invalid validation result status");
+
         SharedStructs.Result memory result = lilypadStorage.getResult(_validationResult.resultId);
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
@@ -624,7 +696,7 @@ contract LilypadPaymentEngine is
     function HandleValidationFailed(
         SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool) {
-
+        require(_validationResult.status == SharedStructs.ValidationResultStatusEnum.ValidationRejected, "Invalid validation result status");
         /**
             Resource Provider acted dishonestly
             - Deduct an amount from the resource provider (where TBD)
