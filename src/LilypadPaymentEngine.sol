@@ -160,7 +160,6 @@ contract LilypadPaymentEngine is
     event LilypadPayment__ControllerRoleRevoked(address indexed account, address indexed sender);
     event LilypadPayment__escrowPayout(address indexed to, uint256 amount);
 
-    error LilypadPayment__amountMustBeNonNegative(bytes4 functionSelector, uint256 amount);
     error LilypadPayment__insufficientEscrowAmount(uint256 escrowAmount, uint256 requiredAmount);
     error LilypadPayment__insufficientActiveEscrowAmount();
     error LilypadPayment__amountMustBeGreaterThanZero(bytes4 functionSelector, uint256 amount);
@@ -188,13 +187,6 @@ contract LilypadPaymentEngine is
     modifier moreThanZero(uint256 amount) {
         if (amount <= 0) {
             revert LilypadPayment__amountMustBeGreaterThanZero(msg.sig, amount);
-        }
-        _;
-    }
-
-    modifier nonNegative(uint256 amount) {
-        if (amount < 0) {
-            revert LilypadPayment__amountMustBeNonNegative(msg.sig, amount);
         }
         _;
     }
@@ -482,7 +474,7 @@ contract LilypadPaymentEngine is
     function payoutJob(
         address _to,
         uint256 _amount
-    ) private onlyRole(SharedStructs.CONTROLLER_ROLE) nonNegative(_amount) returns (bool) {
+    ) private onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
         require(_to != address(0), "Payout address cannot be zero address");
 
         if (_amount == 0) {
