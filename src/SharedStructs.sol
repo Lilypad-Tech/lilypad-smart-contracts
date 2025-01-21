@@ -122,4 +122,10 @@ library SharedStructs {
         uint256 timestamp;
         address validator;
     }
+
+    struct Module {
+        address moduleOwner;
+        string moduleName;
+        string moduleUrl;
+    }
 }

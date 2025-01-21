@@ -11,10 +11,6 @@ import {SharedStructs} from "./SharedStructs.sol";
  * @dev Implementation of storage contract for Lilypad platform
  */
 contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradeable {
-    using SharedStructs for SharedStructs.Deal;
-    using SharedStructs for SharedStructs.Result;
-    using SharedStructs for SharedStructs.ValidationResult;
-
     // Version
     string public version;
 
@@ -97,8 +93,12 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * - Emits a `ControllerRoleGranted` event upon successful role assignment
      */
     function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) revert LilypadStorage__ZeroAddressNotAllowed();
-        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert LilypadStorage__RoleAlreadyAssigned();
+        if (account == address(0)) {
+            revert LilypadStorage__ZeroAddressNotAllowed();
+        }
+        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
+            revert LilypadStorage__RoleAlreadyAssigned();
+        }
         _grantRole(SharedStructs.CONTROLLER_ROLE, account);
         emit ControllerRoleGranted(account, msg.sender);
     }
@@ -113,8 +113,12 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * - Emits a `ControllerRoleRevoked` event upon successful role revocation
      */
     function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) revert LilypadStorage__ZeroAddressNotAllowed();
-        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert LilypadStorage__RoleNotFound();
+        if (account == address(0)) {
+            revert LilypadStorage__ZeroAddressNotAllowed();
+        }
+        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
+            revert LilypadStorage__RoleNotFound();
+        }
         if (account == msg.sender) revert LilypadStorage__CannotRevokeOwnRole();
 
         _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
@@ -164,7 +168,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         string memory validationResultId,
         SharedStructs.ValidationResultStatusEnum status
     ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (bytes(validationResultId).length == 0) revert LilypadStorage__EmptyValidationResultId();
+        if (bytes(validationResultId).length == 0) {
+            revert LilypadStorage__EmptyValidationResultId();
+        }
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
         if (validationResult.timestamp == 0) revert LilypadStorage__ValidationResultNotFound(validationResultId);
         validationResult.status = status;
@@ -223,8 +229,12 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         returns (bool)
     {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
-        if (bytes(result.dealId).length == 0) revert LilypadStorage__EmptyDealId();
-        if (bytes(result.resultCID).length == 0) revert LilypadStorage__EmptyCID();
+        if (bytes(result.dealId).length == 0) {
+            revert LilypadStorage__EmptyDealId();
+        }
+        if (bytes(result.resultCID).length == 0) {
+            revert LilypadStorage__EmptyCID();
+        }
         result.timestamp = block.timestamp;
         results[resultId] = result;
         emit ResultSaved(resultId, result.dealId);
@@ -269,6 +279,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         if (deal.moduleCreator == address(0)) revert LilypadStorage__InvalidModuleCreatorAddress();
         if (deal.solver == address(0)) revert LilypadStorage__InvalidSolverAddress();
         if (deal.jobCreator == deal.resourceProvider) revert LilypadStorage__SameAddressNotAllowed();
+
         deal.timestamp = block.timestamp;
         deals[dealId] = deal;
         emit DealSaved(dealId, deal.jobCreator, deal.resourceProvider);
@@ -287,9 +298,13 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         view
         returns (SharedStructs.ValidationResult memory)
     {
-        if (bytes(validationResultId).length == 0) revert LilypadStorage__EmptyValidationResultId();
+        if (bytes(validationResultId).length == 0) {
+            revert LilypadStorage__EmptyValidationResultId();
+        }
         SharedStructs.ValidationResult memory validationResult = validationResults[validationResultId];
+
         if (validationResult.timestamp == 0) revert LilypadStorage__ValidationResultNotFound(validationResultId);
+
         return validationResult;
     }
 
@@ -308,10 +323,18 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         string memory validationResultId,
         SharedStructs.ValidationResult memory validationResult
     ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (bytes(validationResultId).length == 0) revert LilypadStorage__EmptyValidationResultId();
-        if (bytes(validationResult.resultId).length == 0) revert LilypadStorage__EmptyResultId();
-        if (bytes(validationResult.validationCID).length == 0) revert LilypadStorage__EmptyCID();
-        if (validationResult.validator == address(0)) revert LilypadStorage__InvalidValidatorAddress();
+        if (bytes(validationResultId).length == 0) {
+            revert LilypadStorage__EmptyValidationResultId();
+        }
+        if (bytes(validationResult.resultId).length == 0) {
+            revert LilypadStorage__EmptyResultId();
+        }
+        if (bytes(validationResult.validationCID).length == 0) {
+            revert LilypadStorage__EmptyCID();
+        }
+        if (validationResult.validator == address(0)) {
+            revert LilypadStorage__InvalidValidatorAddress();
+        }
         validationResult.timestamp = block.timestamp;
         validationResults[validationResultId] = validationResult;
         emit ValidationResultSaved(validationResultId, validationResult.resultId, validationResult.validator);
@@ -344,9 +367,13 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         view
         returns (SharedStructs.ValidationResultStatusEnum)
     {
-        if (bytes(validationResultId).length == 0) revert LilypadStorage__EmptyValidationResultId();
+        if (bytes(validationResultId).length == 0) {
+            revert LilypadStorage__EmptyValidationResultId();
+        }
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
+
         if (validationResult.timestamp == 0) revert LilypadStorage__ValidationResultNotFound(validationResultId);
+        
         return validationResult.status;
     }
 
