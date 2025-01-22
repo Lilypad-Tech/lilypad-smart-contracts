@@ -436,7 +436,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        bool success = paymentEngine.HandleJobCompletion(result);
+        bool success = paymentEngine.handleJobCompletion(result);
         
         assertTrue(success);
         
@@ -546,7 +546,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        bool success = paymentEngine.HandleJobCompletion(result);
+        bool success = paymentEngine.handleJobCompletion(result);
         
         assertTrue(success);
         assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
@@ -639,7 +639,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        bool success = paymentEngine.HandleJobCompletion(result);
+        bool success = paymentEngine.handleJobCompletion(result);
         
         assertTrue(success);
         assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
@@ -732,7 +732,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        bool success = paymentEngine.HandleJobCompletion(result);
+        bool success = paymentEngine.handleJobCompletion(result);
         
         assertTrue(success);
         // Verify minimal payments were processed correctly
@@ -773,7 +773,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        paymentEngine.HandleJobCompletion(result);
+        paymentEngine.handleJobCompletion(result);
         vm.stopPrank();
     }
 
@@ -789,7 +789,7 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(address(paymentEngine));
         vm.expectRevert("Invalid result status");
-        paymentEngine.HandleJobCompletion(result);
+        paymentEngine.handleJobCompletion(result);
         vm.stopPrank();
     }
 
@@ -863,7 +863,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        bool success = paymentEngine.HandleJobCompletion(result);
+        bool success = paymentEngine.handleJobCompletion(result);
         
         assertTrue(success);
         // Verify only base payment was processed
@@ -955,7 +955,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        bool success = paymentEngine.HandleJobCompletion(result);
+        bool success = paymentEngine.handleJobCompletion(result);
         
         assertTrue(success);
         // Verify mixed fee scenario worked correctly
@@ -1037,7 +1037,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.ResultStatusEnum.ResultsAccepted,
             timestamp: block.timestamp
         });
-        paymentEngine.HandleJobCompletion(result);
+        paymentEngine.handleJobCompletion(result);
         vm.stopPrank();
     }
 
@@ -1122,7 +1122,7 @@ contract LilypadPaymentEngineTest is Test {
 
         uint256 initialTotalEscrow = paymentEngine.totalEscrow();
         uint256 initialActiveEscrow = paymentEngine.totalActiveEscrow();
-        bool success = paymentEngine.HandleJobFailure(result);
+        bool success = paymentEngine.handleJobFailure(result);
         assertTrue(success);
 
         // Verify escrow was slashed for the resource provider
@@ -1159,7 +1159,7 @@ contract LilypadPaymentEngineTest is Test {
             "LilypadStorage__DealNotFound(string)",
             "nonexistent"
         ));
-        paymentEngine.HandleJobFailure(result);
+        paymentEngine.handleJobFailure(result);
         vm.stopPrank();
     }
 
@@ -1239,7 +1239,7 @@ contract LilypadPaymentEngineTest is Test {
         // Test job failure with invalid result
         vm.startPrank(address(paymentEngine));
         vm.expectRevert(LilypadStorage.LilypadStorage__EmptyResultId.selector);
-        paymentEngine.HandleJobFailure(result);
+        paymentEngine.handleJobFailure(result);
         
         // Verify escrow state hasn't changed
         assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral - rpRequiredEscrow);
@@ -1263,7 +1263,7 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(address(paymentEngine));
         vm.expectRevert("Invalid result status");
-        paymentEngine.HandleJobFailure(result);
+        paymentEngine.handleJobFailure(result);
         vm.stopPrank();
     }
 
@@ -1361,7 +1361,7 @@ contract LilypadPaymentEngineTest is Test {
         vm.expectEmit(true, true, true, true);
         emit LilypadPayment__ValidationPassed(ALICE, BOB, EVE, jobCost);
         
-        bool success = paymentEngine.HandleValidationPassed(validationResult);
+        bool success = paymentEngine.handleValidationPassed(validationResult);
         assertTrue(success);
 
         // Verify escrow and payment state
@@ -1395,7 +1395,7 @@ contract LilypadPaymentEngineTest is Test {
             "LilypadStorage__ResultNotFound(string)",
             "nonexistent"
         ));
-        paymentEngine.HandleValidationPassed(validationResult);
+        paymentEngine.handleValidationPassed(validationResult);
         vm.stopPrank();
     }
 
@@ -1447,7 +1447,7 @@ contract LilypadPaymentEngineTest is Test {
         // Test validation with insufficient escrow
         vm.startPrank(address(paymentEngine));
         vm.expectRevert("Active escrow is less than the total cost of the job");
-        paymentEngine.HandleValidationPassed(validationResult);
+        paymentEngine.handleValidationPassed(validationResult);
         vm.stopPrank();
     }
 
@@ -1464,7 +1464,7 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(address(paymentEngine));
         vm.expectRevert("Invalid validation result status");
-        paymentEngine.HandleValidationPassed(validationResult);
+        paymentEngine.handleValidationPassed(validationResult);
         vm.stopPrank();
     }
 } 

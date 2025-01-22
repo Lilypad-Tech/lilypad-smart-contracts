@@ -544,7 +544,7 @@ contract LilypadPaymentEngine is
      * @dev Handles the completion of a job
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function HandleJobCompletion(
+    function handleJobCompletion(
         SharedStructs.Result memory result
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
         require(result.status == SharedStructs.ResultStatusEnum.ResultsAccepted, "Invalid result status");
@@ -655,7 +655,7 @@ contract LilypadPaymentEngine is
      * @dev Handles the failure of a job
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function HandleJobFailure(
+    function handleJobFailure(
         SharedStructs.Result memory result
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
         require(result.status == SharedStructs.ResultStatusEnum.ResultsRejected, "Invalid result status");
@@ -682,7 +682,7 @@ contract LilypadPaymentEngine is
      * @dev Handles the passing of a validation
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function HandleValidationPassed(
+    function handleValidationPassed(
         SharedStructs.ValidationResult memory _validationResult
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
         require(_validationResult.status == SharedStructs.ValidationResultStatusEnum.ValidationAccepted, "Invalid validation result status");
@@ -718,7 +718,7 @@ contract LilypadPaymentEngine is
      * @dev Handles the failure of a validation
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function HandleValidationFailed(
+    function handleValidationFailed(
         SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool) {
         require(_validationResult.status == SharedStructs.ValidationResultStatusEnum.ValidationRejected, "Invalid validation result status");

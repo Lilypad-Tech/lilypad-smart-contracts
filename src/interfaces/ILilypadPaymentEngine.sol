@@ -11,7 +11,7 @@ interface ILilypadPaymentEngine {
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
-    function HandleJobCompletion(
+    function handleJobCompletion(
         SharedStructs.Result memory _result
     ) external returns (bool);
 
@@ -21,7 +21,7 @@ interface ILilypadPaymentEngine {
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
-    function HandleJobFailure(
+    function handleJobFailure(
         SharedStructs.Result memory _result
     ) external returns (bool);
 
@@ -31,7 +31,7 @@ interface ILilypadPaymentEngine {
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
-    function HandleValidationPassed(
+    function handleValidationPassed(
         SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool);
 
@@ -41,7 +41,7 @@ interface ILilypadPaymentEngine {
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
-    function HandleValidationFailed(
+    function handleValidationFailed(
         SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool);
 
