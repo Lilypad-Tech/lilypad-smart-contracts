@@ -176,6 +176,17 @@ contract LilypadPaymentEngine is
     error LilypadPayment__unauthorizedWithdrawal();
     error LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet();
     error LilypadPayment__ZeroAddressNotAllowed();
+    error LilypadPayment__ZeroTokenAddress();
+    error LilypadPayment__ZeroTreasuryWallet();
+    error LilypadPayment__ZeroValueBasedRewardsWallet();
+    error LilypadPayment__ZeroStorageAddress();
+    error LilypadPayment__ZeroUserAddress();
+    error LilypadPayment__ParametersMustSumToTenThousand();
+    error LilypadPayment__V1MustBeGreaterThanV2();
+    error LilypadPayment__V2MustBeLessThanV1();
+    error LilypadPayment__InvalidResultStatus();
+    error LilypadPayment__InvalidValidationResultStatus();
+    error LilypadPayment__InvalidDealStatus();
     error LilypadPayment__RoleNotFound();
     error LilypadPayment__CannotRevokeOwnRole();
     error LilypadPayment__RoleAlreadyAssigned();
@@ -216,11 +227,11 @@ contract LilypadPaymentEngine is
         address _treasuryWallet,
         address _valueBasedRewardsWallet
     ) public initializer {
-        require(_tokenAddress != address(0), "Token address cannot be zero");
-        require(_lilypadStorageAddress != address(0), "Lilypad Storage address cannot be zero");
-        require(_lilypadUserAddress != address(0), "Lilypad User address cannot be zero");
-        require(_treasuryWallet != address(0), "Treasury wallet address cannot be zero");
-        require(_valueBasedRewardsWallet != address(0), "Value based rewards wallet address cannot be zero");
+        if (_tokenAddress == address(0)) revert LilypadPayment__ZeroTokenAddress();
+        if (_lilypadStorageAddress == address(0)) revert LilypadPayment__ZeroStorageAddress();
+        if (_lilypadUserAddress == address(0)) revert LilypadPayment__ZeroUserAddress();
+        if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
+        if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
 
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -739,7 +750,7 @@ contract LilypadPaymentEngine is
      * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
      */
     function setP1(uint256 _p1) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_p1 + p2 + p3 == 10000, "Parameters must sum to 10000");
+        if (p1 + p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p1 = _p1;
         emit TokenomicsParameterUpdated("p1", _p1);
     }
@@ -750,7 +761,7 @@ contract LilypadPaymentEngine is
      * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
      */
     function setP2(uint256 _p2) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(p1 + _p2 + p3 == 10000, "Parameters must sum to 10000");
+        if (p1 + _p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p2 = _p2;
         emit TokenomicsParameterUpdated("p2", _p2);
     }
@@ -761,7 +772,7 @@ contract LilypadPaymentEngine is
      * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
      */
     function setP3(uint256 _p3) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(p1 + p2 + _p3 == 10000, "Parameters must sum to 10000");
+        if (p1 + p2 + _p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p3 = _p3;
         emit TokenomicsParameterUpdated("p3", _p3);
     }
@@ -798,7 +809,7 @@ contract LilypadPaymentEngine is
      * @param _v1 New v1 value
      */
     function setV1(uint256 _v1) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_v1 > v2, "v1 must be greater than v2");
+        if (_v1 <= v2) revert LilypadPayment__V1MustBeGreaterThanV2();
         v1 = _v1;
         emit TokenomicsParameterUpdated("v1", _v1);
     }
@@ -808,7 +819,7 @@ contract LilypadPaymentEngine is
      * @param _v2 New v2 value
      */
     function setV2(uint256 _v2) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_v2 < v1, "v2 must be less than v1");
+        if (_v2 >= v1) revert LilypadPayment__V2MustBeLessThanV1();
         v2 = _v2;
         emit TokenomicsParameterUpdated("v2", _v2);
     }
@@ -820,5 +831,23 @@ contract LilypadPaymentEngine is
     function setResourceProviderActiveEscrowScaler(uint256 _resourceProviderActiveEscrowScaler) external onlyRole(DEFAULT_ADMIN_ROLE) {
         resourceProviderActiveEscrowScaler = _resourceProviderActiveEscrowScaler;
         emit TokenomicsParameterUpdated("resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler);
+    }
+
+    /**
+     * @notice Sets the treasury wallet address
+     * @param _treasuryWallet New treasury wallet address
+     */
+    function setTreasuryWallet(address _treasuryWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
+        treasuryWallet = _treasuryWallet;
+    }
+
+    /**
+     * @notice Sets the value based rewards wallet address
+     * @param _valueBasedRewardsWallet New value based rewards wallet address
+     */
+    function setValueBasedRewardsWallet(address _valueBasedRewardsWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
+        valueBasedRewardsWallet = _valueBasedRewardsWallet;
     }
 }
