@@ -287,6 +287,195 @@ contract LilypadPaymentEngineTest is Test {
         vm.stopPrank();
     }
 
+    function test_SetP1() public {
+        vm.startPrank(address(this));
+        
+        // Set p2 and p3 to make sum equal 10000
+        uint256 _newP1 = 10000 - paymentEngine.p2() - paymentEngine.p3();
+        
+        // Set p1 to complete the 10000 total
+        paymentEngine.setP1(_newP1);
+        
+        assertEq(paymentEngine.p1(), _newP1);
+        vm.stopPrank();
+    }
+
+    function test_SetP1_Reverts_WhenNotAdmin() public {
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        paymentEngine.setP1(1000);
+        vm.stopPrank();
+    }
+
+    function test_SetP1_Reverts_WhenSumNotTenThousand() public {
+        vm.startPrank(address(this));    
+        // Try to set p1 to value that would make sum > 10000
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ParametersMustSumToTenThousand.selector);
+        paymentEngine.setP1(20000); // Would make sum > 10000
+        vm.stopPrank();
+    }
+
+    function test_SetP2() public {
+        vm.startPrank(address(this));
+        
+        uint256 _newP2 = 10000 - paymentEngine.p1() - paymentEngine.p3();
+        
+        // Set p2 to complete the 10000 total
+        paymentEngine.setP2(_newP2);
+        
+        assertEq(paymentEngine.p2(), _newP2);
+        vm.stopPrank();
+    }
+
+    function test_SetP2_Reverts_WhenNotAdmin() public {
+        vm.startPrank(BOB);
+        vm.expectRevert();
+        paymentEngine.setP2(5000);
+        vm.stopPrank();
+    }
+
+    function test_SetP2_Reverts_WhenSumNotTenThousand() public {
+        vm.startPrank(address(this)); 
+        // Try to set p2 to value that would make sum > 10000
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ParametersMustSumToTenThousand.selector);
+        paymentEngine.setP2(16000); // Would make sum > 10000
+        vm.stopPrank();
+    }
+
+    function test_SetP3() public {
+        vm.startPrank(address(this));
+        
+        // Set p1 and p2 to make sum equal 10000
+        uint256 _newP3 = 10000 - paymentEngine.p1() - paymentEngine.p2();
+        
+        // Set p3 to complete the 10000 total
+        paymentEngine.setP3(_newP3);
+
+        assertEq(paymentEngine.p3(), _newP3);
+        vm.stopPrank();
+    }
+
+    function test_SetP3_Reverts_WhenNotAdmin() public {
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        paymentEngine.setP3(4000);
+        vm.stopPrank();
+    }
+
+    function test_SetP3_Reverts_WhenSumNotTenThousand() public {
+        vm.startPrank(address(this));
+        
+        // Try to set p3 to value that would make sum > 10000
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ParametersMustSumToTenThousand.selector);
+        paymentEngine.setP3(16000); // Would make sum > 10000
+        vm.stopPrank();
+    }
+
+    function test_SetP() public {
+        vm.startPrank(address(this));
+        paymentEngine.setP(2000);
+        assertEq(paymentEngine.p(), 2000);
+        vm.stopPrank();
+    }
+
+    function test_SetP_Reverts_WhenNotAdmin() public {
+        vm.startPrank(BOB);
+        vm.expectRevert();
+        paymentEngine.setP(2000);
+        vm.stopPrank();
+    }
+
+    function test_SetV1() public {
+        vm.startPrank(address(this));
+        // First set v2 to a lower value
+        paymentEngine.setV2(100);
+        paymentEngine.setV1(200);
+        assertEq(paymentEngine.v1(), 200);
+        vm.stopPrank();
+    }
+
+    function test_SetV1_Reverts_WhenNotAdmin() public {
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        paymentEngine.setV1(200);
+        vm.stopPrank();
+    }
+
+    function test_SetV1_Reverts_WhenNotGreaterThanV2() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__V1MustBeGreaterThanV2.selector);
+        paymentEngine.setV1(100); // v2 defaults to 1, so v1 must be > 1
+        vm.stopPrank();
+    }
+
+    function test_SetV2() public {
+        vm.startPrank(address(this));
+        // v2 must be less than v1, and v1 defaults to 2
+        paymentEngine.setV2(1);
+        assertEq(paymentEngine.v2(), 1);
+        vm.stopPrank();
+    }
+
+    function test_SetV2_Reverts_WhenNotAdmin() public {
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        paymentEngine.setV2(1);
+        vm.stopPrank();
+    }
+
+    function test_SetV2_Reverts_WhenNotLessThanV1() public {
+        vm.startPrank(address(this));
+        uint256 _newV2 = paymentEngine.v1() + 1;
+
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__V2MustBeLessThanV1.selector);
+        paymentEngine.setV2(_newV2); // Try to set V2 higher than V1
+        vm.stopPrank();
+    }
+
+    function test_SetTreasuryWallet() public {
+        vm.startPrank(address(this));
+        address newTreasuryWallet = address(5);
+        paymentEngine.setTreasuryWallet(newTreasuryWallet);
+        assertEq(paymentEngine.treasuryWallet(), newTreasuryWallet);
+        vm.stopPrank();
+    }
+
+    function test_SetTreasuryWallet_Reverts_WhenNotAdmin() public {
+        vm.startPrank(BOB);
+        vm.expectRevert();
+        paymentEngine.setTreasuryWallet(address(5));
+        vm.stopPrank();
+    }
+
+    function test_SetTreasuryWallet_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroTreasuryWallet.selector);
+        paymentEngine.setTreasuryWallet(address(0));
+        vm.stopPrank();
+    }
+
+    function test_SetValueBasedRewardsWallet() public {
+        vm.startPrank(address(this));
+        address newValueBasedRewardsWallet = address(5);
+        paymentEngine.setValueBasedRewardsWallet(newValueBasedRewardsWallet);
+        assertEq(paymentEngine.valueBasedRewardsWallet(), newValueBasedRewardsWallet);
+        vm.stopPrank();
+    }
+
+    function test_SetValueBasedRewardsWallet_Reverts_WhenNotAdmin() public {
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        paymentEngine.setValueBasedRewardsWallet(address(5));
+        vm.stopPrank();
+    }
+
+    function test_SetValueBasedRewardsWallet_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroValueBasedRewardsWallet.selector);
+        paymentEngine.setValueBasedRewardsWallet(address(0));
+        vm.stopPrank();
+    }
+
     // Escrow Locking Tests
     function test_LockEscrowForJob() public {
         uint256 jobCost = 100 * 10**18;
@@ -464,14 +653,6 @@ contract LilypadPaymentEngineTest is Test {
 
         // Only the resource provider's collateral should be left
         assertEq(paymentEngine.totalEscrow(), rpCollateral);
-
-        // Verify that the result was saved
-        SharedStructs.Result memory savedResult = lilypadStorage.getResult("result1");
-        assertEq(savedResult.resultId, result.resultId);
-        assertEq(savedResult.dealId, result.dealId);
-        assertEq(savedResult.resultCID, result.resultCID);
-        assertEq(uint(savedResult.status), uint(result.status));
-        assertEq(savedResult.timestamp, result.timestamp);
 
         vm.stopPrank();
     }
@@ -873,14 +1054,6 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE); // Unchanged
         assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE); // Unchanged
 
-        // Verify result was saved
-        SharedStructs.Result memory savedResult = lilypadStorage.getResult("result1");
-        assertEq(savedResult.resultId, result.resultId);
-        assertEq(savedResult.dealId, result.dealId);
-        assertEq(savedResult.resultCID, result.resultCID);
-        assertEq(uint(savedResult.status), uint(result.status));
-        assertEq(savedResult.timestamp, result.timestamp);
-
         vm.stopPrank();
     }
 
@@ -969,14 +1142,6 @@ contract LilypadPaymentEngineTest is Test {
         
         assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE + expectedTreasuryAmount);
         assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
-
-        // Verify result was saved
-        SharedStructs.Result memory savedResult = lilypadStorage.getResult("result1");
-        assertEq(savedResult.resultId, result.resultId);
-        assertEq(savedResult.dealId, result.dealId);
-        assertEq(savedResult.resultCID, result.resultCID);
-        assertEq(uint(savedResult.status), uint(result.status));
-        assertEq(savedResult.timestamp, result.timestamp);
 
         vm.stopPrank();
     }
@@ -1130,14 +1295,6 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.totalEscrow(), initialTotalEscrow - rpRequiredEscrow);
         assertEq(paymentEngine.totalActiveEscrow(), initialActiveEscrow - rpRequiredEscrow); // Need to update for the job creator active escorw
 
-        // Verify result was saved
-        SharedStructs.Result memory savedResult = lilypadStorage.getResult("result1");
-        assertEq(savedResult.resultId, result.resultId);
-        assertEq(savedResult.dealId, result.dealId);
-        assertEq(savedResult.resultCID, result.resultCID);
-        assertEq(uint(savedResult.status), uint(result.status));
-        assertEq(savedResult.timestamp, result.timestamp);
-
         // TODO: uncomment once you figure out what happens to the job creator's escrow
         // assertEq(paymentEngine.escrowBalanceOf(ALICE), jobCost);
         // assertEq(token.balanceOf(ALICE), INITIAL_BALANCE - jobCost);
@@ -1160,94 +1317,6 @@ contract LilypadPaymentEngineTest is Test {
             "nonexistent"
         ));
         paymentEngine.handleJobFailure(result);
-        vm.stopPrank();
-    }
-
-    function test_HandleJobFailure_RevertWhen_ResultSaveFails() public {
-        // Setup initial state
-        uint256 basePayment = 5 * 10**18;
-        uint256 jobCreatorSolverFee = 1 * 10**18;
-        uint256 resourceProviderSolverFee = 1 * 10**18;
-        uint256 moduleCreatorFee = 1 * 10**18;
-        uint256 networkCongestionFee = 1 * 10**18;
-        uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
-        uint256 jobCost = basePayment + totalFees;
-        uint256 rpCollateral = 20 * 10**18;
-        
-        // Setup escrow for both parties
-        vm.startPrank(ALICE);
-        token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(
-            ALICE,
-            SharedStructs.PaymentReason.JobFee,
-            jobCost
-        );
-        vm.stopPrank();
-
-        vm.startPrank(BOB);
-        token.approve(address(paymentEngine), rpCollateral);
-        paymentEngine.payEscrow(
-            BOB,
-            SharedStructs.PaymentReason.ResourceProviderCollateral,
-            rpCollateral
-        );
-        vm.stopPrank();
-
-        // Create and save deal
-        SharedStructs.Deal memory deal = SharedStructs.Deal({
-            dealId: "deal1",
-            jobCreator: ALICE,
-            resourceProvider: BOB,
-            moduleCreator: CHARLIE,
-            solver: DAVE,
-            jobOfferCID: "jobCID1",
-            resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp,
-            paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
-                resourceProviderSolverFee: resourceProviderSolverFee,
-                networkCongestionFee: networkCongestionFee,
-                moduleCreatorFee: moduleCreatorFee,
-                priceOfJobWithoutFees: basePayment
-            })
-        });
-        
-        vm.startPrank(address(this));
-        lilypadStorage.saveDeal("deal1", deal);
-
-        // Lock escrow
-        uint256 rpRequiredEscrow = (basePayment + resourceProviderSolverFee) * (paymentEngine.resourceProviderActiveEscrowScaler() / 10000);
-        paymentEngine.initiateLockupOfEscrowForJob(
-            ALICE,
-            BOB,
-            "deal1",
-            jobCost,
-            rpRequiredEscrow
-        );
-        vm.stopPrank();
-
-        // Create result with empty resultId which will cause save to fail
-        SharedStructs.Result memory result = SharedStructs.Result({
-            resultId: "", // Empty resultId will cause save to fail
-            dealId: "deal1",
-            resultCID: "resultCID1",
-            status: SharedStructs.ResultStatusEnum.ResultsRejected,
-            timestamp: block.timestamp
-        });
-
-        // Test job failure with invalid result
-        vm.startPrank(address(paymentEngine));
-        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyResultId.selector);
-        paymentEngine.handleJobFailure(result);
-        
-        // Verify escrow state hasn't changed
-        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral - rpRequiredEscrow);
-        assertEq(paymentEngine.activeEscrow(BOB), rpRequiredEscrow);
-
-        // TODO: uncomment once you figure out what happens to the job creator's escrow
-        // assertEq(paymentEngine.escrowBalanceOf(ALICE), 0);
-        // assertEq(paymentEngine.activeEscrow(ALICE), jobCost);
         vm.stopPrank();
     }
 
@@ -1368,14 +1437,6 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.activeEscrow(ALICE), 0);
         assertEq(paymentEngine.totalActiveEscrow(), initialActiveEscrow - jobCost);
         assertEq(token.balanceOf(EVE), initialValidatorBalance + jobCost);
-
-        // Verify validation result was saved
-        SharedStructs.ValidationResult memory savedValidation = lilypadStorage.getValidationResult("validation1");
-        assertEq(savedValidation.validationResultId, validationResult.validationResultId);
-        assertEq(savedValidation.resultId, validationResult.resultId);
-        assertEq(savedValidation.validationCID, validationResult.validationCID);
-        assertEq(uint(savedValidation.status), uint(validationResult.status));
-        assertEq(savedValidation.validator, validationResult.validator);
 
         vm.stopPrank();
     }

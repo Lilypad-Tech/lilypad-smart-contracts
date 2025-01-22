@@ -565,9 +565,6 @@ contract LilypadPaymentEngine is
         // Calculate fees and payments in a separate internal function
         _processJobCompletion(deal);
 
-        // Save the result
-        lilypadStorage.saveResult(result.resultId, result);
-
         emit LilypadPayment__JobCompleted(deal.jobCreator, deal.resourceProvider, deal.dealId);
         return true;
     }
@@ -682,9 +679,6 @@ contract LilypadPaymentEngine is
 
         //TODO: What happens to the job creator's escrow?
 
-        // Save the result
-        lilypadStorage.saveResult(result.resultId, result);
-
         emit LilypadPayment__JobFailed(deal.jobCreator, deal.resourceProvider, result.resultId);
         return true;
     }
@@ -718,9 +712,6 @@ contract LilypadPaymentEngine is
         // Pay the validator
         payoutJob(_validationResult.validator, totalCostOfJob);
 
-        // Save the validation result
-        lilypadStorage.saveValidationResult(_validationResult.validationResultId, _validationResult);
-
         emit LilypadPayment__ValidationPassed(deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalCostOfJob);
         return true;
     }
@@ -750,7 +741,7 @@ contract LilypadPaymentEngine is
      * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
      */
     function setP1(uint256 _p1) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (p1 + p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
+        if (_p1 + p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p1 = _p1;
         emit TokenomicsParameterUpdated("p1", _p1);
     }
