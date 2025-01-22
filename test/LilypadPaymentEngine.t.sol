@@ -969,7 +969,7 @@ contract LilypadPaymentEngineTest is Test {
         });
 
         vm.startPrank(address(paymentEngine));
-        vm.expectRevert("Invalid result status");
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__InvalidResultStatus.selector);
         paymentEngine.handleJobCompletion(result);
         vm.stopPrank();
     }
@@ -1331,7 +1331,7 @@ contract LilypadPaymentEngineTest is Test {
         });
 
         vm.startPrank(address(paymentEngine));
-        vm.expectRevert("Invalid result status");
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__InvalidResultStatus.selector);
         paymentEngine.handleJobFailure(result);
         vm.stopPrank();
     }
@@ -1513,7 +1513,6 @@ contract LilypadPaymentEngineTest is Test {
     }
 
     function test_HandleValidationPassed_RevertWhen_InvalidStatus() public {
-        // Create validation result with wrong status
         SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
             validationResultId: "validation1",
             resultId: "result1",
@@ -1524,7 +1523,7 @@ contract LilypadPaymentEngineTest is Test {
         });
 
         vm.startPrank(address(paymentEngine));
-        vm.expectRevert("Invalid validation result status");
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__InvalidValidationResultStatus.selector);
         paymentEngine.handleValidationPassed(validationResult);
         vm.stopPrank();
     }

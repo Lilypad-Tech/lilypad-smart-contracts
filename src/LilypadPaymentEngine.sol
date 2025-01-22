@@ -186,7 +186,6 @@ contract LilypadPaymentEngine is
     error LilypadPayment__V2MustBeLessThanV1();
     error LilypadPayment__InvalidResultStatus();
     error LilypadPayment__InvalidValidationResultStatus();
-    error LilypadPayment__InvalidDealStatus();
     error LilypadPayment__RoleNotFound();
     error LilypadPayment__CannotRevokeOwnRole();
     error LilypadPayment__RoleAlreadyAssigned();
@@ -558,7 +557,8 @@ contract LilypadPaymentEngine is
     function handleJobCompletion(
         SharedStructs.Result memory result
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        require(result.status == SharedStructs.ResultStatusEnum.ResultsAccepted, "Invalid result status");
+        if (result.status != SharedStructs.ResultStatusEnum.ResultsAccepted) revert LilypadPayment__InvalidResultStatus();
+
         // Get the deal from the storage contract, if it doesn't exist, revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
@@ -666,7 +666,7 @@ contract LilypadPaymentEngine is
     function handleJobFailure(
         SharedStructs.Result memory result
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        require(result.status == SharedStructs.ResultStatusEnum.ResultsRejected, "Invalid result status");
+        if (result.status != SharedStructs.ResultStatusEnum.ResultsRejected) revert LilypadPayment__InvalidResultStatus();
 
         // Get the deal from the storage contract, if it doesn't exist, revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
@@ -690,7 +690,7 @@ contract LilypadPaymentEngine is
     function handleValidationPassed(
         SharedStructs.ValidationResult memory _validationResult
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        require(_validationResult.status == SharedStructs.ValidationResultStatusEnum.ValidationAccepted, "Invalid validation result status");
+        if (_validationResult.status != SharedStructs.ValidationResultStatusEnum.ValidationAccepted) revert LilypadPayment__InvalidValidationResultStatus();
 
         SharedStructs.Result memory result = lilypadStorage.getResult(_validationResult.resultId);
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
@@ -723,7 +723,7 @@ contract LilypadPaymentEngine is
     function handleValidationFailed(
         SharedStructs.ValidationResult memory _validationResult
     ) external returns (bool) {
-        require(_validationResult.status == SharedStructs.ValidationResultStatusEnum.ValidationRejected, "Invalid validation result status");
+        if (_validationResult.status != SharedStructs.ValidationResultStatusEnum.ValidationRejected) revert LilypadPayment__InvalidValidationResultStatus();
         /**
             Resource Provider acted dishonestly
             - Deduct an amount from the resource provider (where TBD)
