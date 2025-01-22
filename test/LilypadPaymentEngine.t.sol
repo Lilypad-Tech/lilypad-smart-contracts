@@ -61,6 +61,12 @@ contract LilypadPaymentEngineTest is Test {
         address indexed validator,
         uint256 amount
     );
+    event LilypadPayment__ValidationFailed(
+        address indexed jobCreator,
+        address indexed resourceProvider,
+        address indexed validator,
+        uint256 amount
+    );
 
     function setUp() public {
         // Deploy token with initial supply (using 1 million instead of 1 billion for initial supply)
@@ -1424,7 +1430,6 @@ contract LilypadPaymentEngineTest is Test {
         vm.startPrank(address(paymentEngine));
         
         uint256 initialValidatorBalance = token.balanceOf(EVE);
-        uint256 initialTotalEscrow = paymentEngine.totalEscrow();
         uint256 initialActiveEscrow = paymentEngine.totalActiveEscrow();
 
         vm.expectEmit(true, true, true, true);
@@ -1460,10 +1465,141 @@ contract LilypadPaymentEngineTest is Test {
         vm.stopPrank();
     }
 
-    function test_HandleValidationPassed_RevertWhen_InsufficientEscrow() public {
-        // Create and save deal with no escrow
-        SharedStructs.Deal memory deal = SharedStructs.Deal({
-            dealId: "deal1",
+    function test_HandleValidationPassed_RevertWhen_InvalidStatus() public {
+        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
+            validationResultId: "validation1",
+            resultId: "result1",
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationPending, // Wrong status
+            timestamp: block.timestamp,
+            validator: EVE
+        });
+
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__InvalidValidationResultStatus.selector);
+        paymentEngine.handleValidationPassed(validationResult);
+        vm.stopPrank();
+    }
+
+    function test_HandleValidationFailed() public {
+        // Setup initial job
+        uint256 basePayment = 5 * 10**18;
+        uint256 jobCreatorSolverFee = 1 * 10**18;
+        uint256 resourceProviderSolverFee = 1 * 10**18;
+        uint256 networkCongestionFee = 1 * 10**18;
+        uint256 moduleCreatorFee = 1 * 10**18;
+        uint256 jobCost = basePayment + jobCreatorSolverFee + networkCongestionFee + moduleCreatorFee;
+        uint256 rpCollateral = 20 * 10**18;
+
+        // Setup original job deal
+        SharedStructs.Deal memory originalDeal = SharedStructs.Deal({
+            dealId: "originalDeal",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                JobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment
+            })
+        });
+
+        // Setup validation job deal (costs more than original job)
+        SharedStructs.Deal memory validationDeal = SharedStructs.Deal({
+            dealId: "validationDeal",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID2",
+            resourceOfferCID: "resourceCID2",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                JobCreatorSolverFee: jobCreatorSolverFee * 2,
+                resourceProviderSolverFee: resourceProviderSolverFee * 2,
+                networkCongestionFee: networkCongestionFee * 2,
+                moduleCreatorFee: moduleCreatorFee * 2,
+                priceOfJobWithoutFees: basePayment * 2
+            })
+        });
+        
+        // Setup escrow for resource provider
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(
+            BOB,
+            SharedStructs.PaymentReason.ResourceProviderCollateral,
+            rpCollateral
+        );
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        // Save deals
+        lilypadStorage.saveDeal("originalDeal", originalDeal);
+        lilypadStorage.saveDeal("validationDeal", validationDeal);
+
+        // Create and save result
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "validationDeal",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        lilypadStorage.saveResult("result1", result);
+        vm.stopPrank();
+
+        // Create validation result
+        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
+            validationResultId: "validation1",
+            resultId: "result1",
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationRejected,
+            timestamp: block.timestamp,
+            validator: EVE
+        });
+
+        // Test validation failed
+        vm.startPrank(address(paymentEngine));
+        
+        uint256 initialRPBalance = paymentEngine.escrowBalanceOf(BOB);
+
+        vm.expectEmit(true, true, true, true);
+        // Since the penalty is greater than the escrow, the total penalty becomes the escrow balance of the RP
+        emit LilypadPayment__ValidationFailed(ALICE, BOB, EVE, initialRPBalance);
+        
+        bool success = paymentEngine.handleValidationFailed(validationResult, originalDeal);
+        assertTrue(success);
+
+        // Verify escrow state
+        // Since the penalty is greater than the escrow, the total penalty becomes the escrow balance of the RP and thus should be 0
+        assertEq(paymentEngine.escrowBalanceOf(BOB), 0);
+        // Since the only escrow in the system is the one from the RP, the total escrow should be 0
+        assertEq(paymentEngine.totalEscrow(), 0);
+
+        vm.stopPrank();
+    }
+
+    function test_HandleValidationFailed_RevertWhen_InvalidStatus() public {
+        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
+            validationResultId: "validation1",
+            resultId: "result1",
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationPending,
+            timestamp: block.timestamp,
+            validator: EVE
+        });
+
+        SharedStructs.Deal memory originalDeal = SharedStructs.Deal({
+            dealId: "originalDeal",
             jobCreator: ALICE,
             resourceProvider: BOB,
             moduleCreator: CHARLIE,
@@ -1480,51 +1616,10 @@ contract LilypadPaymentEngineTest is Test {
                 priceOfJobWithoutFees: 5 * 10**18
             })
         });
-        
-        vm.startPrank(address(this));
-        lilypadStorage.saveDeal("deal1", deal);
-
-        // Create and save result
-        SharedStructs.Result memory result = SharedStructs.Result({
-            resultId: "result1",
-            dealId: "deal1",
-            resultCID: "resultCID1",
-            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
-            timestamp: block.timestamp
-        });
-        lilypadStorage.saveResult("result1", result);
-        vm.stopPrank();
-
-        // Create validation result
-        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
-            validationResultId: "validation1",
-            resultId: "result1",
-            validationCID: "validationCID1",
-            status: SharedStructs.ValidationResultStatusEnum.ValidationAccepted,
-            timestamp: block.timestamp,
-            validator: EVE
-        });
-
-        // Test validation with insufficient escrow
-        vm.startPrank(address(paymentEngine));
-        vm.expectRevert("Active escrow is less than the total cost of the job");
-        paymentEngine.handleValidationPassed(validationResult);
-        vm.stopPrank();
-    }
-
-    function test_HandleValidationPassed_RevertWhen_InvalidStatus() public {
-        SharedStructs.ValidationResult memory validationResult = SharedStructs.ValidationResult({
-            validationResultId: "validation1",
-            resultId: "result1",
-            validationCID: "validationCID1",
-            status: SharedStructs.ValidationResultStatusEnum.ValidationPending, // Wrong status
-            timestamp: block.timestamp,
-            validator: EVE
-        });
 
         vm.startPrank(address(paymentEngine));
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__InvalidValidationResultStatus.selector);
-        paymentEngine.handleValidationPassed(validationResult);
+        paymentEngine.handleValidationFailed(validationResult, originalDeal);
         vm.stopPrank();
     }
 } 

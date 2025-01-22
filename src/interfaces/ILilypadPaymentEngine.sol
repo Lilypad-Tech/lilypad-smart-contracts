@@ -38,11 +38,13 @@ interface ILilypadPaymentEngine {
     /**
      * @dev This method will encompass the business logic related to handling a failed validation and sending/releasing funds to the appropriate actors (i.e. the validation run failed to complete)
      * @param _validationResult The validation result struct of the job that is passed from the Sovler
+     * @param _originalJobDeal The original job deal struct of the job that ran under validation
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
     function handleValidationFailed(
-        SharedStructs.ValidationResult memory _validationResult
+        SharedStructs.ValidationResult memory _validationResult,
+        SharedStructs.Deal memory _originalJobDeal
     ) external returns (bool);
 
     /**
