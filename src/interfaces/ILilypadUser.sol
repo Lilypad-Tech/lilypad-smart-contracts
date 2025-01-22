@@ -59,4 +59,10 @@ interface ILilypadUser {
      * @return Returns true if the user has the specified role.
      */
     function hasRole(address walletAddress, SharedStructs.UserType role) external view returns (bool);
+
+    /**
+     * @dev Retrieves all validator addresses.
+     * @return Returns an array of all validator addresses in the system.
+     */
+    function getValidators() external view returns (address[] memory);
 }

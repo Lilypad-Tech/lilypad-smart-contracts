@@ -1,0 +1,298 @@
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.13;
+
+import "forge-std/Test.sol";
+import "../src/LilypadValidation.sol";
+import "../src/LilypadStorage.sol";
+import "../src/LilypadUser.sol";
+import {SharedStructs} from "../src/SharedStructs.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+
+contract LilypadValidationTest is Test {
+    LilypadValidation public lilypadValidation;
+    LilypadStorage public lilypadStorage;
+    LilypadUser public lilypadUser;
+
+    address public constant ALICE = address(0x1);
+    address public constant BOB = address(0x2);
+    address public constant CHARLIE = address(0x3);
+    address public constant VALIDATOR = address(0x4);
+    address public constant CONTROLLER = address(0x5);
+
+    // Events
+    event ValidationRequested(string dealId, string resultId);
+    event ValidationProcessed(string validationResultId, SharedStructs.ValidationResultStatusEnum status);
+    event StorageContractSet(address storageContract);
+    event UserContractSet(address userContract);
+    event ControllerRoleGranted(address indexed account, address indexed sender);
+    event ControllerRoleRevoked(address indexed account, address indexed sender);
+
+    function setUp() public {
+        // Deploy and initialize storage contract
+        LilypadStorage storageImplementation = new LilypadStorage();
+        bytes memory storageInitData = abi.encodeWithSelector(LilypadStorage.initialize.selector);
+        ERC1967Proxy storageProxy = new ERC1967Proxy(address(storageImplementation), storageInitData);
+        lilypadStorage = LilypadStorage(address(storageProxy));
+
+        // Deploy and initialize user contract
+        LilypadUser userImplementation = new LilypadUser();
+        bytes memory userInitData = abi.encodeWithSelector(LilypadUser.initialize.selector);
+        ERC1967Proxy userProxy = new ERC1967Proxy(address(userImplementation), userInitData);
+        lilypadUser = LilypadUser(address(userProxy));
+
+        // Deploy and initialize validation contract
+        LilypadValidation implementation = new LilypadValidation();
+        bytes memory validationInitData = abi.encodeWithSelector(LilypadValidation.initialize.selector);
+        ERC1967Proxy validationProxy = new ERC1967Proxy(address(implementation), validationInitData);
+        lilypadValidation = LilypadValidation(address(validationProxy));
+
+        // Set up contracts
+        lilypadValidation.setStorageContract(address(lilypadStorage));
+        lilypadValidation.setUserContract(address(lilypadUser));
+
+        // Grant controller roles
+        lilypadValidation.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
+        lilypadStorage.grantRole(SharedStructs.CONTROLLER_ROLE, address(lilypadValidation));
+        lilypadUser.grantRole(SharedStructs.CONTROLLER_ROLE, address(lilypadValidation));
+
+        // Register a validator
+        vm.startPrank(address(lilypadValidation));
+        lilypadUser.insertUser(
+            VALIDATOR, "validatorMetadata", "https://validator.example.com", SharedStructs.UserType.Validator
+        );
+        vm.stopPrank();
+    }
+
+    // Version Tests
+    function test_InitialVersion() public {
+        assertEq(lilypadValidation.version(), "1.0.0");
+    }
+
+    function test_GetVersion() public {
+        assertEq(lilypadValidation.getVersion(), "1.0.0");
+    }
+
+    // Contract Setup Tests
+    function test_RevertWhen_SettingZeroAddressStorage() public {
+        vm.expectRevert(LilypadValidation.LilypadValidation__ZeroAddressNotAllowed.selector);
+        lilypadValidation.setStorageContract(address(0));
+    }
+
+    function test_RevertWhen_SettingZeroAddressUser() public {
+        vm.expectRevert(LilypadValidation.LilypadValidation__ZeroAddressNotAllowed.selector);
+        lilypadValidation.setUserContract(address(0));
+    }
+
+    function test_SetStorageContract() public {
+        address newStorage = address(0x123);
+        vm.expectEmit(true, true, true, true);
+        emit StorageContractSet(newStorage);
+        lilypadValidation.setStorageContract(newStorage);
+        assertEq(address(lilypadValidation.lilypadStorage()), newStorage);
+    }
+
+    function test_SetUserContract() public {
+        address newUser = address(0x456);
+        vm.expectEmit(true, true, true, true);
+        emit UserContractSet(newUser);
+        lilypadValidation.setUserContract(newUser);
+        assertEq(address(lilypadValidation.lilypadUser()), newUser);
+    }
+
+    // Role Management Tests
+    function test_RevertWhen_NonAdminGrantsControllerRole() public {
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        lilypadValidation.grantControllerRole(BOB);
+    }
+
+    function test_RevertWhen_GrantingControllerRoleToZeroAddress() public {
+        vm.expectRevert(LilypadValidation.LilypadValidation__ZeroAddressNotAllowed.selector);
+        lilypadValidation.grantControllerRole(address(0));
+    }
+
+    function test_RevertWhen_GrantingControllerRoleToExistingController() public {
+        vm.expectRevert(LilypadValidation.LilypadValidation__RoleAlreadyAssigned.selector);
+        lilypadValidation.grantControllerRole(CONTROLLER);
+    }
+
+    function test_GrantControllerRole() public {
+        vm.expectEmit(true, true, true, true);
+        emit ControllerRoleGranted(ALICE, address(this));
+        lilypadValidation.grantControllerRole(ALICE);
+        assertTrue(lilypadValidation.hasControllerRole(ALICE));
+    }
+
+    function test_RevertWhen_RevokingOwnControllerRole() public {
+        vm.expectRevert(LilypadValidation.LilypadValidation__CannotRevokeOwnRole.selector);
+        lilypadValidation.revokeControllerRole(address(this));
+    }
+
+    // Validation Request Tests
+    function test_RevertWhen_NonControllerRequestsValidation() public {
+        vm.startPrank(ALICE);
+        SharedStructs.Deal memory deal = _createDeal();
+        SharedStructs.Result memory result = _createResult();
+        SharedStructs.ValidationResult memory validation = _createValidation();
+
+        vm.expectRevert();
+        lilypadValidation.requestValidation(deal, result, validation);
+    }
+
+    function test_RevertWhen_RequestingValidationWithInvalidDeal() public {
+        vm.startPrank(CONTROLLER);
+        SharedStructs.Deal memory deal = _createDeal();
+        deal.dealId = "";
+        SharedStructs.Result memory result = _createResult();
+        SharedStructs.ValidationResult memory validation = _createValidation();
+
+        vm.expectRevert(LilypadValidation.LilypadValidation__InvalidDeal.selector);
+        lilypadValidation.requestValidation(deal, result, validation);
+    }
+
+    function test_SuccessfulValidationRequest() public {
+        // First save a deal and result
+        SharedStructs.Deal memory deal = _createDeal();
+        SharedStructs.Result memory result = _createResult();
+        SharedStructs.ValidationResult memory validation = _createValidation();
+
+        vm.startPrank(address(lilypadValidation));
+        lilypadStorage.saveDeal(deal.dealId, deal);
+        lilypadStorage.saveResult(result.resultId, result);
+        vm.stopPrank();
+
+        vm.startPrank(CONTROLLER);
+        vm.expectEmit(true, true, true, true);
+        emit ValidationRequested(deal.dealId, result.resultId);
+
+        bool success = lilypadValidation.requestValidation(deal, result, validation);
+        assertTrue(success);
+        vm.stopPrank();
+    }
+
+    // Validation Processing Tests
+    function test_RevertWhen_ProcessingInvalidValidation() public {
+        vm.startPrank(CONTROLLER);
+        SharedStructs.ValidationResult memory validation = _createValidation();
+        validation.validationResultId = "";
+
+        vm.expectRevert(LilypadValidation.LilypadValidation__InvalidValidation.selector);
+        lilypadValidation.processValidation(validation);
+    }
+
+    function test_RevertWhen_ProcessingValidationWithNonValidator() public {
+        // First register ALICE as a JobCreator (non-validator)
+        vm.startPrank(address(lilypadValidation));
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+        vm.stopPrank();
+
+        // Now test validation processing
+        vm.startPrank(CONTROLLER);
+        SharedStructs.ValidationResult memory validation = _createValidation();
+        validation.validator = ALICE; // ALICE exists but is not a validator
+
+        vm.expectRevert(LilypadValidation.LilypadValidation__NotValidator.selector);
+        lilypadValidation.processValidation(validation);
+        vm.stopPrank();
+    }
+
+    function test_SuccessfulValidationProcessing() public {
+        vm.startPrank(CONTROLLER);
+        SharedStructs.ValidationResult memory validation = _createValidation();
+
+        vm.expectEmit(true, true, true, true);
+        emit ValidationProcessed(validation.validationResultId, validation.status);
+
+        bool success = lilypadValidation.processValidation(validation);
+        assertTrue(success);
+    }
+
+    // Fuzz Tests
+    function testFuzz_RequestValidation(
+        string memory dealId,
+        string memory resultId,
+        string memory validationResultId,
+        address jobCreator,
+        address resourceProvider
+    ) public {
+        vm.assume(bytes(dealId).length > 0);
+        vm.assume(bytes(resultId).length > 0);
+        vm.assume(bytes(validationResultId).length > 0);
+        vm.assume(jobCreator != address(0));
+        vm.assume(resourceProvider != address(0));
+
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: jobCreator,
+            resourceProvider: resourceProvider,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp
+        });
+
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: resultId,
+            dealId: dealId,
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+
+        SharedStructs.ValidationResult memory validation = SharedStructs.ValidationResult({
+            validationResultId: validationResultId,
+            resultId: resultId,
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationPending,
+            timestamp: block.timestamp,
+            validator: VALIDATOR
+        });
+
+        // First save the deal and result
+        vm.startPrank(address(lilypadValidation));
+        lilypadStorage.saveDeal(dealId, deal);
+        lilypadStorage.saveResult(resultId, result);
+        vm.stopPrank();
+
+        // Then request validation
+        vm.startPrank(CONTROLLER);
+        bool success = lilypadValidation.requestValidation(deal, result, validation);
+        assertTrue(success);
+        vm.stopPrank();
+    }
+
+    // Helper functions
+    function _createDeal() internal view returns (SharedStructs.Deal memory) {
+        return SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp
+        });
+    }
+
+    function _createResult() internal view returns (SharedStructs.Result memory) {
+        return SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+    }
+
+    function _createValidation() internal view returns (SharedStructs.ValidationResult memory) {
+        return SharedStructs.ValidationResult({
+            validationResultId: "validation1",
+            resultId: "result1",
+            validationCID: "validationCID1",
+            status: SharedStructs.ValidationResultStatusEnum.ValidationPending,
+            timestamp: block.timestamp,
+            validator: VALIDATOR
+        });
+    }
+}

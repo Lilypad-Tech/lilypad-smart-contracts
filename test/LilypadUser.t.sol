@@ -243,10 +243,11 @@ contract LilypadUserTest is Test {
         SharedStructs.UserType initialRole = SharedStructs.UserType(_initialRole % 6);
         SharedStructs.UserType newRole = SharedStructs.UserType(_newRole % 6);
 
-        // Skip test if trying to add incompatible roles
+        // Skip test if trying to add incompatible roles or if roles are the same
         if (
             (initialRole == SharedStructs.UserType.JobCreator && newRole == SharedStructs.UserType.ResourceProvider)
                 || (initialRole == SharedStructs.UserType.ResourceProvider && newRole == SharedStructs.UserType.JobCreator)
+                || initialRole == newRole
         ) {
             return;
         }
@@ -380,5 +381,107 @@ contract LilypadUserTest is Test {
         // Verify JobCreator role still can't be added
         vm.expectRevert(LilypadUser.LilypadUser__RoleNotAllowed.selector);
         lilypadUser.addRole(ALICE, SharedStructs.UserType.JobCreator);
+    }
+
+    // Validator List Tests
+    function test_GetValidatorsEmpty() public {
+        address[] memory validators = lilypadUser.getValidators();
+        assertEq(validators.length, 0);
+    }
+
+    function test_GetValidatorsSingle() public {
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.Validator);
+
+        address[] memory validators = lilypadUser.getValidators();
+        assertEq(validators.length, 1);
+        assertEq(validators[0], ALICE);
+    }
+
+    function test_GetValidatorsMultiple() public {
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.Validator);
+        lilypadUser.insertUser(BOB, "metadata2", "http://example.com", SharedStructs.UserType.Validator);
+
+        address[] memory validators = lilypadUser.getValidators();
+        assertEq(validators.length, 2);
+        assertTrue(validators[0] == ALICE || validators[1] == ALICE);
+        assertTrue(validators[0] == BOB || validators[1] == BOB);
+    }
+
+    function test_ValidatorListAfterRoleRemoval() public {
+        // Add two validators
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.Validator);
+        lilypadUser.insertUser(BOB, "metadata2", "http://example.com", SharedStructs.UserType.Validator);
+
+        // Remove validator role from ALICE
+        lilypadUser.removeRole(ALICE, SharedStructs.UserType.Validator);
+
+        // Check validators list
+        address[] memory validators = lilypadUser.getValidators();
+        assertEq(validators.length, 1);
+        assertEq(validators[0], BOB);
+    }
+
+    function test_ValidatorListAfterRoleAdd() public {
+        // Add user with non-validator role
+        lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+
+        // Add validator role
+        lilypadUser.addRole(ALICE, SharedStructs.UserType.Validator);
+
+        // Check validators list
+        address[] memory validators = lilypadUser.getValidators();
+        assertEq(validators.length, 1);
+        assertEq(validators[0], ALICE);
+    }
+
+    function testFuzz_ValidatorManagement(address[] memory potentialValidators, bool[] memory shouldBeValidator)
+        public
+    {
+        // Bound array size to a reasonable range
+        uint256 size = bound(potentialValidators.length, 1, 5);
+
+        // Create new arrays with bounded size
+        address[] memory boundedValidators = new address[](size);
+        bool[] memory boundedShouldBeValidator = new bool[](size);
+
+        uint256 expectedValidatorCount = 0;
+
+        // Process only up to our bounded size
+        for (uint256 i = 0; i < size; i++) {
+            // Generate a unique non-zero address
+            address user = address(uint160(i + 1));
+
+            // Use input boolean if available, otherwise alternate
+            bool shouldBeValid = shouldBeValidator.length > i ? shouldBeValidator[i] : (i % 2 == 0);
+
+            boundedValidators[i] = user;
+            boundedShouldBeValidator[i] = shouldBeValid;
+
+            // Insert user
+            if (shouldBeValid) {
+                lilypadUser.insertUser(user, "metadata", "http://example.com", SharedStructs.UserType.Validator);
+                expectedValidatorCount++;
+            } else {
+                lilypadUser.insertUser(user, "metadata", "http://example.com", SharedStructs.UserType.JobCreator);
+            }
+        }
+
+        // Verify validator count
+        address[] memory validators = lilypadUser.getValidators();
+        assertEq(validators.length, expectedValidatorCount);
+
+        // Verify each validator is in the list
+        for (uint256 i = 0; i < size; i++) {
+            if (boundedShouldBeValidator[i]) {
+                bool found = false;
+                for (uint256 j = 0; j < validators.length; j++) {
+                    if (validators[j] == boundedValidators[i]) {
+                        found = true;
+                        break;
+                    }
+                }
+                assertTrue(found);
+            }
+        }
     }
 }
