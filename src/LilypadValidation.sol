@@ -50,17 +50,33 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
 
     /**
      * @dev Initializes the contract setting the deployer as the initial controller
+     * @param storageAddress The address of the storage contract
+     * @param userAddress The address of the user contract
      * @notice
      * - Initializes the AccessControl contract
      * - Grants DEFAULT_ADMIN_ROLE to the deployer
      * - Grants CONTROLLER_ROLE to the deployer
      * - Sets initial version to "1.0.0"
+     * - Sets storage and user contract addresses
      */
-    function initialize() public initializer {
+    function initialize(address storageAddress, address userAddress) public initializer {
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
         version = "1.0.0";
+
+        if (storageAddress == address(0)) {
+            revert LilypadValidation__ZeroAddressNotAllowed();
+        }
+        if (userAddress == address(0)) {
+            revert LilypadValidation__ZeroAddressNotAllowed();
+        }
+
+        lilypadStorage = ILilypadStorage(storageAddress);
+        lilypadUser = ILilypadUser(userAddress);
+
+        emit StorageContractSet(storageAddress);
+        emit UserContractSet(userAddress);
     }
 
     /**
@@ -70,36 +86,6 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
      */
     function getVersion() external view returns (string memory) {
         return version;
-    }
-
-    /**
-     * @dev Sets the storage contract address
-     * @notice
-     * - Only accounts with DEFAULT_ADMIN_ROLE can call this function
-     * - Reverts if storageAddress is zero address
-     * - Emits a StorageContractSet event upon successful setting
-     */
-    function setStorageContract(address storageAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (storageAddress == address(0)) {
-            revert LilypadValidation__ZeroAddressNotAllowed();
-        }
-        lilypadStorage = ILilypadStorage(storageAddress);
-        emit StorageContractSet(storageAddress);
-    }
-
-    /**
-     * @dev Sets the user contract address
-     * @notice
-     * - Only accounts with DEFAULT_ADMIN_ROLE can call this function
-     * - Reverts if userAddress is zero address
-     * - Emits a UserContractSet event upon successful setting
-     */
-    function setUserContract(address userAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (userAddress == address(0)) {
-            revert LilypadValidation__ZeroAddressNotAllowed();
-        }
-        lilypadUser = ILilypadUser(userAddress);
-        emit UserContractSet(userAddress);
     }
 
     /**

@@ -43,13 +43,10 @@ contract LilypadValidationTest is Test {
 
         // Deploy and initialize validation contract
         LilypadValidation implementation = new LilypadValidation();
-        bytes memory validationInitData = abi.encodeWithSelector(LilypadValidation.initialize.selector);
+        bytes memory validationInitData =
+            abi.encodeWithSelector(LilypadValidation.initialize.selector, address(lilypadStorage), address(lilypadUser));
         ERC1967Proxy validationProxy = new ERC1967Proxy(address(implementation), validationInitData);
         lilypadValidation = LilypadValidation(address(validationProxy));
-
-        // Set up contracts
-        lilypadValidation.setStorageContract(address(lilypadStorage));
-        lilypadValidation.setUserContract(address(lilypadUser));
 
         // Grant controller roles
         lilypadValidation.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
@@ -74,30 +71,40 @@ contract LilypadValidationTest is Test {
     }
 
     // Contract Setup Tests
-    function test_RevertWhen_SettingZeroAddressStorage() public {
+    function test_RevertWhen_InitializingWithZeroAddressStorage() public {
+        LilypadValidation implementation = new LilypadValidation();
+        bytes memory validationInitData =
+            abi.encodeWithSelector(LilypadValidation.initialize.selector, address(0), address(0x1));
         vm.expectRevert(LilypadValidation.LilypadValidation__ZeroAddressNotAllowed.selector);
-        lilypadValidation.setStorageContract(address(0));
+        new ERC1967Proxy(address(implementation), validationInitData);
     }
 
-    function test_RevertWhen_SettingZeroAddressUser() public {
+    function test_RevertWhen_InitializingWithZeroAddressUser() public {
+        LilypadValidation implementation = new LilypadValidation();
+        bytes memory validationInitData =
+            abi.encodeWithSelector(LilypadValidation.initialize.selector, address(0x1), address(0));
         vm.expectRevert(LilypadValidation.LilypadValidation__ZeroAddressNotAllowed.selector);
-        lilypadValidation.setUserContract(address(0));
+        new ERC1967Proxy(address(implementation), validationInitData);
     }
 
-    function test_SetStorageContract() public {
-        address newStorage = address(0x123);
-        vm.expectEmit(true, true, true, true);
-        emit StorageContractSet(newStorage);
-        lilypadValidation.setStorageContract(newStorage);
-        assertEq(address(lilypadValidation.lilypadStorage()), newStorage);
-    }
+    function test_InitializeWithValidAddresses() public {
+        LilypadValidation implementation = new LilypadValidation();
+        address testStorage = address(0x123);
+        address testUser = address(0x456);
 
-    function test_SetUserContract() public {
-        address newUser = address(0x456);
+        bytes memory validationInitData =
+            abi.encodeWithSelector(LilypadValidation.initialize.selector, testStorage, testUser);
+
         vm.expectEmit(true, true, true, true);
-        emit UserContractSet(newUser);
-        lilypadValidation.setUserContract(newUser);
-        assertEq(address(lilypadValidation.lilypadUser()), newUser);
+        emit StorageContractSet(testStorage);
+        vm.expectEmit(true, true, true, true);
+        emit UserContractSet(testUser);
+
+        ERC1967Proxy validationProxy = new ERC1967Proxy(address(implementation), validationInitData);
+        LilypadValidation validation = LilypadValidation(address(validationProxy));
+
+        assertEq(address(validation.lilypadStorage()), testStorage);
+        assertEq(address(validation.lilypadUser()), testUser);
     }
 
     // Role Management Tests
