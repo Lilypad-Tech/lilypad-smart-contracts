@@ -26,7 +26,7 @@ interface ILilypadPaymentEngine {
     ) external returns (bool);
 
     /**
-     * @dev This method will encompass the business logic related to handling a successful validation completion and sending/releasing funds to the appropriate actors (i.e. the validation run successfully completed)
+     * @dev This method will encompass the business logic related to handling a successful validation (i.e. a resource provider acted honestly) completion and sending/releasing funds to the appropriate actors (i.e. the validation run successfully completed)
      * @param _validationResult The validation result struct of the job that is passed from the Solver
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
@@ -36,7 +36,7 @@ interface ILilypadPaymentEngine {
     ) external returns (bool);
 
     /**
-     * @dev This method will encompass the business logic related to handling a failed validation and sending/releasing funds to the appropriate actors (i.e. the validation run failed to complete)
+     * @dev This method will encompass the business logic related to handling a failed validation (i.e. a resource provider acted dishonestly) and sending/releasing funds to the appropriate actors (i.e. the validation run failed to complete)
      * @param _validationResult The validation result struct of the job that is passed from the Sovler
      * @param _originalJobDeal The original job deal struct of the job that ran under validation
      * @return Returns true if the operation is successful.

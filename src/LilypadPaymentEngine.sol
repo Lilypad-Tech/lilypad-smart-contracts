@@ -53,6 +53,7 @@ contract LilypadPaymentEngine is
     LilypadUser private lilypadUser;
     //TODO: Add Validation contract when complete
 
+    // The version of the contract
     string public version;
 
     // The lock duration: 30 days in seconds
@@ -66,25 +67,31 @@ contract LilypadPaymentEngine is
     address public treasuryWallet;
     address public valueBasedRewardsWallet;
 
-    /**
-    These are the parameters described in the Lilypad tokenomics paper
-    src: _add_link_here_
-    
-    p: The percentage of total fees that go towads the protocol
-    (1-p): The percentage of total fees that go towards the value based rewards
-    
-    p1: Percentage of P allocated to burn token
-    p2: Percentage of P allocated to go to grants and airdrops
-    p3: Percentage of P allocated to the validation pool
-    Note:  p1 + p2 + p3 must equal 10000 (100%)
+    // This is the total escrow that is currently locked in the contract
+    uint256 public totalEscrow;
 
-    m: The percentage of module creator fees that go towards protocol revenue
-    
-    alpha: The multipler for future stimulants of token (do I need this here?)
-    
-    v1: The scaling factor for determining value based rewards for RPs based on total fees geenrated by the RP
-    v2: The scaling factor for determining value based rewards for RPs based on total average collateral locked up
-    Note: v1 > v2 to scaoe the importance of fees over collateral
+    // This is the total active escrow for running jobs locked for actively running jobs
+    uint256 public totalActiveEscrow;
+
+    /**
+        These are the parameters described in the Lilypad tokenomics paper
+        src: _add_link_here_
+        
+        p: The percentage of total fees that go towads the protocol
+        (1-p): The percentage of total fees that go towards the value based rewards
+        
+        p1: Percentage of P allocated to burn token
+        p2: Percentage of P allocated to go to grants and airdrops
+        p3: Percentage of P allocated to the validation pool
+        Note:  p1 + p2 + p3 must equal 10000 (100%)
+
+        m: The percentage of module creator fees that go towards protocol revenue
+        
+        alpha: The multipler for future stimulants of token (do I need this here?)
+        
+        v1: The scaling factor for determining value based rewards for RPs based on total fees geenrated by the RP
+        v2: The scaling factor for determining value based rewards for RPs based on total average collateral locked up
+        Note: v1 > v2 to scaoe the importance of fees over collateral
     */
     uint256 public p;
     uint256 public p1;
@@ -100,12 +107,6 @@ contract LilypadPaymentEngine is
 
     // This is the scaler for the resource provider's active escrow
     uint256 public resourceProviderActiveEscrowScaler;
-
-    // This is the total escrow for tracking
-    uint256 public totalEscrow;
-
-    // This is the total active escrow for running jobs
-    uint256 public totalActiveEscrow;
 
     // This is a mapping of escrow deposits
     mapping(address account => uint256 amount) public escrowBalances;
@@ -284,6 +285,113 @@ contract LilypadPaymentEngine is
     ////////////////////////////////
 
     /**
+     * @notice Sets the p1 parameter (burn amount)
+     * @param _p1 New p1 value
+     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
+     */
+    function setP1(uint256 _p1) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_p1 + p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
+        p1 = _p1;
+        emit TokenomicsParameterUpdated("p1", _p1);
+    }
+
+    /**
+     * @notice Sets the p2 parameter (grants/ecosystem pool fee)
+     * @param _p2 New p2 value
+     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
+     */
+    function setP2(uint256 _p2) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (p1 + _p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
+        p2 = _p2;
+        emit TokenomicsParameterUpdated("p2", _p2);
+    }
+
+    /**
+     * @notice Sets the p3 parameter (validation pool fee)
+     * @param _p3 New p3 value
+     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
+     */
+    function setP3(uint256 _p3) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (p1 + p2 + _p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
+        p3 = _p3;
+        emit TokenomicsParameterUpdated("p3", _p3);
+    }
+
+    /**
+     * @notice Sets the p parameter (the amount of fees to be paid to the treasury)
+     * @param _p New p value
+     */
+    function setP(uint256 _p) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        p = _p;
+        emit TokenomicsParameterUpdated("p", _p);
+    }
+
+    /**
+     * @notice Sets the m parameter (The module creator fee)
+     * @param _m New m value
+     */
+    function setM(uint256 _m) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        m = _m;
+        emit TokenomicsParameterUpdated("m", _m);
+    }
+
+    /**
+     * @notice Sets the alpha parameter ()
+     * @param _alpha New alpha value
+     */
+    function setAlpha(uint256 _alpha) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        alpha = _alpha;
+        emit TokenomicsParameterUpdated("alpha", _alpha);
+    }
+
+    /**
+     * @notice Sets the v1 parameter ()
+     * @param _v1 New v1 value
+     */
+    function setV1(uint256 _v1) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_v1 <= v2) revert LilypadPayment__V1MustBeGreaterThanV2();
+        v1 = _v1;
+        emit TokenomicsParameterUpdated("v1", _v1);
+    }
+
+    /**
+     * @notice Sets the v2 parameter ()
+     * @param _v2 New v2 value
+     */
+    function setV2(uint256 _v2) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_v2 >= v1) revert LilypadPayment__V2MustBeLessThanV1();
+        v2 = _v2;
+        emit TokenomicsParameterUpdated("v2", _v2);
+    }
+
+    /**
+     * @notice Sets the resource provider active escrow scaler
+     * @param _resourceProviderActiveEscrowScaler New resource provider active escrow scaler
+     */
+    function setResourceProviderActiveEscrowScaler(uint256 _resourceProviderActiveEscrowScaler) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        resourceProviderActiveEscrowScaler = _resourceProviderActiveEscrowScaler;
+        emit TokenomicsParameterUpdated("resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler);
+    }
+
+    /**
+     * @notice Sets the treasury wallet address
+     * @param _treasuryWallet New treasury wallet address
+     */
+    function setTreasuryWallet(address _treasuryWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
+        treasuryWallet = _treasuryWallet;
+    }
+
+    /**
+     * @notice Sets the value based rewards wallet address
+     * @param _valueBasedRewardsWallet New value based rewards wallet address
+     */
+    function setValueBasedRewardsWallet(address _valueBasedRewardsWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
+        valueBasedRewardsWallet = _valueBasedRewardsWallet;
+    }
+
+    /**
      * @dev Returns the current version of the contract
      * @notice
      * - Returns the semantic version string of the contract
@@ -454,7 +562,7 @@ contract LilypadPaymentEngine is
             revert LilypadPayment__escrowNotWithdrawableForActor(_withdrawer);
         }
 
-        if (escrowBalances[_withdrawer] < _amount) {
+        if (escrowBalances[_withdrawer] < _amount || escrowBalances[_withdrawer] == 0) {
             revert LilypadPayment__insufficientEscrowBalanceForWithdrawal();
         }
 
@@ -682,7 +790,7 @@ contract LilypadPaymentEngine is
     }
 
     /**
-     * @dev Handles the passing of a validation
+     * @dev Handles the passing of a validation which would be called in the event of a resource provider acting honestly
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
     function handleValidationPassed(
@@ -694,28 +802,18 @@ contract LilypadPaymentEngine is
         // This is the deal that the validation was initiated with, not the original job deal that was the cause of the validation
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
-        // Calculate the required active collateral for the resource provider
-        uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + 
+        // Calculate the total cost of the validation job
+        uint256 totalCostOfValidation = deal.paymentStructure.priceOfJobWithoutFees + 
             deal.paymentStructure.JobCreatorSolverFee + 
             deal.paymentStructure.moduleCreatorFee + 
             deal.paymentStructure.networkCongestionFee;
-
-
-        require(activeEscrow[deal.jobCreator] >= totalCostOfJob, "Active escrow is less than the total cost of the job");
         
-        
-        require(activeEscrow[deal.jobCreator] >= totalCostOfJob, "Active escrow is less than the total cost of the job");
-        
-        // Deduct the active escrow for the job creator
-        activeEscrow[deal.jobCreator] -= totalCostOfJob;
+        // Calculate the required active collateral for the validator
+        uint256 validatorRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
 
-        // Subtract the amount from the total active escrow for running jobs
-        totalActiveEscrow -= totalCostOfJob;
-        
-        // Pay the validator
-        payoutJob(_validationResult.validator, totalCostOfJob);
+        _processValidationPayment(_validationResult.validator, deal.jobCreator, totalCostOfValidation, validatorRequiredActiveEscrow);
 
-        emit LilypadPayment__ValidationPassed(deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalCostOfJob);
+        emit LilypadPayment__ValidationPassed(deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalCostOfValidation);
         return true;
     }
 
@@ -725,14 +823,14 @@ contract LilypadPaymentEngine is
      */
     function handleValidationFailed(
         SharedStructs.ValidationResult memory _validationResult,
-        SharedStructs.Deal memory _originalJobDeeal
+        SharedStructs.Deal memory _originalJobDeal
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
         if (_validationResult.status != SharedStructs.ValidationResultStatusEnum.ValidationRejected) revert LilypadPayment__InvalidValidationResultStatus();
 
         // Find the result from the storage contract
         SharedStructs.Result memory result = lilypadStorage.getResult(_validationResult.resultId);
 
-        // Find the deal from the storage contract
+        // Find the deal from the storage contract, this is the deal that the validation was initiated with, not the original job deal that was the cause of the validation
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
         // Calculate the total cost of the validation job
@@ -741,13 +839,16 @@ contract LilypadPaymentEngine is
             deal.paymentStructure.moduleCreatorFee + 
             deal.paymentStructure.networkCongestionFee;
 
-        // Calculate the total cost of the original job from _originalJobDeal
-        uint256 totalCostOfOriginalJob = _originalJobDeeal.paymentStructure.priceOfJobWithoutFees + 
-            _originalJobDeeal.paymentStructure.JobCreatorSolverFee + 
-            _originalJobDeeal.paymentStructure.moduleCreatorFee + 
-            _originalJobDeeal.paymentStructure.networkCongestionFee;
+        // Calculate the required active collateral for the validator
+        uint256 validatorRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
 
-        // Calculate the total penalty for the resource provider
+        // Calculate the total cost of the original job from _originalJobDeal
+        uint256 totalCostOfOriginalJob = _originalJobDeal.paymentStructure.priceOfJobWithoutFees + 
+            _originalJobDeal.paymentStructure.JobCreatorSolverFee + 
+            _originalJobDeal.paymentStructure.moduleCreatorFee + 
+            _originalJobDeal.paymentStructure.networkCongestionFee;
+
+        // Calculate the total penalty for the resource provider who acted dishonestly
         uint256 totalPenalty = totalCostOfValidation + totalCostOfOriginalJob;
 
         // Deduct the total penalty from the resource provider from escrow balances but check if the resource provider has enough escrow
@@ -762,120 +863,36 @@ contract LilypadPaymentEngine is
             // If the resource provider has enough escrow, deduct the total penalty
             escrowBalances[deal.resourceProvider] -= totalPenalty;
         }
-   
-        // Deduct the total penalty from the total escrow
-        totalEscrow -= totalPenalty;
+
+        // Pay the validator for their validation work
+        _processValidationPayment(_validationResult.validator, deal.jobCreator, totalCostOfValidation, validatorRequiredActiveEscrow);
 
         // TODO: send the total penalty to the validation pool
+
+        // Deduct the total penalty from the running total escrow
+        totalEscrow -= totalPenalty;
 
         emit LilypadPayment__ValidationFailed(deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalPenalty);
         return true;
     }
-    
-    /**
-     * @notice Sets the p1 parameter (burn amount)
-     * @param _p1 New p1 value
-     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
-     */
-    function setP1(uint256 _p1) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_p1 + p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
-        p1 = _p1;
-        emit TokenomicsParameterUpdated("p1", _p1);
-    }
 
-    /**
-     * @notice Sets the p2 parameter (grants/ecosystem pool fee)
-     * @param _p2 New p2 value
-     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
-     */
-    function setP2(uint256 _p2) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (p1 + _p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
-        p2 = _p2;
-        emit TokenomicsParameterUpdated("p2", _p2);
-    }
+    function _processValidationPayment(address validator, address jobCreator, uint256 totalCostOfValidation, uint256 validatorRequiredActiveEscrow) private {
+        // Deduct the active escrow for the job creator
+        activeEscrow[jobCreator] -= totalCostOfValidation;
 
-    /**
-     * @notice Sets the p3 parameter (validation pool fee)
-     * @param _p3 New p3 value
-     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
-     */
-    function setP3(uint256 _p3) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (p1 + p2 + _p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
-        p3 = _p3;
-        emit TokenomicsParameterUpdated("p3", _p3);
-    }
+        // Deduct the active escrow for the validator
+        activeEscrow[validator] -= validatorRequiredActiveEscrow;
 
-    /**
-     * @notice Sets the p parameter (the amount of fees to be paid to the treasury)
-     * @param _p New p value
-     */
-    function setP(uint256 _p) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        p = _p;
-        emit TokenomicsParameterUpdated("p", _p);
-    }
+        // Return the validator's active escrow to their balance
+        escrowBalances[validator] += validatorRequiredActiveEscrow;
+        
+        // Pay the validator
+        payoutJob(validator, totalCostOfValidation);
 
-    /**
-     * @notice Sets the m parameter (The module creator fee)
-     * @param _m New m value
-     */
-    function setM(uint256 _m) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        m = _m;
-        emit TokenomicsParameterUpdated("m", _m);
-    }
+        // Subtract the amount from the total active escrow for running jobs
+        totalActiveEscrow -= totalCostOfValidation + validatorRequiredActiveEscrow;
 
-    /**
-     * @notice Sets the alpha parameter ()
-     * @param _alpha New alpha value
-     */
-    function setAlpha(uint256 _alpha) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        alpha = _alpha;
-        emit TokenomicsParameterUpdated("alpha", _alpha);
-    }
-
-    /**
-     * @notice Sets the v1 parameter ()
-     * @param _v1 New v1 value
-     */
-    function setV1(uint256 _v1) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_v1 <= v2) revert LilypadPayment__V1MustBeGreaterThanV2();
-        v1 = _v1;
-        emit TokenomicsParameterUpdated("v1", _v1);
-    }
-
-    /**
-     * @notice Sets the v2 parameter ()
-     * @param _v2 New v2 value
-     */
-    function setV2(uint256 _v2) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_v2 >= v1) revert LilypadPayment__V2MustBeLessThanV1();
-        v2 = _v2;
-        emit TokenomicsParameterUpdated("v2", _v2);
-    }
-
-    /**
-     * @notice Sets the resource provider active escrow scaler
-     * @param _resourceProviderActiveEscrowScaler New resource provider active escrow scaler
-     */
-    function setResourceProviderActiveEscrowScaler(uint256 _resourceProviderActiveEscrowScaler) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        resourceProviderActiveEscrowScaler = _resourceProviderActiveEscrowScaler;
-        emit TokenomicsParameterUpdated("resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler);
-    }
-
-    /**
-     * @notice Sets the treasury wallet address
-     * @param _treasuryWallet New treasury wallet address
-     */
-    function setTreasuryWallet(address _treasuryWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
-        treasuryWallet = _treasuryWallet;
-    }
-
-    /**
-     * @notice Sets the value based rewards wallet address
-     * @param _valueBasedRewardsWallet New value based rewards wallet address
-     */
-    function setValueBasedRewardsWallet(address _valueBasedRewardsWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
-        valueBasedRewardsWallet = _valueBasedRewardsWallet;
+        // Subtract the amount from the total escrow for running jobs since the total cost of the validation job is being paid out
+        totalEscrow -= totalCostOfValidation;
     }
 }

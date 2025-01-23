@@ -37,7 +37,7 @@ library SharedStructs {
         // the money the RP, JC and Validtor all put up to prevent timeouts
         TimeoutCollateral,
         // The money a JC puts up to pay for a validator to validate their results
-        Validiationcollateral,
+        ValidiationCollateral,
         // the money the JC pays the Validtor for resolving a dispute
         ValidationFee,
         // the money that the module creator pays to the protocol when a module is run
