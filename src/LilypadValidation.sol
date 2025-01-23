@@ -24,8 +24,6 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
 
     // Custom Errors
     error LilypadValidation__ZeroAddressNotAllowed();
-    error LilypadValidation__StorageNotSet();
-    error LilypadValidation__UserContractNotSet();
     error LilypadValidation__InvalidDeal();
     error LilypadValidation__InvalidResult();
     error LilypadValidation__InvalidValidation();
@@ -154,13 +152,6 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
         SharedStructs.Result memory result,
         SharedStructs.ValidationResult memory validation
     ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (address(lilypadStorage) == address(0)) {
-            revert LilypadValidation__StorageNotSet();
-        }
-        if (address(lilypadUser) == address(0)) {
-            revert LilypadValidation__UserContractNotSet();
-        }
-
         // Validate deal and result
         if (bytes(deal.dealId).length == 0 || deal.jobCreator == address(0) || deal.resourceProvider == address(0)) {
             revert LilypadValidation__InvalidDeal();
@@ -226,13 +217,6 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
-        if (address(lilypadStorage) == address(0)) {
-            revert LilypadValidation__StorageNotSet();
-        }
-        if (address(lilypadUser) == address(0)) {
-            revert LilypadValidation__UserContractNotSet();
-        }
-
         // Validate validation result
         if (
             bytes(validation.validationResultId).length == 0 || bytes(validation.resultId).length == 0
@@ -264,10 +248,6 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
      * - Resizes the array at the end to match the actual validator count
      */
     function getValidators() public view returns (address[] memory) {
-        if (address(lilypadUser) == address(0)) {
-            revert LilypadValidation__UserContractNotSet();
-        }
-
         return lilypadUser.getValidators();
     }
 }
