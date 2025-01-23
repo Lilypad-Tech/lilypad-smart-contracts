@@ -29,17 +29,12 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
     error LilypadValidation__InvalidValidation();
     error LilypadValidation__NoValidatorsAvailable();
     error LilypadValidation__NotValidator();
-    error LilypadValidation__RoleAlreadyAssigned();
-    error LilypadValidation__RoleNotFound();
-    error LilypadValidation__CannotRevokeOwnRole();
 
     // Events
     event ValidationRequested(string dealId, string resultId, address jobCreator);
     event ValidationProcessed(string validationResultId, SharedStructs.ValidationResultStatusEnum status);
     event StorageContractSet(address storageContract);
     event UserContractSet(address userContract);
-    event ControllerRoleGranted(address indexed account, address indexed sender);
-    event ControllerRoleRevoked(address indexed account, address indexed sender);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -84,56 +79,6 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
      */
     function getVersion() external view returns (string memory) {
         return version;
-    }
-
-    /**
-     * @dev Grants the controller role to an account
-     * @notice
-     * - Only accounts with DEFAULT_ADMIN_ROLE can call this function
-     * - Reverts if account is zero address
-     * - Reverts if account already has controller role
-     * - Emits a ControllerRoleGranted event upon successful grant
-     */
-    function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) {
-            revert LilypadValidation__ZeroAddressNotAllowed();
-        }
-        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
-            revert LilypadValidation__RoleAlreadyAssigned();
-        }
-        _grantRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit ControllerRoleGranted(account, msg.sender);
-    }
-
-    /**
-     * @dev Revokes the controller role from an account
-     * @notice
-     * - Only accounts with DEFAULT_ADMIN_ROLE can call this function
-     * - Reverts if account is zero address
-     * - Reverts if account doesn't have controller role
-     * - Reverts if trying to revoke own role
-     * - Emits a ControllerRoleRevoked event upon successful revocation
-     */
-    function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) {
-            revert LilypadValidation__ZeroAddressNotAllowed();
-        }
-        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
-            revert LilypadValidation__RoleNotFound();
-        }
-        if (account == msg.sender) {
-            revert LilypadValidation__CannotRevokeOwnRole();
-        }
-        _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit ControllerRoleRevoked(account, msg.sender);
-    }
-
-    /**
-     * @dev Checks if an account has the controller role
-     * @notice View function that returns true if the account has CONTROLLER_ROLE
-     */
-    function hasControllerRole(address account) external view returns (bool) {
-        return hasRole(SharedStructs.CONTROLLER_ROLE, account);
     }
 
     /**

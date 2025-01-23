@@ -5,27 +5,6 @@ import "../SharedStructs.sol";
 
 interface ILilypadValidation {
     /**
-     * @dev Grants the controller role to an account
-     * @param account address to grant the controller role to
-     * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
-     */
-    function grantControllerRole(address account) external;
-
-    /**
-     * @dev Revokes the controller role from an account
-     * @param account address to revoke the controller role from
-     * @notice Only accounts with DEFAULT_ADMIN_ROLE can call this function
-     */
-    function revokeControllerRole(address account) external;
-
-    /**
-     * @dev Checks if an account has the controller role
-     * @param account address to check
-     * @return bool Indicates whether the account has the controller role
-     */
-    function hasControllerRole(address account) external view returns (bool);
-
-    /**
      * @dev This method will house the business logic related to accepting a verification request.
      * @param deal The `Deal` struct containing the details of the deal to be verified.
      * @param result The `Result` struct containing the details of the result to be verified.

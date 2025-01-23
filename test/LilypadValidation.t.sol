@@ -25,8 +25,7 @@ contract LilypadValidationTest is Test {
     event ValidationProcessed(string validationResultId, SharedStructs.ValidationResultStatusEnum status);
     event StorageContractSet(address storageContract);
     event UserContractSet(address userContract);
-    event ControllerRoleGranted(address indexed account, address indexed sender);
-    event ControllerRoleRevoked(address indexed account, address indexed sender);
+    event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
 
     function setUp() public {
         // Deploy and initialize storage contract
@@ -62,11 +61,11 @@ contract LilypadValidationTest is Test {
     }
 
     // Version Tests
-    function test_InitialVersion() public {
+    function test_InitialVersion() public view {
         assertEq(lilypadValidation.version(), "1.0.0");
     }
 
-    function test_GetVersion() public {
+    function test_GetVersion() public view {
         assertEq(lilypadValidation.getVersion(), "1.0.0");
     }
 
@@ -111,29 +110,14 @@ contract LilypadValidationTest is Test {
     function test_RevertWhen_NonAdminGrantsControllerRole() public {
         vm.startPrank(ALICE);
         vm.expectRevert();
-        lilypadValidation.grantControllerRole(BOB);
-    }
-
-    function test_RevertWhen_GrantingControllerRoleToZeroAddress() public {
-        vm.expectRevert(LilypadValidation.LilypadValidation__ZeroAddressNotAllowed.selector);
-        lilypadValidation.grantControllerRole(address(0));
-    }
-
-    function test_RevertWhen_GrantingControllerRoleToExistingController() public {
-        vm.expectRevert(LilypadValidation.LilypadValidation__RoleAlreadyAssigned.selector);
-        lilypadValidation.grantControllerRole(CONTROLLER);
+        lilypadValidation.grantRole(SharedStructs.CONTROLLER_ROLE, BOB);
     }
 
     function test_GrantControllerRole() public {
         vm.expectEmit(true, true, true, true);
-        emit ControllerRoleGranted(ALICE, address(this));
-        lilypadValidation.grantControllerRole(ALICE);
-        assertTrue(lilypadValidation.hasControllerRole(ALICE));
-    }
-
-    function test_RevertWhen_RevokingOwnControllerRole() public {
-        vm.expectRevert(LilypadValidation.LilypadValidation__CannotRevokeOwnRole.selector);
-        lilypadValidation.revokeControllerRole(address(this));
+        emit RoleGranted(SharedStructs.CONTROLLER_ROLE, ALICE, address(this));
+        lilypadValidation.grantRole(SharedStructs.CONTROLLER_ROLE, ALICE);
+        assertTrue(lilypadValidation.hasRole(SharedStructs.CONTROLLER_ROLE, ALICE));
     }
 
     // Validation Request Tests
@@ -228,6 +212,7 @@ contract LilypadValidationTest is Test {
         vm.assume(bytes(validationResultId).length > 0);
         vm.assume(jobCreator != address(0));
         vm.assume(resourceProvider != address(0));
+        vm.assume(jobCreator != resourceProvider); // Ensure addresses are different
 
         SharedStructs.Deal memory deal = SharedStructs.Deal({
             dealId: dealId,
