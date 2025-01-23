@@ -36,7 +36,7 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
     error LilypadValidation__CannotRevokeOwnRole();
 
     // Events
-    event ValidationRequested(string dealId, string resultId);
+    event ValidationRequested(string dealId, string resultId, address jobCreator);
     event ValidationProcessed(string validationResultId, SharedStructs.ValidationResultStatusEnum status);
     event StorageContractSet(address storageContract);
     event UserContractSet(address userContract);
@@ -222,7 +222,7 @@ contract LilypadValidation is Initializable, ILilypadValidation, AccessControlUp
             revert LilypadValidation__InvalidValidation();
         }
 
-        emit ValidationRequested(deal.dealId, result.resultId);
+        emit ValidationRequested(deal.dealId, result.resultId, deal.jobCreator);
         return true;
     }
 

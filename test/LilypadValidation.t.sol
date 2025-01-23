@@ -21,7 +21,7 @@ contract LilypadValidationTest is Test {
     address public constant CONTROLLER = address(0x5);
 
     // Events
-    event ValidationRequested(string dealId, string resultId);
+    event ValidationRequested(string dealId, string resultId, address jobCreator);
     event ValidationProcessed(string validationResultId, SharedStructs.ValidationResultStatusEnum status);
     event StorageContractSet(address storageContract);
     event UserContractSet(address userContract);
@@ -164,7 +164,7 @@ contract LilypadValidationTest is Test {
 
         vm.startPrank(CONTROLLER);
         vm.expectEmit(true, true, true, true);
-        emit ValidationRequested(deal.dealId, result.resultId);
+        emit ValidationRequested(deal.dealId, result.resultId, deal.jobCreator);
 
         bool success = lilypadValidation.requestValidation(deal, result, validation);
         assertTrue(success);
