@@ -34,7 +34,8 @@ contract DeployLilypadPaymentEngine is Script {
         address storage_,
         address user_,
         address treasury,
-        address rewards
+        address rewards,
+        address validationPool
     ) internal returns (LilypadPaymentEngine, address) {
         LilypadPaymentEngine engineImpl = new LilypadPaymentEngine();
         bytes memory initData = abi.encodeWithSelector(
@@ -43,7 +44,8 @@ contract DeployLilypadPaymentEngine is Script {
             storage_,
             user_,
             treasury,
-            rewards
+            rewards,
+            validationPool
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(engineImpl), initData);
         return (LilypadPaymentEngine(address(proxy)), address(proxy));
@@ -52,6 +54,7 @@ contract DeployLilypadPaymentEngine is Script {
     function run() external {
         address treasuryWallet = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
         address valueRewardsWallet = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+        address validationPoolWallet = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
         
         vm.startBroadcast();
 
@@ -64,7 +67,8 @@ contract DeployLilypadPaymentEngine is Script {
             address(lilypadStorage),
             address(user),
             treasuryWallet,
-            valueRewardsWallet
+            valueRewardsWallet,
+            validationPoolWallet
         );
 
         // Setup roles
