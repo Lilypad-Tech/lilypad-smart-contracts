@@ -56,6 +56,8 @@ forge script script/LilypadToken.s.sol:DeployLilypadToken --rpc-url <your_rpc_ur
 
 forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory --rpc-url <your_rpc_url> --private-key <your_private_key>
 
+forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine --rpc-url <your_rpc_url> --private-key <your_private_key>
+
 forge script script/LilypadValidation.s.sol:DeployLilypadValidation --rpc-url <your_rpc_url> --private-key <your_private_key>
 ```
 
@@ -69,7 +71,10 @@ forge script script/LilypadStorage.s.sol:DeployLilypadStorage --rpc-url http://1
 
 forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
 
+forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
+
 forge script script/LilypadValidation.s.sol:DeployLilypadValidation --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
+>>>>>>> main
 ```
 
 ### Cast
@@ -84,4 +89,10 @@ $ cast <subcommand>
 $ forge --help
 $ anvil --help
 $ cast --help
+```
+
+### Gas Reports
+
+```shell
+$ forge test --gas-report
 ```

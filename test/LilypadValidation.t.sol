@@ -218,10 +218,19 @@ contract LilypadValidationTest is Test {
             dealId: dealId,
             jobCreator: jobCreator,
             resourceProvider: resourceProvider,
+            moduleCreator: CHARLIE,
+            solver: VALIDATOR,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 100,
+                resourceProviderSolverFee: 100,
+                networkCongestionFee: 100,
+                moduleCreatorFee: 100,
+                priceOfJobWithoutFees: 100
+            })
         });
 
         SharedStructs.Result memory result = SharedStructs.Result({
@@ -260,10 +269,19 @@ contract LilypadValidationTest is Test {
             dealId: "deal1",
             jobCreator: ALICE,
             resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: VALIDATOR,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
             status: SharedStructs.DealStatusEnum.DealAgreed,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 100,
+                resourceProviderSolverFee: 100,
+                networkCongestionFee: 100,
+                moduleCreatorFee: 100,
+                priceOfJobWithoutFees: 100
+            })
         });
     }
 

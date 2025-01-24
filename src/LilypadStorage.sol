@@ -20,9 +20,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     error LilypadStorage__RoleNotFound();
     error LilypadStorage__CannotRevokeOwnRole();
 
-    error LilypadStorage__DealNotFound();
-    error LilypadStorage__ValidationResultNotFound();
-    error LilypadStorage__ResultNotFound();
+    error LilypadStorage__DealNotFound(string dealId);
+    error LilypadStorage__ValidationResultNotFound(string validationResultId);
+    error LilypadStorage__ResultNotFound(string resultId);
 
     error LilypadStorage__EmptyCID(); // For empty CID checks
 
@@ -35,6 +35,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     error LilypadStorage__InvalidJobCreatorAddress();
     error LilypadStorage__InvalidResourceProviderAddress();
     error LilypadStorage__InvalidValidatorAddress();
+    error LilypadStorage__InvalidModuleCreatorAddress();
+    error LilypadStorage__InvalidSolverAddress();
 
     // Events for important state changes
     event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
@@ -148,7 +150,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
         SharedStructs.Deal storage deal = deals[dealId];
-        if (deal.timestamp == 0) revert LilypadStorage__DealNotFound();
+        if (deal.timestamp == 0) revert LilypadStorage__DealNotFound(dealId);
         deal.status = status;
         emit DealStatusChanged(dealId, status);
         return true;
@@ -170,9 +172,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
             revert LilypadStorage__EmptyValidationResultId();
         }
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
-        if (validationResult.timestamp == 0) {
-            revert LilypadStorage__ValidationResultNotFound();
-        }
+        if (validationResult.timestamp == 0) revert LilypadStorage__ValidationResultNotFound(validationResultId);
         validationResult.status = status;
         emit ValidationResultStatusChanged(validationResultId, status);
         return true;
@@ -193,7 +193,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
         SharedStructs.Result storage result = results[resultId];
-        if (result.timestamp == 0) revert LilypadStorage__ResultNotFound();
+        if (result.timestamp == 0) revert LilypadStorage__ResultNotFound(resultId);
         result.status = status;
         emit ResultStatusChanged(resultId, status);
         return true;
@@ -209,7 +209,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     function getResult(string memory resultId) external view returns (SharedStructs.Result memory) {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
         SharedStructs.Result memory result = results[resultId];
-        if (result.timestamp == 0) revert LilypadStorage__ResultNotFound();
+        if (result.timestamp == 0) revert LilypadStorage__ResultNotFound(resultId);
         return result;
     }
 
@@ -251,7 +251,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     function getDeal(string memory dealId) external view returns (SharedStructs.Deal memory) {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
         SharedStructs.Deal memory deal = deals[dealId];
-        if (deal.timestamp == 0) revert LilypadStorage__DealNotFound();
+        if (deal.timestamp == 0) revert LilypadStorage__DealNotFound(dealId);
         return deal;
     }
 
@@ -262,6 +262,8 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * - Reverts if dealId is empty
      * - Reverts if jobCreator address is zero
      * - Reverts if resourceProvider address is zero
+     * - Reverts if moduleCreator address is zero
+     * - Reverts if solver address is zero
      * - Reverts if jobCreator and resourceProvider are the same address
      * - Sets timestamp to current block timestamp
      * - Emits a DealSaved event upon successful save
@@ -272,15 +274,12 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         returns (bool)
     {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
-        if (deal.jobCreator == address(0)) {
-            revert LilypadStorage__InvalidJobCreatorAddress();
-        }
-        if (deal.resourceProvider == address(0)) {
-            revert LilypadStorage__InvalidResourceProviderAddress();
-        }
-        if (deal.jobCreator == deal.resourceProvider) {
-            revert LilypadStorage__SameAddressNotAllowed();
-        }
+        if (deal.jobCreator == address(0)) revert LilypadStorage__InvalidJobCreatorAddress();
+        if (deal.resourceProvider == address(0)) revert LilypadStorage__InvalidResourceProviderAddress();
+        if (deal.moduleCreator == address(0)) revert LilypadStorage__InvalidModuleCreatorAddress();
+        if (deal.solver == address(0)) revert LilypadStorage__InvalidSolverAddress();
+        if (deal.jobCreator == deal.resourceProvider) revert LilypadStorage__SameAddressNotAllowed();
+
         deal.timestamp = block.timestamp;
         deals[dealId] = deal;
         emit DealSaved(dealId, deal.jobCreator, deal.resourceProvider);
@@ -303,9 +302,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
             revert LilypadStorage__EmptyValidationResultId();
         }
         SharedStructs.ValidationResult memory validationResult = validationResults[validationResultId];
-        if (validationResult.timestamp == 0) {
-            revert LilypadStorage__ValidationResultNotFound();
-        }
+
+        if (validationResult.timestamp == 0) revert LilypadStorage__ValidationResultNotFound(validationResultId);
+
         return validationResult;
     }
 
@@ -352,7 +351,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     function checkDealStatus(string memory dealId) external view returns (SharedStructs.DealStatusEnum) {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
         SharedStructs.Deal storage deal = deals[dealId];
-        if (deal.timestamp == 0) revert LilypadStorage__DealNotFound();
+        if (deal.timestamp == 0) revert LilypadStorage__DealNotFound(dealId);
         return deal.status;
     }
 
@@ -372,9 +371,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
             revert LilypadStorage__EmptyValidationResultId();
         }
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
-        if (validationResult.timestamp == 0) {
-            revert LilypadStorage__ValidationResultNotFound();
-        }
+
+        if (validationResult.timestamp == 0) revert LilypadStorage__ValidationResultNotFound(validationResultId);
+
         return validationResult.status;
     }
 
@@ -388,7 +387,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     function checkResultStatus(string memory resultId) external view returns (SharedStructs.ResultStatusEnum) {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
         SharedStructs.Result storage result = results[resultId];
-        if (result.timestamp == 0) revert LilypadStorage__ResultNotFound();
+        if (result.timestamp == 0) revert LilypadStorage__ResultNotFound(resultId);
         return result.status;
     }
 }
