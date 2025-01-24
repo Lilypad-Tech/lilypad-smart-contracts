@@ -583,13 +583,12 @@ contract LilypadPaymentEngine is
     }
 
     /**
-     * @dev Processes a payout for a job, transferring a specified amount from one address's escrow
-     * to another.
+     * @dev Processes a payout for a job, transferring a specified amount from the contracts balance to a specific address
      * @notice 
         - This function is restricted to the CONTROLLER_ROLE.
         - If the amount is 0, it will emit an event and return false (this is to avoid reverts when the amount is 0)
      */
-    function payoutJob(
+    function payout(
         address _to,
         uint256 _amount
     ) private onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
@@ -744,19 +743,19 @@ contract LilypadPaymentEngine is
         escrowBalances[deal.resourceProvider] += resoureProviderRequiredActiveEscrow;
         
         // Pay the resource provider
-        payoutJob(deal.resourceProvider, deal.paymentStructure.priceOfJobWithoutFees);
+        payout(deal.resourceProvider, deal.paymentStructure.priceOfJobWithoutFees);
 
         // Pay the module creator their portion
-        payoutJob(deal.moduleCreator, moduleCreatorPaymentAmount);
+        payout(deal.moduleCreator, moduleCreatorPaymentAmount);
 
         // Pay the solver
-        payoutJob(deal.solver, deal.paymentStructure.jobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
+        payout(deal.solver, deal.paymentStructure.jobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
 
         // Pay the treasury
-        payoutJob(treasuryWallet, TreasuryPaymentTotalAmount + grantsAndAirdropsAmount);
+        payout(treasuryWallet, TreasuryPaymentTotalAmount + grantsAndAirdropsAmount);
 
         // Pay the value based rewards
-        payoutJob(valueBasedRewardsWallet, valueBasedRewardsAmount);
+        payout(valueBasedRewardsWallet, valueBasedRewardsAmount);
 
         // TODO: send the validationPoolAmount to the validation contract when complete
         
@@ -793,7 +792,7 @@ contract LilypadPaymentEngine is
         activeEscrow[deal.jobCreator] -= totalCostOfJob;
         
         // Refund the job creator
-        payoutJob(deal.jobCreator, totalCostOfJob);
+        payout(deal.jobCreator, totalCostOfJob);
 
         // Subtract the amount from the total active escrow for running jobs
         totalActiveEscrow -= totalCostOfJob;
@@ -903,7 +902,7 @@ contract LilypadPaymentEngine is
         escrowBalances[validator] += validatorRequiredActiveEscrow;
         
         // Pay the validator
-        payoutJob(validator, totalCostOfValidation);
+        payout(validator, totalCostOfValidation);
 
         // Subtract the amount from the total active escrow for running jobs
         totalActiveEscrow -= totalCostOfValidation + validatorRequiredActiveEscrow;
