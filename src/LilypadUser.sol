@@ -17,6 +17,9 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
     // mapping of addresses to roles using bitwise operations to store multiple roles
     mapping(address => uint256) usersRoles;
 
+    // Array to track validator addresses
+    address[] private validatorAddresses;
+
     // Version
     string public version;
 
@@ -64,6 +67,11 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
 
         users[walletAddress] = SharedStructs.User({userAddress: walletAddress, metadataID: metadataID, url: url});
         usersRoles[walletAddress] = 1 << uint256(role);
+
+        // Add to validator list if role is Validator
+        if (role == SharedStructs.UserType.Validator) {
+            validatorAddresses.push(walletAddress);
+        }
 
         emit UserManagementEvent(walletAddress, metadataID, url, role);
 
@@ -127,11 +135,21 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
             revert LilypadUser__RoleNotAllowed();
         }
 
+        // Check if role already exists
+        if (usersRoles[walletAddress] & 1 << uint256(role) != 0) {
+            revert LilypadUser__RoleAlreadyAssigned();
+        }
+
         // add the role to the user using bitwise operations to avoid overwriting existing roles
         // Existing roles: 0001
         // New role:      0100
         // Result:        0101  (both roles are now set)
         usersRoles[walletAddress] = usersRoles[walletAddress] | 1 << uint256(role);
+
+        // Add to validator list if role is Validator
+        if (role == SharedStructs.UserType.Validator) {
+            validatorAddresses.push(walletAddress);
+        }
 
         emit UserManagementEvent(walletAddress, user.metadataID, user.url, role);
 
@@ -164,6 +182,17 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
         // Role to remove: 0100
         // Result:        0001  (only the new role is removed)
         usersRoles[walletAddress] = usersRoles[walletAddress] & ~(1 << uint256(role));
+
+        // Remove from validator list if role is Validator
+        if (role == SharedStructs.UserType.Validator) {
+            for (uint256 i = 0; i < validatorAddresses.length; i++) {
+                if (validatorAddresses[i] == walletAddress) {
+                    validatorAddresses[i] = validatorAddresses[validatorAddresses.length - 1];
+                    validatorAddresses.pop();
+                    break;
+                }
+            }
+        }
 
         emit UserManagementEvent(walletAddress, users[walletAddress].metadataID, users[walletAddress].url, role);
 
@@ -198,5 +227,13 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
         // Role to check: 0100
         // Result:        0101 & 0100 = 0100  (non-zero, so the role is set)
         return usersRoles[walletAddress] & 1 << uint256(role) != 0;
+    }
+
+    /**
+     * @dev Retrieves all validator addresses.
+     * @return Returns an array of all validator addresses in the system.
+     */
+    function getValidators() external view returns (address[] memory) {
+        return validatorAddresses;
     }
 }
