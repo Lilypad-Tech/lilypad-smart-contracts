@@ -777,13 +777,29 @@ contract LilypadPaymentEngine is
         // Get the deal from the storage contract, if it doesn't exist, revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
     
+        // Calculate the total cost of the job
+        uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + 
+            deal.paymentStructure.jobCreatorSolverFee + 
+            deal.paymentStructure.moduleCreatorFee + 
+            deal.paymentStructure.networkCongestionFee;
+
         // Calculate the required active collateral for the resource provider to be slashed
         uint256 resoureProviderRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
 
         // Slash the resource provider
         slashEscrow(deal.resourceProvider, SharedStructs.UserType.ResourceProvider, resoureProviderRequiredActiveEscrow);
 
-        //TODO: Refund the job creator their escrow
+        // Deduct the active escrow for the job creator
+        activeEscrow[deal.jobCreator] -= totalCostOfJob;
+        
+        // Refund the job creator
+        payoutJob(deal.jobCreator, totalCostOfJob);
+
+        // Subtract the amount from the total active escrow for running jobs
+        totalActiveEscrow -= totalCostOfJob;
+
+        // Subtract the amount from the total escrow for running jobs since the total cost of the job is being paid out
+        totalEscrow -= totalCostOfJob;
 
         emit LilypadPayment__JobFailed(deal.jobCreator, deal.resourceProvider, result.resultId);
         return true;

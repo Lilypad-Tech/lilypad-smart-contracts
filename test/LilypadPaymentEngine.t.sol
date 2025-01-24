@@ -1298,12 +1298,11 @@ contract LilypadPaymentEngineTest is Test {
 
         // Verify escrow was slashed for the resource provider
         assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral - rpRequiredEscrow);
-        assertEq(paymentEngine.totalEscrow(), initialTotalEscrow - rpRequiredEscrow);
-        assertEq(paymentEngine.totalActiveEscrow(), initialActiveEscrow - rpRequiredEscrow); // Need to update for the job creator active escorw
+        assertEq(paymentEngine.totalEscrow(), initialTotalEscrow - rpRequiredEscrow - jobCost);
+        assertEq(paymentEngine.totalActiveEscrow(), initialActiveEscrow - rpRequiredEscrow - jobCost);
 
-        // TODO: uncomment once you figure out what happens to the job creator's escrow
-        // assertEq(paymentEngine.escrowBalanceOf(ALICE), jobCost);
-        // assertEq(token.balanceOf(ALICE), INITIAL_BALANCE - jobCost);
+        // Since the job creator's escrow was refunded, their balance should be the same as the initial balance
+        assertEq(token.balanceOf(ALICE), INITIAL_BALANCE);
 
         vm.stopPrank();
     }
