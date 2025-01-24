@@ -86,7 +86,7 @@ library SharedStructs {
      * - The total cost of a job from a Resource Provider perspective is the sum of the priceOfJobWithoutFees and the resourceProviderSolverFee multiple by the resourceProviderActiveEscrowScaler (in the Payment Engine Contract)
      */
     struct DealPaymentStructure {
-        uint256 JobCreatorSolverFee;
+        uint256 jobCreatorSolverFee;
         uint256 resourceProviderSolverFee;
         uint256 networkCongestionFee;
         uint256 moduleCreatorFee;

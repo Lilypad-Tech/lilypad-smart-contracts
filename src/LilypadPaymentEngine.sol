@@ -684,7 +684,7 @@ contract LilypadPaymentEngine is
     function _processJobCompletion(SharedStructs.Deal memory deal) private {
         // Calculate the total cost of the job
         uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + 
-            deal.paymentStructure.JobCreatorSolverFee + 
+            deal.paymentStructure.jobCreatorSolverFee + 
             deal.paymentStructure.moduleCreatorFee + 
             deal.paymentStructure.networkCongestionFee;
 
@@ -750,7 +750,7 @@ contract LilypadPaymentEngine is
         payoutJob(deal.moduleCreator, moduleCreatorPaymentAmount);
 
         // Pay the solver
-        payoutJob(deal.solver, deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
+        payoutJob(deal.solver, deal.paymentStructure.jobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
 
         // Pay the treasury
         payoutJob(treasuryWallet, TreasuryPaymentTotalAmount + grantsAndAirdropsAmount);
@@ -804,7 +804,7 @@ contract LilypadPaymentEngine is
 
         // Calculate the total cost of the validation job
         uint256 totalCostOfValidation = deal.paymentStructure.priceOfJobWithoutFees + 
-            deal.paymentStructure.JobCreatorSolverFee + 
+            deal.paymentStructure.jobCreatorSolverFee + 
             deal.paymentStructure.moduleCreatorFee + 
             deal.paymentStructure.networkCongestionFee;
         
@@ -835,7 +835,7 @@ contract LilypadPaymentEngine is
 
         // Calculate the total cost of the validation job
         uint256 totalCostOfValidation = deal.paymentStructure.priceOfJobWithoutFees + 
-            deal.paymentStructure.JobCreatorSolverFee + 
+            deal.paymentStructure.jobCreatorSolverFee + 
             deal.paymentStructure.moduleCreatorFee + 
             deal.paymentStructure.networkCongestionFee;
 
@@ -844,7 +844,7 @@ contract LilypadPaymentEngine is
 
         // Calculate the total cost of the original job from _originalJobDeal
         uint256 totalCostOfOriginalJob = _originalJobDeal.paymentStructure.priceOfJobWithoutFees + 
-            _originalJobDeal.paymentStructure.JobCreatorSolverFee + 
+            _originalJobDeal.paymentStructure.jobCreatorSolverFee + 
             _originalJobDeal.paymentStructure.moduleCreatorFee + 
             _originalJobDeal.paymentStructure.networkCongestionFee;
 

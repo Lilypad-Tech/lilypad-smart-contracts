@@ -596,7 +596,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -641,7 +641,7 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
         assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
         assertEq(token.balanceOf(CHARLIE), INITIAL_BALANCE + (deal.paymentStructure.moduleCreatorFee - (deal.paymentStructure.moduleCreatorFee * paymentEngine.m())/10000));
-        assertEq(token.balanceOf(DAVE), INITIAL_BALANCE + deal.paymentStructure.JobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
+        assertEq(token.balanceOf(DAVE), INITIAL_BALANCE + deal.paymentStructure.jobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
 
         // Calculate expected treasury amount
         uint256 protocolFees = deal.paymentStructure.networkCongestionFee + 
@@ -704,7 +704,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -797,7 +797,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -890,7 +890,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -1020,7 +1020,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -1104,7 +1104,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -1174,7 +1174,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -1254,7 +1254,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -1363,7 +1363,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -1489,7 +1489,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -1509,7 +1509,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: jobCreatorSolverFee,
+                jobCreatorSolverFee: jobCreatorSolverFee,
                 resourceProviderSolverFee: resourceProviderSolverFee,
                 networkCongestionFee: networkCongestionFee,
                 moduleCreatorFee: moduleCreatorFee,
@@ -1612,7 +1612,7 @@ contract LilypadPaymentEngineTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                JobCreatorSolverFee: 0,
+                jobCreatorSolverFee: 0,
                 resourceProviderSolverFee: 0,
                 networkCongestionFee: 0,
                 moduleCreatorFee: 0,
