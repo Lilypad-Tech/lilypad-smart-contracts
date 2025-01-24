@@ -373,7 +373,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         SharedStructs.ValidationResult storage validationResult = validationResults[validationResultId];
 
         if (validationResult.timestamp == 0) revert LilypadStorage__ValidationResultNotFound(validationResultId);
-        
+
         return validationResult.status;
     }
 

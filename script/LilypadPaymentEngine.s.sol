@@ -11,7 +11,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 
 contract DeployLilypadPaymentEngine is Script {
     function deployToken() internal returns (LilypadToken) {
-        uint256 initialSupply = 10_000_000 * 10**18;
+        uint256 initialSupply = 10_000_000 * 10 ** 18;
         return new LilypadToken(initialSupply);
     }
 
@@ -39,13 +39,7 @@ contract DeployLilypadPaymentEngine is Script {
     ) internal returns (LilypadPaymentEngine, address) {
         LilypadPaymentEngine engineImpl = new LilypadPaymentEngine();
         bytes memory initData = abi.encodeWithSelector(
-            LilypadPaymentEngine.initialize.selector,
-            token,
-            storage_,
-            user_,
-            treasury,
-            rewards,
-            validationPool
+            LilypadPaymentEngine.initialize.selector, token, storage_, user_, treasury, rewards, validationPool
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(engineImpl), initData);
         return (LilypadPaymentEngine(address(proxy)), address(proxy));
@@ -55,7 +49,7 @@ contract DeployLilypadPaymentEngine is Script {
         address treasuryWallet = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
         address valueRewardsWallet = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
         address validationPoolWallet = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-        
+
         vm.startBroadcast();
 
         // Deploy contracts

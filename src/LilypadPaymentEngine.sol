@@ -15,13 +15,7 @@ import {SharedStructs} from "./SharedStructs.sol";
  * @title LilypadPaymentEngine
  * @dev Implementation of the LilypadPaymentEngine contract
  */
-contract LilypadPaymentEngine is
-    ILilypadPaymentEngine,
-    Initializable,
-    AccessControlUpgradeable,
-    ReentrancyGuard
-{
-
+contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessControlUpgradeable, ReentrancyGuard {
     ////////////////////////////////
     ///////// State Variables //////
     ////////////////////////////////
@@ -37,8 +31,7 @@ contract LilypadPaymentEngine is
     uint256 public constant COLLATERAL_LOCK_DURATION = 30 days;
 
     // The minimum amount of escrow that a resource provider must deposit as collateral
-    uint256 public constant MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT =
-        10 * 10 ** 18;
+    uint256 public constant MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT = 10 * 10 ** 18;
 
     // The wallets of where the fees are supposed to flow
     address public treasuryWallet;
@@ -52,25 +45,25 @@ contract LilypadPaymentEngine is
     uint256 public totalActiveEscrow;
 
     /**
-        These are the parameters described in the Lilypad tokenomics paper
-        src: _add_link_here_
-        
-        p: The percentage of total fees that go towads the protocol
-        (1-p): The percentage of total fees that go towards the value based rewards
-        
-        p1: Percentage of P allocated to burn token
-        p2: Percentage of P allocated to go to grants and airdrops
-        p3: Percentage of P allocated to the validation pool
-        Note:  p1 + p2 + p3 must equal 10000 (100%)
-
-        m: The percentage of module creator fees that go towards protocol revenue
-        
-        alpha: The multipler for future stimulants of token (do I need this here?)
-        
-        v1: The scaling factor for determining value based rewards for RPs based on total fees geenrated by the RP
-        v2: The scaling factor for determining value based rewards for RPs based on total average collateral locked up
-        Note: v1 > v2 to scaoe the importance of fees over collateral
-    */
+     * These are the parameters described in the Lilypad tokenomics paper
+     *     src: _add_link_here_
+     *
+     *     p: The percentage of total fees that go towads the protocol
+     *     (1-p): The percentage of total fees that go towards the value based rewards
+     *
+     *     p1: Percentage of P allocated to burn token
+     *     p2: Percentage of P allocated to go to grants and airdrops
+     *     p3: Percentage of P allocated to the validation pool
+     *     Note:  p1 + p2 + p3 must equal 10000 (100%)
+     *
+     *     m: The percentage of module creator fees that go towards protocol revenue
+     *
+     *     alpha: The multipler for future stimulants of token (do I need this here?)
+     *
+     *     v1: The scaling factor for determining value based rewards for RPs based on total fees geenrated by the RP
+     *     v2: The scaling factor for determining value based rewards for RPs based on total average collateral locked up
+     *     Note: v1 > v2 to scaoe the importance of fees over collateral
+     */
     uint256 public p;
     uint256 public p1;
     uint256 public p2;
@@ -93,48 +86,34 @@ contract LilypadPaymentEngine is
     mapping(address account => uint256 activeEscrow) public activeEscrow;
 
     // This is a mapping keeping track of the deposits for each account and the timestamp of when they can be withdrawn
-    mapping(address account => uint256 depositTimestamp)
-        public depositTimestamps;
+    mapping(address account => uint256 depositTimestamp) public depositTimestamps;
 
     ////////////////////////////////
     ///////// Events ///////////////
     ////////////////////////////////
 
     event LilypadPayment__escrowPaid(
-        address indexed payee,
-        SharedStructs.PaymentReason indexed paymentReason,
-        uint256 amount
+        address indexed payee, SharedStructs.PaymentReason indexed paymentReason, uint256 amount
     );
-    event LilypadPayment__escrowWithdrawn(
-        address indexed withdrawer,
-        uint256 amount
-    );
-    event LilypadPayment__escrowSlashed(
-        address indexed account,
-        SharedStructs.UserType indexed actor,
-        uint256 amount
-    );
+    event LilypadPayment__escrowWithdrawn(address indexed withdrawer, uint256 amount);
+    event LilypadPayment__escrowSlashed(address indexed account, SharedStructs.UserType indexed actor, uint256 amount);
     event LilypadPayment__ActiveEscrowLockedForJob(
-        address indexed jobCreator,
-        address indexed resourceProvider,
-        string indexed dealId,
-        uint256 cost
+        address indexed jobCreator, address indexed resourceProvider, string indexed dealId, uint256 cost
     );
     event TokenomicsParameterUpdated(string indexed parameter, uint256 value);
     event ActiveCollateralLockupPercentageUpdated(uint256 percentage);
-    event LilypadPayment__JobCompleted(
-        address indexed jobCreator,
-        address indexed resourceProvider,
-        string dealId
+    event LilypadPayment__JobCompleted(address indexed jobCreator, address indexed resourceProvider, string dealId);
+    event LilypadPayment__TotalFeesGeneratedByJob(
+        address indexed resourceProvider, address indexed jobCreator, string dealId, uint256 amount
     );
-    event LilypadPayment__JobFailed(
-        address indexed jobCreator,
-        address indexed resourceProvider,
-        string resultId
-    );
+    event LilypadPayment__JobFailed(address indexed jobCreator, address indexed resourceProvider, string resultId);
     event LilypadPayment__ZeroAmountPayout(address indexed intended_recipient);
-    event LilypadPayment__ValidationPassed(address indexed jobCreator, address indexed resourceProvider, address indexed validator, uint256 amount);
-    event LilypadPayment__ValidationFailed(address indexed jobCreator, address indexed resourceProvider, address indexed validator, uint256 amount);
+    event LilypadPayment__ValidationPassed(
+        address indexed jobCreator, address indexed resourceProvider, address indexed validator, uint256 amount
+    );
+    event LilypadPayment__ValidationFailed(
+        address indexed jobCreator, address indexed resourceProvider, address indexed validator, uint256 amount
+    );
     event LilypadPayment__ControllerRoleGranted(address indexed account, address indexed sender);
     event LilypadPayment__ControllerRoleRevoked(address indexed account, address indexed sender);
     event LilypadPayment__escrowPayout(address indexed to, uint256 amount);
@@ -150,8 +129,16 @@ contract LilypadPaymentEngine is
     error LilypadPayment__escrowNotWithdrawable();
     error LilypadPayment__escrowNotWithdrawableForActor(address actor);
     error LilypadPayment__DealNotFound();
-    error LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts(uint256 pValue, uint256 p1Value, uint256 p2Value, uint256 p3Value);
-    error LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(string dealId, uint256 jobCreatorActiveEscrow, uint256 resourceProviderActiveEscrow, uint256 totalCostOfJob, uint256 resourceProviderRequiredActiveEscrow);
+    error LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts(
+        uint256 pValue, uint256 p1Value, uint256 p2Value, uint256 p3Value
+    );
+    error LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(
+        string dealId,
+        uint256 jobCreatorActiveEscrow,
+        uint256 resourceProviderActiveEscrow,
+        uint256 totalCostOfJob,
+        uint256 resourceProviderRequiredActiveEscrow
+    );
     error LilypadPayment__unauthorizedWithdrawal();
     error LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet();
     error LilypadPayment__ZeroAddressNotAllowed();
@@ -193,14 +180,14 @@ contract LilypadPaymentEngine is
         }
         _;
     }
-    
+
     modifier hasEnoughActiveEscrow(address _address, uint256 _amount) {
         if (activeEscrow[_address] < _amount) {
             revert LilypadPayment__insufficientActiveEscrowAmount();
         }
         _;
     }
-    
+
     ////////////////////////////////
     ///////// Constructor //////////
     ////////////////////////////////
@@ -250,10 +237,10 @@ contract LilypadPaymentEngine is
 
         // Module Creator Fee percentage to be paid to treasury represented as a basis point
         m = 200;
-        
+
         // The stimulent factor for future growth of the token
         alpha = 0;
-        
+
         // expoential weight for scaling fees
         v1 = 2;
 
@@ -355,7 +342,10 @@ contract LilypadPaymentEngine is
      * @notice Sets the resource provider active escrow scaler
      * @param _resourceProviderActiveEscrowScaler New resource provider active escrow scaler
      */
-    function setResourceProviderActiveEscrowScaler(uint256 _resourceProviderActiveEscrowScaler) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setResourceProviderActiveEscrowScaler(uint256 _resourceProviderActiveEscrowScaler)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         resourceProviderActiveEscrowScaler = _resourceProviderActiveEscrowScaler;
         emit TokenomicsParameterUpdated("resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler);
     }
@@ -396,10 +386,7 @@ contract LilypadPaymentEngine is
         return version;
     }
 
-    function checkEscrowBalanceForAmount(
-        address _address,
-        uint256 _amount
-    ) public view returns (bool) {
+    function checkEscrowBalanceForAmount(address _address, uint256 _amount) public view returns (bool) {
         return escrowBalances[_address] >= _amount;
     }
 
@@ -411,9 +398,7 @@ contract LilypadPaymentEngine is
         return escrowBalances[_address];
     }
 
-    function activeEscrowBalanceOf(
-        address _address
-    ) public view returns (uint256) {
+    function activeEscrowBalanceOf(address _address) public view returns (uint256) {
         return activeEscrow[_address];
     }
 
@@ -458,14 +443,15 @@ contract LilypadPaymentEngine is
      * @dev Pays an escrow for a given address
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function payEscrow(
-        address _payee,
-        SharedStructs.PaymentReason _paymentReason,
-        uint256 _amount
-    ) external moreThanZero(_amount) returns (bool) {
+    function payEscrow(address _payee, SharedStructs.PaymentReason _paymentReason, uint256 _amount)
+        external
+        moreThanZero(_amount)
+        returns (bool)
+    {
         if (_payee == address(0)) revert LilypadPayment__ZeroPayeeAddress();
 
-        bool isResourceProviderOrValidator = lilypadUser.hasRole(_payee, SharedStructs.UserType.ResourceProvider) || lilypadUser.hasRole(_payee, SharedStructs.UserType.Validator);
+        bool isResourceProviderOrValidator = lilypadUser.hasRole(_payee, SharedStructs.UserType.ResourceProvider)
+            || lilypadUser.hasRole(_payee, SharedStructs.UserType.Validator);
 
         if (isResourceProviderOrValidator) {
             // Check if the resource provider has enough escrow to cover the amount
@@ -485,19 +471,13 @@ contract LilypadPaymentEngine is
         if (isResourceProviderOrValidator) {
             // In the case of a Resource Provider or Validator, set the time when the deposit can be withdrawn by the account
             // Note: If the account continueously tops up their escrow balance, the withdrawl time will be extended to 30 days from the last deposit
-            depositTimestamps[_payee] =
-                block.timestamp +
-                COLLATERAL_LOCK_DURATION;
+            depositTimestamps[_payee] = block.timestamp + COLLATERAL_LOCK_DURATION;
         }
 
         // Add the amount to the total escrow for tracking
         totalEscrow += _amount;
 
-        emit LilypadPayment__escrowPaid(
-            _payee,
-            _paymentReason,
-            _amount
-        );
+        emit LilypadPayment__escrowPaid(_payee, _paymentReason, _amount);
         return true;
     }
 
@@ -505,11 +485,7 @@ contract LilypadPaymentEngine is
      * @dev Deducts (slashes) a specified amount from an escrow balance as a penalty.
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function slashEscrow(
-        address _address,
-        SharedStructs.UserType _actor,
-        uint256 _amount
-    )
+    function slashEscrow(address _address, SharedStructs.UserType _actor, uint256 _amount)
         private
         moreThanZero(_amount)
         onlyRole(SharedStructs.CONTROLLER_ROLE)
@@ -539,13 +515,18 @@ contract LilypadPaymentEngine is
      * @dev Withdraws a specified amount from an escrow balance.
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function withdrawEscrow(
-        address _withdrawer,
-        uint256 _amount
-    ) external nonReentrant moreThanZero(_amount) returns (bool) {
+    function withdrawEscrow(address _withdrawer, uint256 _amount)
+        external
+        nonReentrant
+        moreThanZero(_amount)
+        returns (bool)
+    {
         if (_withdrawer == address(0)) revert LilypadPayment__ZeroWithdrawalAddress();
         if (msg.sender != _withdrawer) revert LilypadPayment__unauthorizedWithdrawal();
-        if (lilypadUser.hasRole(_withdrawer,SharedStructs.UserType.ResourceProvider) || lilypadUser.hasRole(_withdrawer, SharedStructs.UserType.Validator)) {
+        if (
+            lilypadUser.hasRole(_withdrawer, SharedStructs.UserType.ResourceProvider)
+                || lilypadUser.hasRole(_withdrawer, SharedStructs.UserType.Validator)
+        ) {
             if (block.timestamp < depositTimestamps[_withdrawer]) {
                 revert LilypadPayment__escrowNotWithdrawable();
             }
@@ -575,21 +556,18 @@ contract LilypadPaymentEngine is
 
     /**
      * @dev Processes a payout for a job, transferring a specified amount from the contracts balance to a specific address
-     * @notice 
-        - This function is restricted to the CONTROLLER_ROLE.
-        - If the amount is 0, it will emit an event and return false (this is to avoid reverts when the amount is 0)
+     * @notice
+     *     - This function is restricted to the CONTROLLER_ROLE.
+     *     - If the amount is 0, it will emit an event and return false (this is to avoid reverts when the amount is 0)
      */
-    function payout(
-        address _to,
-        uint256 _amount
-    ) private onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+    function payout(address _to, uint256 _amount) private onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
         if (_to == address(0)) revert LilypadPayment__ZeroPayoutAddress();
 
         if (_amount == 0) {
             emit LilypadPayment__ZeroAmountPayout(_to);
             return false;
         }
-        
+
         bool success = token.transfer(_to, _amount);
         if (!success) {
             revert LilypadPayment__transferFailed();
@@ -611,15 +589,9 @@ contract LilypadPaymentEngine is
         uint256 resourceProviderCollateralLockupAmount
     )
         external
-        hasEnoughEscrow(
-            jobCreator,
-            cost
-        )
+        hasEnoughEscrow(jobCreator, cost)
         moreThanZero(cost)
-        hasEnoughEscrow(
-            resourceProvider,
-            resourceProviderCollateralLockupAmount
-        )
+        hasEnoughEscrow(resourceProvider, resourceProviderCollateralLockupAmount)
         moreThanZero(resourceProviderCollateralLockupAmount)
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
@@ -639,12 +611,7 @@ contract LilypadPaymentEngine is
         // Add the amount to the total active escrow for running jobs
         totalActiveEscrow += cost + resourceProviderCollateralLockupAmount;
 
-        emit LilypadPayment__ActiveEscrowLockedForJob(
-            jobCreator,
-            resourceProvider,
-            dealId,
-            cost
-        );
+        emit LilypadPayment__ActiveEscrowLockedForJob(jobCreator, resourceProvider, dealId, cost);
         return true;
     }
 
@@ -652,10 +619,15 @@ contract LilypadPaymentEngine is
      * @dev Handles the completion of a job
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function handleJobCompletion(
-        SharedStructs.Result memory result
-    ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (result.status != SharedStructs.ResultStatusEnum.ResultsAccepted) revert LilypadPayment__InvalidResultStatus();
+    function handleJobCompletion(SharedStructs.Result memory result)
+        external
+        nonReentrant
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
+        if (result.status != SharedStructs.ResultStatusEnum.ResultsAccepted) {
+            revert LilypadPayment__InvalidResultStatus();
+        }
 
         // Get the deal from the storage contract, if it doesn't exist, revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
@@ -673,35 +645,38 @@ contract LilypadPaymentEngine is
      */
     function _processJobCompletion(SharedStructs.Deal memory deal) private {
         // Calculate the total cost of the job
-        uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + 
-            deal.paymentStructure.jobCreatorSolverFee + 
-            deal.paymentStructure.moduleCreatorFee + 
-            deal.paymentStructure.networkCongestionFee;
+        uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.jobCreatorSolverFee
+            + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.networkCongestionFee;
 
         // Calculate the required active collateral for the resource provider
-        uint256 resoureProviderRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
+        uint256 resoureProviderRequiredActiveEscrow = (
+            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
+        ) * (resourceProviderActiveEscrowScaler / 10000);
 
         // Get the active escrow for both parties
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
         uint256 resourceProviderActiveEscrow = activeEscrow[deal.resourceProvider];
 
         // Check the accounting to ensure both parties have enough active escrow locked in to complete the job agreement
-        if (resourceProviderActiveEscrow < resoureProviderRequiredActiveEscrow || jobCreatorActiveEscrow < totalCostOfJob) {
+        if (
+            resourceProviderActiveEscrow < resoureProviderRequiredActiveEscrow
+                || jobCreatorActiveEscrow < totalCostOfJob
+        ) {
             revert LilypadPayment__HandleJobCompletion__InsufficientActiveEscrowToCompleteJob(
-                deal.dealId, 
-                jobCreatorActiveEscrow, 
-                resourceProviderActiveEscrow, 
-                totalCostOfJob, 
+                deal.dealId,
+                jobCreatorActiveEscrow,
+                resourceProviderActiveEscrow,
+                totalCostOfJob,
                 resoureProviderRequiredActiveEscrow
             );
         }
 
         // Calculate protocol fees
-        uint256 totalProtocolFees = deal.paymentStructure.networkCongestionFee + 
-            (deal.paymentStructure.moduleCreatorFee * m)/10000;
+        uint256 totalProtocolFees =
+            deal.paymentStructure.networkCongestionFee + (deal.paymentStructure.moduleCreatorFee * m) / 10000;
 
         // P: Protocol Revenue
-        uint256 TreasuryPaymentTotalAmount = (totalProtocolFees * p)/10000;
+        uint256 TreasuryPaymentTotalAmount = (totalProtocolFees * p) / 10000;
 
         // Value Based Rewards = total fees - treasury amount
         // Simplifiying the equation, we get : valueBasedRewardsAmount = totalProtocolFees - (totalProtocolFees * p)/10000 = totalProtocolFees(1-p)/10000
@@ -709,13 +684,14 @@ contract LilypadPaymentEngine is
 
         // Calculate module creator payment (total fee minus the protocol's portion)
         // Simplifiying the equation, we get : moduleCreatorPaymentAmount = moduleCreatorFee(1-m)/10000
-        uint256 moduleCreatorPaymentAmount = deal.paymentStructure.moduleCreatorFee - (deal.paymentStructure.moduleCreatorFee * m)/10000;
+        uint256 moduleCreatorPaymentAmount =
+            deal.paymentStructure.moduleCreatorFee - (deal.paymentStructure.moduleCreatorFee * m) / 10000;
 
         // p1
-        uint256 burnAmount = (TreasuryPaymentTotalAmount * (p1))/10000;
+        uint256 burnAmount = (TreasuryPaymentTotalAmount * (p1)) / 10000;
 
         // p2
-        uint256 grantsAndAirdropsAmount = (TreasuryPaymentTotalAmount * (p2))/10000;
+        uint256 grantsAndAirdropsAmount = (TreasuryPaymentTotalAmount * (p2)) / 10000;
 
         // p3 - calculate as remainder to avoid rounding errors
         uint256 validationPoolAmount = TreasuryPaymentTotalAmount - burnAmount - grantsAndAirdropsAmount;
@@ -732,7 +708,7 @@ contract LilypadPaymentEngine is
 
         // Return the resource provider's active escrow to their balance
         escrowBalances[deal.resourceProvider] += resoureProviderRequiredActiveEscrow;
-        
+
         // Pay the resource provider
         payout(deal.resourceProvider, deal.paymentStructure.priceOfJobWithoutFees);
 
@@ -756,35 +732,44 @@ contract LilypadPaymentEngine is
 
         // Subtract the amount from the total escrow for running jobs since the total cost of the job is being paid out
         totalEscrow -= totalCostOfJob;
+
+        emit LilypadPayment__TotalFeesGeneratedByJob(
+            deal.resourceProvider, deal.jobCreator, deal.dealId, totalProtocolFees
+        );
     }
 
     /**
      * @dev Handles the failure of a job
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function handleJobFailure(
-        SharedStructs.Result memory result
-    ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (result.status != SharedStructs.ResultStatusEnum.ResultsRejected) revert LilypadPayment__InvalidResultStatus();
+    function handleJobFailure(SharedStructs.Result memory result)
+        external
+        nonReentrant
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
+        if (result.status != SharedStructs.ResultStatusEnum.ResultsRejected) {
+            revert LilypadPayment__InvalidResultStatus();
+        }
 
         // Get the deal from the storage contract, if it doesn't exist, revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
-    
+
         // Calculate the total cost of the job
-        uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + 
-            deal.paymentStructure.jobCreatorSolverFee + 
-            deal.paymentStructure.moduleCreatorFee + 
-            deal.paymentStructure.networkCongestionFee;
+        uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.jobCreatorSolverFee
+            + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.networkCongestionFee;
 
         // Calculate the required active collateral for the resource provider to be slashed
-        uint256 resoureProviderRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
+        uint256 resoureProviderRequiredActiveEscrow = (
+            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
+        ) * (resourceProviderActiveEscrowScaler / 10000);
 
         // Slash the resource provider
         slashEscrow(deal.resourceProvider, SharedStructs.UserType.ResourceProvider, resoureProviderRequiredActiveEscrow);
 
         // Deduct the active escrow for the job creator
         activeEscrow[deal.jobCreator] -= totalCostOfJob;
-        
+
         // Refund the job creator
         payout(deal.jobCreator, totalCostOfJob);
 
@@ -802,27 +787,37 @@ contract LilypadPaymentEngine is
      * @dev Handles the passing of a validation which would be called in the event of a resource provider acting honestly
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function handleValidationPassed(
-        SharedStructs.ValidationResult memory _validationResult
-    ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (_validationResult.status != SharedStructs.ValidationResultStatusEnum.ValidationAccepted) revert LilypadPayment__InvalidValidationResultStatus();
+    function handleValidationPassed(SharedStructs.ValidationResult memory _validationResult)
+        external
+        nonReentrant
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
+        if (_validationResult.status != SharedStructs.ValidationResultStatusEnum.ValidationAccepted) {
+            revert LilypadPayment__InvalidValidationResultStatus();
+        }
 
         SharedStructs.Result memory result = lilypadStorage.getResult(_validationResult.resultId);
         // This is the deal that the validation was initiated with, not the original job deal that was the cause of the validation
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
         // Calculate the total cost of the validation job
-        uint256 totalCostOfValidation = deal.paymentStructure.priceOfJobWithoutFees + 
-            deal.paymentStructure.jobCreatorSolverFee + 
-            deal.paymentStructure.moduleCreatorFee + 
-            deal.paymentStructure.networkCongestionFee;
-        
+        uint256 totalCostOfValidation = deal.paymentStructure.priceOfJobWithoutFees
+            + deal.paymentStructure.jobCreatorSolverFee + deal.paymentStructure.moduleCreatorFee
+            + deal.paymentStructure.networkCongestionFee;
+
         // Calculate the required active collateral for the validator
-        uint256 validatorRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
+        uint256 validatorRequiredActiveEscrow = (
+            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
+        ) * (resourceProviderActiveEscrowScaler / 10000);
 
-        _processValidationPayment(_validationResult.validator, deal.jobCreator, totalCostOfValidation, validatorRequiredActiveEscrow);
+        _processValidationPayment(
+            _validationResult.validator, deal.jobCreator, totalCostOfValidation, validatorRequiredActiveEscrow
+        );
 
-        emit LilypadPayment__ValidationPassed(deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalCostOfValidation);
+        emit LilypadPayment__ValidationPassed(
+            deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalCostOfValidation
+        );
         return true;
     }
 
@@ -834,7 +829,9 @@ contract LilypadPaymentEngine is
         SharedStructs.ValidationResult memory _validationResult,
         SharedStructs.Deal memory _originalJobDeal
     ) external nonReentrant onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (_validationResult.status != SharedStructs.ValidationResultStatusEnum.ValidationRejected) revert LilypadPayment__InvalidValidationResultStatus();
+        if (_validationResult.status != SharedStructs.ValidationResultStatusEnum.ValidationRejected) {
+            revert LilypadPayment__InvalidValidationResultStatus();
+        }
 
         // Find the result from the storage contract
         SharedStructs.Result memory result = lilypadStorage.getResult(_validationResult.resultId);
@@ -843,19 +840,19 @@ contract LilypadPaymentEngine is
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
         // Calculate the total cost of the validation job
-        uint256 totalCostOfValidation = deal.paymentStructure.priceOfJobWithoutFees + 
-            deal.paymentStructure.jobCreatorSolverFee + 
-            deal.paymentStructure.moduleCreatorFee + 
-            deal.paymentStructure.networkCongestionFee;
+        uint256 totalCostOfValidation = deal.paymentStructure.priceOfJobWithoutFees
+            + deal.paymentStructure.jobCreatorSolverFee + deal.paymentStructure.moduleCreatorFee
+            + deal.paymentStructure.networkCongestionFee;
 
         // Calculate the required active collateral for the validator
-        uint256 validatorRequiredActiveEscrow = (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (resourceProviderActiveEscrowScaler/10000);
+        uint256 validatorRequiredActiveEscrow = (
+            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
+        ) * (resourceProviderActiveEscrowScaler / 10000);
 
         // Calculate the total cost of the original job from _originalJobDeal
-        uint256 totalCostOfOriginalJob = _originalJobDeal.paymentStructure.priceOfJobWithoutFees + 
-            _originalJobDeal.paymentStructure.jobCreatorSolverFee + 
-            _originalJobDeal.paymentStructure.moduleCreatorFee + 
-            _originalJobDeal.paymentStructure.networkCongestionFee;
+        uint256 totalCostOfOriginalJob = _originalJobDeal.paymentStructure.priceOfJobWithoutFees
+            + _originalJobDeal.paymentStructure.jobCreatorSolverFee + _originalJobDeal.paymentStructure.moduleCreatorFee
+            + _originalJobDeal.paymentStructure.networkCongestionFee;
 
         // Calculate the total penalty for the resource provider who acted dishonestly
         uint256 totalPenalty = totalCostOfValidation + totalCostOfOriginalJob;
@@ -874,18 +871,28 @@ contract LilypadPaymentEngine is
         }
 
         // Pay the validator for their validation work
-        _processValidationPayment(_validationResult.validator, deal.jobCreator, totalCostOfValidation, validatorRequiredActiveEscrow);
+        _processValidationPayment(
+            _validationResult.validator, deal.jobCreator, totalCostOfValidation, validatorRequiredActiveEscrow
+        );
 
-        // TODO: send the total penalty to the validation pool
+        // Send the total penalty to the validation pool
+        payout(validationPoolWallet, totalPenalty);
 
         // Deduct the total penalty from the running total escrow
         totalEscrow -= totalPenalty;
 
-        emit LilypadPayment__ValidationFailed(deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalPenalty);
+        emit LilypadPayment__ValidationFailed(
+            deal.jobCreator, deal.resourceProvider, _validationResult.validator, totalPenalty
+        );
         return true;
     }
 
-    function _processValidationPayment(address validator, address jobCreator, uint256 totalCostOfValidation, uint256 validatorRequiredActiveEscrow) private {
+    function _processValidationPayment(
+        address validator,
+        address jobCreator,
+        uint256 totalCostOfValidation,
+        uint256 validatorRequiredActiveEscrow
+    ) private {
         // Deduct the active escrow for the job creator
         activeEscrow[jobCreator] -= totalCostOfValidation;
 
@@ -894,7 +901,7 @@ contract LilypadPaymentEngine is
 
         // Return the validator's active escrow to their balance
         escrowBalances[validator] += validatorRequiredActiveEscrow;
-        
+
         // Pay the validator
         payout(validator, totalCostOfValidation);
 

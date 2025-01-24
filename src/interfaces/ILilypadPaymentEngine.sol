@@ -4,6 +4,13 @@ pragma solidity ^0.8.13;
 import {SharedStructs} from "../SharedStructs.sol";
 
 interface ILilypadPaymentEngine {
+    /**
+     * @dev This method will encompass the business logic related to handling a job completion and sending/releasing funds to the appropriate actors
+     * @param _result The result struct of the job that is passed from the Solver
+     * @return Returns true if the operation is successful.
+     * @notice This function is restricted to the controller role.
+     */
+    function handleJobCompletion(SharedStructs.Result memory _result) external returns (bool);
 
     /**
      * @dev This method will encompass the business logic related to handling a job completion and sending/releasing funds to the appropriate actors
@@ -11,19 +18,7 @@ interface ILilypadPaymentEngine {
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
-    function handleJobCompletion(
-        SharedStructs.Result memory _result
-    ) external returns (bool);
-
-    /**
-     * @dev This method will encompass the business logic related to handling a job completion and sending/releasing funds to the appropriate actors
-     * @param _result The result struct of the job that is passed from the Solver
-     * @return Returns true if the operation is successful.
-     * @notice This function is restricted to the controller role.
-     */
-    function handleJobFailure(
-        SharedStructs.Result memory _result
-    ) external returns (bool);
+    function handleJobFailure(SharedStructs.Result memory _result) external returns (bool);
 
     /**
      * @dev This method will encompass the business logic related to handling a successful validation (i.e. a resource provider acted honestly) completion and sending/releasing funds to the appropriate actors (i.e. the validation run successfully completed)
@@ -31,9 +26,7 @@ interface ILilypadPaymentEngine {
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the controller role.
      */
-    function handleValidationPassed(
-        SharedStructs.ValidationResult memory _validationResult
-    ) external returns (bool);
+    function handleValidationPassed(SharedStructs.ValidationResult memory _validationResult) external returns (bool);
 
     /**
      * @dev This method will encompass the business logic related to handling a failed validation (i.e. a resource provider acted dishonestly) and sending/releasing funds to the appropriate actors (i.e. the validation run failed to complete)
@@ -58,8 +51,8 @@ interface ILilypadPaymentEngine {
      * @dev Returns whether the escrow is active for a specific address.
      * @param _address The address whose escrow status is being queried.
      * @return True if the escrow is active, false otherwise.
-     */ 
-    function checkActiveEscrow(address _address) external view returns (bool);  
+     */
+    function checkActiveEscrow(address _address) external view returns (bool);
 
     /**
      * @dev Returns the active escrow balance of a specific address.
@@ -83,11 +76,9 @@ interface ILilypadPaymentEngine {
      * @return Returns true if the operation is successful.
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function payEscrow(
-        address _payee,
-        SharedStructs.PaymentReason _paymentReason,
-        uint256 _amount
-    ) external returns (bool);
+    function payEscrow(address _payee, SharedStructs.PaymentReason _paymentReason, uint256 _amount)
+        external
+        returns (bool);
 
     /**
      * @dev Refunds a specified amount from the escrow to a given address.
@@ -96,10 +87,7 @@ interface ILilypadPaymentEngine {
      * @return Returns true if the refund operation is successful.
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
-    function withdrawEscrow(
-        address _withdrawer,
-        uint256 _amount
-    ) external returns (bool);
+    function withdrawEscrow(address _withdrawer, uint256 _amount) external returns (bool);
 
     /**
      * @dev This method will encompass the business logic related to initiating the lockup of escrow for a job

@@ -7,8 +7,6 @@ import {SharedStructs} from "../src/SharedStructs.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-
-
 contract LilypadStorageTest is Test {
     LilypadStorage public lilypadStorage;
     address public constant ALICE = address(0x1);
@@ -273,26 +271,17 @@ contract LilypadStorageTest is Test {
 
     // Error Tests
     function test_RevertWhen_GettingNonexistentDeal() public {
-        vm.expectRevert(abi.encodeWithSignature(
-            "LilypadStorage__DealNotFound(string)",
-            "nonexistent"
-        ));
+        vm.expectRevert(abi.encodeWithSignature("LilypadStorage__DealNotFound(string)", "nonexistent"));
         lilypadStorage.getDeal("nonexistent");
     }
 
     function test_RevertWhen_GettingNonexistentResult() public {
-        vm.expectRevert(abi.encodeWithSignature(
-            "LilypadStorage__ResultNotFound(string)",
-            "nonexistent"
-        ));
+        vm.expectRevert(abi.encodeWithSignature("LilypadStorage__ResultNotFound(string)", "nonexistent"));
         lilypadStorage.getResult("nonexistent");
     }
 
     function test_RevertWhen_GettingNonexistentValidation() public {
-        vm.expectRevert(abi.encodeWithSignature(
-            "LilypadStorage__ValidationResultNotFound(string)",
-            "nonexistent"
-        ));
+        vm.expectRevert(abi.encodeWithSignature("LilypadStorage__ValidationResultNotFound(string)", "nonexistent"));
         lilypadStorage.getValidationResult("nonexistent");
     }
 
@@ -634,7 +623,9 @@ contract LilypadStorageTest is Test {
         assertEq(retrievedDeal.resourceOfferCID, deal.resourceOfferCID);
         assertEq(retrievedDeal.timestamp, block.timestamp);
         assertEq(retrievedDeal.paymentStructure.jobCreatorSolverFee, deal.paymentStructure.jobCreatorSolverFee);
-        assertEq(retrievedDeal.paymentStructure.resourceProviderSolverFee, deal.paymentStructure.resourceProviderSolverFee);
+        assertEq(
+            retrievedDeal.paymentStructure.resourceProviderSolverFee, deal.paymentStructure.resourceProviderSolverFee
+        );
         assertEq(retrievedDeal.paymentStructure.networkCongestionFee, deal.paymentStructure.networkCongestionFee);
         assertEq(retrievedDeal.paymentStructure.moduleCreatorFee, deal.paymentStructure.moduleCreatorFee);
         assertEq(retrievedDeal.paymentStructure.priceOfJobWithoutFees, deal.paymentStructure.priceOfJobWithoutFees);
