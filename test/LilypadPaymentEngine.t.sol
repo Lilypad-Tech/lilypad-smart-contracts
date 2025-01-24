@@ -23,10 +23,12 @@ contract LilypadPaymentEngineTest is Test {
     address public constant EVE = address(0x5);     // Validator
     address public constant TREASURY = address(0x6);
     address public constant VALUE_REWARDS = address(0x7);
+    address public constant VALIDATION_POOL = address(0x8);
 
     uint256 public constant INITIAL_BALANCE = 1000 * 10**18;
     uint256 public constant INITIAL_TREASURY_BALANCE = 10000 * 10**18;
     uint256 public constant INITIAL_VALUE_REWARDS_BALANCE = 10000 * 10**18;
+    uint256 public constant INITIAL_VALIDATION_POOL_BALANCE = 10000 * 10**18;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 
@@ -93,7 +95,8 @@ contract LilypadPaymentEngineTest is Test {
             address(lilypadStorage),
             address(user),
             TREASURY,
-            VALUE_REWARDS
+            VALUE_REWARDS,
+            VALIDATION_POOL
         );
         ERC1967Proxy engineProxy = new ERC1967Proxy(address(engineImpl), engineInitData);
         paymentEngine = LilypadPaymentEngine(address(engineProxy));
@@ -114,7 +117,8 @@ contract LilypadPaymentEngineTest is Test {
         token.mint(EVE, INITIAL_BALANCE);
         token.mint(TREASURY, INITIAL_TREASURY_BALANCE);
         token.mint(VALUE_REWARDS, INITIAL_VALUE_REWARDS_BALANCE);
-
+        token.mint(VALIDATION_POOL, INITIAL_VALIDATION_POOL_BALANCE);
+        
         // Register users and add roles
         user.insertUser(ALICE, "metadata", "url", SharedStructs.UserType.JobCreator);
         user.insertUser(BOB, "metadata", "url", SharedStructs.UserType.ResourceProvider);
@@ -146,6 +150,7 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.version(), "1.0.0");
         assertEq(paymentEngine.treasuryWallet(), TREASURY);
         assertEq(paymentEngine.valueBasedRewardsWallet(), VALUE_REWARDS);
+        assertEq(paymentEngine.validationPoolWallet(), VALIDATION_POOL);
     }
 
     function test_PayEscrow() public {
@@ -479,6 +484,28 @@ contract LilypadPaymentEngineTest is Test {
         vm.startPrank(address(this));
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroValueBasedRewardsWallet.selector);
         paymentEngine.setValueBasedRewardsWallet(address(0));
+        vm.stopPrank();
+    }
+
+    function test_SetValidationPoolWallet() public {
+        vm.startPrank(address(this));
+        address newValidationPoolWallet = address(5);
+        paymentEngine.setValidationPoolWallet(newValidationPoolWallet);
+        assertEq(paymentEngine.validationPoolWallet(), newValidationPoolWallet);
+        vm.stopPrank();
+    }
+
+    function test_SetValidationPoolWallet_Reverts_WhenNotAdmin() public {   
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        paymentEngine.setValidationPoolWallet(address(5));
+        vm.stopPrank();
+    }
+
+    function test_SetValidationPoolWallet_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroValidationPoolWallet.selector);
+        paymentEngine.setValidationPoolWallet(address(0));
         vm.stopPrank();
     }
 
@@ -934,9 +961,11 @@ contract LilypadPaymentEngineTest is Test {
         uint256 protocolFees = networkCongestionFee + (moduleCreatorFee * paymentEngine.m())/10000;
         uint256 expectedTreasuryAmount = (protocolFees * paymentEngine.p())/10000;
         uint256 expectedValueBasedRewardsAmount = protocolFees - expectedTreasuryAmount;
+        uint256 expectedValidationPoolAmount = protocolFees - expectedTreasuryAmount - expectedValueBasedRewardsAmount;
 
         assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE + expectedTreasuryAmount);
         assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
+        assertEq(token.balanceOf(VALIDATION_POOL), INITIAL_VALIDATION_POOL_BALANCE + expectedValidationPoolAmount);
         assertEq(paymentEngine.totalActiveEscrow(), 0);
         assertEq(paymentEngine.totalEscrow(), rpCollateral);
         vm.stopPrank();
@@ -1059,7 +1088,7 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(token.balanceOf(DAVE), INITIAL_BALANCE); // Unchanged
         assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE); // Unchanged
         assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE); // Unchanged
-
+        assertEq(token.balanceOf(VALIDATION_POOL), INITIAL_VALIDATION_POOL_BALANCE); // Unchanged
         vm.stopPrank();
     }
 
@@ -1145,10 +1174,11 @@ contract LilypadPaymentEngineTest is Test {
         uint256 protocolFees = (moduleCreatorFee * paymentEngine.m())/10000;
         uint256 expectedTreasuryAmount = (protocolFees * paymentEngine.p())/10000;
         uint256 expectedValueBasedRewardsAmount = protocolFees - expectedTreasuryAmount;
+        uint256 expectedValidationPoolAmount = protocolFees - expectedTreasuryAmount - expectedValueBasedRewardsAmount;
         
         assertEq(token.balanceOf(TREASURY), INITIAL_TREASURY_BALANCE + expectedTreasuryAmount);
         assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
-
+        assertEq(token.balanceOf(VALIDATION_POOL), INITIAL_VALIDATION_POOL_BALANCE + expectedValidationPoolAmount);
         vm.stopPrank();
     }
 

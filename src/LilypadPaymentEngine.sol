@@ -1,25 +1,3 @@
-// Layout of Contract:
-// version
-// imports
-// interfaces, libraries, contracts
-// Type declarations
-// State variables
-// errors
-// Events
-// Modifiers
-// Functions
-
-// Layout of Functions:
-// constructor
-// receive function (if exists)
-// fallback function (if exists)
-// external
-// public
-// internal
-// private
-// internal & private view & pure functions
-// external & public view & pure functions
-
 // SPX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
@@ -51,7 +29,6 @@ contract LilypadPaymentEngine is
     LilypadToken private token;
     LilypadStorage private lilypadStorage;
     LilypadUser private lilypadUser;
-    //TODO: Add Validation contract when complete
 
     // The version of the contract
     string public version;
@@ -66,6 +43,7 @@ contract LilypadPaymentEngine is
     // The wallets of where the fees are supposed to flow
     address public treasuryWallet;
     address public valueBasedRewardsWallet;
+    address public validationPoolWallet;
 
     // This is the total escrow that is currently locked in the contract
     uint256 public totalEscrow;
@@ -180,6 +158,7 @@ contract LilypadPaymentEngine is
     error LilypadPayment__ZeroTokenAddress();
     error LilypadPayment__ZeroTreasuryWallet();
     error LilypadPayment__ZeroValueBasedRewardsWallet();
+    error LilypadPayment__ZeroValidationPoolWallet();
     error LilypadPayment__ZeroStorageAddress();
     error LilypadPayment__ZeroUserAddress();
     error LilypadPayment__ParametersMustSumToTenThousand();
@@ -190,6 +169,12 @@ contract LilypadPaymentEngine is
     error LilypadPayment__RoleNotFound();
     error LilypadPayment__CannotRevokeOwnRole();
     error LilypadPayment__RoleAlreadyAssigned();
+    error LilypadPayment__ZeroPayoutAddress();
+    error LilypadPayment__ZeroPayeeAddress();
+    error LilypadPayment__ZeroSlashAddress();
+    error LilypadPayment__ZeroWithdrawalAddress();
+    error LilypadPayment__ZeroResourceProviderAddress();
+    error LilypadPayment__ZeroJobCreatorAddress();
 
     ////////////////////////////////
     ///////// Modifiers ///////////
@@ -225,13 +210,15 @@ contract LilypadPaymentEngine is
         address _lilypadStorageAddress,
         address _lilypadUserAddress,
         address _treasuryWallet,
-        address _valueBasedRewardsWallet
+        address _valueBasedRewardsWallet,
+        address _validationPoolWallet
     ) public initializer {
         if (_tokenAddress == address(0)) revert LilypadPayment__ZeroTokenAddress();
         if (_lilypadStorageAddress == address(0)) revert LilypadPayment__ZeroStorageAddress();
         if (_lilypadUserAddress == address(0)) revert LilypadPayment__ZeroUserAddress();
         if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
         if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
+        if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
 
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -240,10 +227,10 @@ contract LilypadPaymentEngine is
         token = LilypadToken(_tokenAddress);
         lilypadStorage = LilypadStorage(_lilypadStorageAddress);
         lilypadUser = LilypadUser(_lilypadUserAddress);
-        //TODO: Add validation contract
 
         treasuryWallet = _treasuryWallet;
         valueBasedRewardsWallet = _valueBasedRewardsWallet;
+        validationPoolWallet = _validationPoolWallet;
 
         version = "1.0.0";
 
@@ -261,7 +248,7 @@ contract LilypadPaymentEngine is
         // Validation pool represented as a basis point
         p3 = 5000;
 
-        // Setting is as a basis point representation of the percentage
+        // Module Creator Fee percentage to be paid to treasury represented as a basis point
         m = 200;
         
         // The stimulent factor for future growth of the token
@@ -392,6 +379,15 @@ contract LilypadPaymentEngine is
     }
 
     /**
+     * @notice Sets the validation pool wallet address
+     * @param _validationPoolWallet New validation pool wallet address
+     */
+    function setValidationPoolWallet(address _validationPoolWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
+        validationPoolWallet = _validationPoolWallet;
+    }
+
+    /**
      * @dev Returns the current version of the contract
      * @notice
      * - Returns the semantic version string of the contract
@@ -467,7 +463,7 @@ contract LilypadPaymentEngine is
         SharedStructs.PaymentReason _paymentReason,
         uint256 _amount
     ) external moreThanZero(_amount) returns (bool) {
-        require(_payee != address(0), "Payee cannot be zero address");
+        if (_payee == address(0)) revert LilypadPayment__ZeroPayeeAddress();
 
         bool isResourceProviderOrValidator = lilypadUser.hasRole(_payee, SharedStructs.UserType.ResourceProvider) || lilypadUser.hasRole(_payee, SharedStructs.UserType.Validator);
 
@@ -519,7 +515,7 @@ contract LilypadPaymentEngine is
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
-        require(_address != address(0), "Address cannot be zero address");
+        if (_address == address(0)) revert LilypadPayment__ZeroSlashAddress();
 
         activeEscrow[_address] -= _amount;
 
@@ -547,21 +543,16 @@ contract LilypadPaymentEngine is
         address _withdrawer,
         uint256 _amount
     ) external nonReentrant moreThanZero(_amount) returns (bool) {
-        require(_withdrawer != address(0), "Withdrawer cannot be zero address");
-
-        if (msg.sender != _withdrawer) {
-            revert LilypadPayment__unauthorizedWithdrawal();
-        }
-
+        if (_withdrawer == address(0)) revert LilypadPayment__ZeroWithdrawalAddress();
+        if (msg.sender != _withdrawer) revert LilypadPayment__unauthorizedWithdrawal();
         if (lilypadUser.hasRole(_withdrawer,SharedStructs.UserType.ResourceProvider) || lilypadUser.hasRole(_withdrawer, SharedStructs.UserType.Validator)) {
             if (block.timestamp < depositTimestamps[_withdrawer]) {
                 revert LilypadPayment__escrowNotWithdrawable();
             }
         } else {
-            //  If we enter this block, it means a non-RP or non-Validator is trying to withdraw their escrow
+            // If we enter this block, it means a non-RP or non-Validator is trying to withdraw their escrow
             revert LilypadPayment__escrowNotWithdrawableForActor(_withdrawer);
         }
-
         if (escrowBalances[_withdrawer] < _amount || escrowBalances[_withdrawer] == 0) {
             revert LilypadPayment__insufficientEscrowBalanceForWithdrawal();
         }
@@ -592,7 +583,7 @@ contract LilypadPaymentEngine is
         address _to,
         uint256 _amount
     ) private onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        require(_to != address(0), "Payout address cannot be zero address");
+        if (_to == address(0)) revert LilypadPayment__ZeroPayoutAddress();
 
         if (_amount == 0) {
             emit LilypadPayment__ZeroAmountPayout(_to);
@@ -633,8 +624,8 @@ contract LilypadPaymentEngine is
         onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
-        require(jobCreator != address(0), "Job creator cannot be zero address");
-        require(resourceProvider != address(0), "Resource provider cannot be zero address");
+        if (jobCreator == address(0)) revert LilypadPayment__ZeroJobCreatorAddress();
+        if (resourceProvider == address(0)) revert LilypadPayment__ZeroResourceProviderAddress();
 
         // Deduct the escrow balances for the job creator and resource provider
         escrowBalances[jobCreator] -= cost;
@@ -757,10 +748,13 @@ contract LilypadPaymentEngine is
         // Pay the value based rewards
         payout(valueBasedRewardsWallet, valueBasedRewardsAmount);
 
-        // TODO: send the validationPoolAmount to the validation contract when complete
-        
+        // Send the validationPoolAmount to the validation pool
+        payout(validationPoolWallet, validationPoolAmount);
+
+        // Subtract the amount from the total active escrow for running jobs
         totalActiveEscrow -= totalCostOfJob + resoureProviderRequiredActiveEscrow;
 
+        // Subtract the amount from the total escrow for running jobs since the total cost of the job is being paid out
         totalEscrow -= totalCostOfJob;
     }
 
