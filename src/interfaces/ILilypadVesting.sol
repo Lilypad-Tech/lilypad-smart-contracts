@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 interface ILilypadVesting {
-   /**
+    /**
      * @dev Creates a vesting schedule for a specified beneficiary.
      * @param beneficiary The address of the recipient of the vested tokens.
      * @param amount The total amount of tokens to be vested.
@@ -23,25 +23,24 @@ interface ILilypadVesting {
     /**
      * @dev Releases the tokens that have been vested up to the current time for all eligible beneficiaries.
      * The function calculates and transfers releasable tokens based on the defined vesting schedule.
-     * @param beneficiary The address of the beneficiary whose tokens are being released.
      * @param scheduleId The ID of the vesting schedule to be released.
      * @return Returns true if the token release operation is successful.
      */
-    function releaseTokens(address beneficiary, uint256 scheduleId) external returns (bool);
+    function releaseTokens(uint256 scheduleId) external returns (bool);
 
     /**
-     * @dev Calculates the number of tokens that are releasable for a specific beneficiary.
-     * The calculation is based on the vesting schedule and the current timestamp.
-     * @param beneficiary The address of the beneficiary whose releasable tokens are being calculated.
-     * @param scheduleId The ID of the vesting schedule to be calculated.
-     * @return The amount of tokens that are currently releasable for the beneficiary.
+     * @dev Calculates the amount of tokens that can be released for a given vesting schedule.
+     * @param beneficiary The address of the beneficiary.
+     * @param scheduleId The ID of the vesting schedule.
+     * @return The amount of tokens that can be released.
      */
     function calculateReleasableTokens(address beneficiary, uint256 scheduleId) external view returns (uint256);
 
     /**
-     * @dev Invalidates a vesting schedule for a specific beneficiary.
-     * @param scheduleId The ID of the vesting schedule to be invalidated.
-     * @return Returns true if the vesting schedule is successfully invalidated.
+     * @dev Withdraws the specified amount of tokens from the vesting contract.
+     * @param amount The amount of tokens to be withdrawn.
+     * @return Returns true if the withdrawal operation is successful.
+     * @notice This function is meant to be used by the controller to withdraw tokens on a special needs basis.
      */
-    function invalidateVestingSchedule(uint256 scheduleId) external returns (bool);
+    function withdraw(uint256 amount) external returns (bool);
 }
