@@ -201,7 +201,7 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
      * @return Returns true if the token release operation is successful.
      */
     function releaseTokens(uint256 scheduleId) external nonReentrant returns (bool) {
-        if (scheduleId >= vestingScheduleCount) revert LilypadVesting__InvalidScheduleId();
+        if (scheduleId > vestingScheduleCount) revert LilypadVesting__InvalidScheduleId();
 
         VestingSchedule storage schedule = vestingSchedules[scheduleId];
         if (schedule.revoked) revert LilypadVesting__VestingScheduleRevoked();
