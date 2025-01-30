@@ -120,12 +120,21 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
         if (beneficiary == address(0)) revert LilypadVesting__InvalidBeneficiary();
         if (beneficiary == msg.sender) revert LilypadVesting__InvalidBeneficiary();
         if (amount == 0) revert LilypadVesting__InvalidAmount();
-        if (
-            startTime < uint64(block.timestamp) || startTime + cliffDuration + vestingDuration < uint64(block.timestamp)
-        ) {
-            revert LilypadVesting__InvalidStartTime();
-        }
         if (cliffDuration == 0 || vestingDuration == 0) revert LilypadVesting__InvalidDuration();
+        if (startTime < uint64(block.timestamp)) revert LilypadVesting__InvalidStartTime();
+
+        // Check each addition separately to prevent overflow
+        uint64 cliffEnd;
+        uint64 vestingEnd;
+
+        unchecked {
+            cliffEnd = startTime + cliffDuration;
+            vestingEnd = cliffEnd + vestingDuration;
+        }
+
+        // Ensure no overflow occurred and end time is valid
+        if (cliffEnd < startTime || vestingEnd < cliffEnd) revert LilypadVesting__InvalidDuration();
+        if (vestingEnd < uint64(block.timestamp)) revert LilypadVesting__InvalidStartTime();
 
         // Increment the vesting schedule count
         vestingScheduleCount++;

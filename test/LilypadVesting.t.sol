@@ -447,4 +447,98 @@ contract LilypadVestingTest is Test {
         );
         vm.stopPrank();
     }
+
+        function test_StartTimeValidationOverflow() public {
+        vm.startPrank(ADMIN);
+
+        // Using values that will cause overflow
+        uint64 startTime = type(uint64).max - 100;
+        uint64 cliffDuration = 50;
+        uint64 vestingDuration = 100;
+
+        // Should revert with InvalidDuration due to overflow check
+        vm.expectRevert(LilypadVesting.LilypadVesting__InvalidDuration.selector);
+        vestingContract.createVestingSchedule(BENEFICIARY, VESTING_AMOUNT, startTime, cliffDuration, vestingDuration);
+
+        vm.stopPrank();
+    }
+
+    function test_PrecisionInVestingCalculation() public {
+        vm.startPrank(ADMIN);
+
+        // Small amount to test precision
+        uint256 smallAmount = 1000 * 10 ** 18; // 1000 tokens
+        uint64 startTime = uint64(block.timestamp);
+
+        vestingContract.createVestingSchedule(
+            BENEFICIARY,
+            smallAmount,
+            startTime,
+            CLIFF_DURATION,
+            365 days // 1 year vesting
+        );
+
+        // Move to 1 day after cliff
+        vm.warp(startTime + CLIFF_DURATION + 1 days);
+
+        // Calculate expected amount: (1 day / 365 days) * 1000 tokens ≈ 2.739726027397260274 tokens
+        uint256 releasableAmount = vestingContract.calculateReleasableTokens(BENEFICIARY, 1);
+
+        // With proper precision handling, we should get at least 2 tokens
+        assertGt(releasableAmount, 2 * 10 ** 18, "Lost precision in vesting calculation");
+
+        // Move to end of vesting
+        vm.warp(startTime + CLIFF_DURATION + 365 days);
+
+        // Should get exact amount at end
+        releasableAmount = vestingContract.calculateReleasableTokens(BENEFICIARY, 1);
+        assertEq(releasableAmount, smallAmount, "Did not vest full amount");
+
+        vm.stopPrank();
+    }
+
+    function test_MaximumValues() public {
+        vm.startPrank(ADMIN);
+
+        // Use a large but reasonable amount that won't exceed token supply
+        uint256 maxAmount = 1_000_000 * 10 ** 18; // 1 million tokens
+        uint64 startTime = uint64(block.timestamp + 1);
+        uint64 maxDuration = type(uint64).max / 3; // Divide by 3 to prevent overflow when adding
+
+        bool success =
+            vestingContract.createVestingSchedule(BENEFICIARY, maxAmount, startTime, maxDuration, maxDuration);
+
+        assertTrue(success, "Failed to create schedule with maximum values");
+
+        // Verify the schedule was created correctly
+        LilypadVesting.VestingSchedule memory schedule = vestingContract.getVestingSchedule(1);
+        assertEq(schedule.totalAmount, maxAmount);
+        assertEq(schedule.cliffDuration, maxDuration);
+        assertEq(schedule.vestingDuration, maxDuration);
+
+        vm.stopPrank();
+    }
+
+    function test_MultipleReleasesInSameBlock() public {
+        vm.startPrank(ADMIN);
+
+        // Create schedule
+        uint64 startTime = uint64(block.timestamp);
+        vestingContract.createVestingSchedule(BENEFICIARY, VESTING_AMOUNT, startTime, CLIFF_DURATION, VESTING_DURATION);
+        vm.stopPrank();
+
+        // Move to middle of vesting
+        vm.warp(startTime + CLIFF_DURATION + VESTING_DURATION / 2);
+
+        vm.startPrank(BENEFICIARY);
+        // First release should succeed
+        bool success = vestingContract.releaseTokens(1);
+        assertTrue(success, "First release failed");
+
+        // Second release in same block should revert with nothing to release
+        vm.expectRevert(LilypadVesting.LilypadVesting__NothingToRelease.selector);
+        vestingContract.releaseTokens(1);
+
+        vm.stopPrank();
+    }
 } 
