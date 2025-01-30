@@ -32,6 +32,13 @@ interface ILilypadProxy {
         returns (bool);
 
     /**
+     * @dev The function to get the escrow amount for a specific address
+     * @param _address The address of the account to get the escrow amount for.
+     * @return Returns the escrow amount for the address.
+     */
+    function getEscrowBalance(address _address) external view returns (uint256);
+
+    /**
      * @dev The function Job Creators will use to request and pay for verification
      * @param requestorAddress The address requesting the verification.
      * @param moduleName The name of the module to be verified.
