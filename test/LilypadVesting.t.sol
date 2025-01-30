@@ -14,8 +14,8 @@ contract LilypadVestingTest is Test {
     address public constant BENEFICIARY = address(0x2);
     address public constant VESTING_MANAGER = address(0x3);
 
-    uint256 public constant INITIAL_SUPPLY = 1_000_000 * 10**18;
-    uint256 public constant VESTING_AMOUNT = 1_000 * 10**18;
+    uint256 public constant INITIAL_SUPPLY = 1_000_000 * 10 ** 18;
+    uint256 public constant VESTING_AMOUNT = 1_000 * 10 ** 18;
     uint64 public constant CLIFF_DURATION = 30 days;
     uint64 public constant VESTING_DURATION = 30 days;
 
@@ -28,22 +28,22 @@ contract LilypadVestingTest is Test {
 
     function setUp() public {
         vm.startPrank(ADMIN);
-        
+
         // Deploy token
         token = new LilypadToken(INITIAL_SUPPLY);
-        
+
         // Deploy vesting contract
         vestingContract = new LilypadVesting(address(token));
-        
+
         // Grant vesting role to VESTING_MANAGER
         vestingContract.grantVestingRole(VESTING_MANAGER);
-        
+
         // Mint tokens to ADMIN
         token.mint(ADMIN, INITIAL_SUPPLY);
-        
+
         // Approve vesting contract to spend tokens
         token.approve(address(vestingContract), type(uint256).max);
-        
+
         vm.stopPrank();
     }
 
@@ -57,28 +57,24 @@ contract LilypadVestingTest is Test {
 
     function test_CreateVestingSchedule() public {
         vm.startPrank(ADMIN);
-        
+
         uint64 startTime = uint64(block.timestamp + 1 days);
-        
+
         // First check initial state
         assertEq(vestingContract.vestingScheduleCount(), 0);
-        
+
         vm.expectEmit(true, true, true, true);
         emit LilypadVesting__VestingScheduleCreated(BENEFICIARY, 1, VESTING_AMOUNT, startTime);
-        
+
         bool success = vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            VESTING_AMOUNT,
-            startTime,
-            CLIFF_DURATION,
-            VESTING_DURATION
+            BENEFICIARY, VESTING_AMOUNT, startTime, CLIFF_DURATION, VESTING_DURATION
         );
-        
+
         assertTrue(success);
-        
+
         // Check schedule count increased
         assertEq(vestingContract.vestingScheduleCount(), 1);
-        
+
         // Get the schedule and verify all fields
         LilypadVesting.VestingSchedule memory schedule = vestingContract.getVestingSchedule(1);
         assertEq(schedule.beneficiary, BENEFICIARY, "Wrong beneficiary");
@@ -93,7 +89,7 @@ contract LilypadVestingTest is Test {
         uint256[] memory scheduleIds = vestingContract.getVestingScheduleIds(BENEFICIARY);
         assertEq(scheduleIds.length, 1, "Should have one schedule");
         assertEq(scheduleIds[0], 1, "Wrong schedule ID");
-        
+
         vm.stopPrank();
     }
 
@@ -101,17 +97,13 @@ contract LilypadVestingTest is Test {
         // Create vesting schedule
         vm.startPrank(ADMIN);
         uint64 startTime = uint64(block.timestamp);
-        
+
         // Create schedule and verify it was created
         bool success = vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            VESTING_AMOUNT,
-            startTime,
-            CLIFF_DURATION,
-            VESTING_DURATION
+            BENEFICIARY, VESTING_AMOUNT, startTime, CLIFF_DURATION, VESTING_DURATION
         );
         assertTrue(success);
-        
+
         // Verify schedule was created correctly
         assertEq(vestingContract.vestingScheduleCount(), 1);
         LilypadVesting.VestingSchedule memory schedule = vestingContract.getVestingSchedule(1);
@@ -125,7 +117,7 @@ contract LilypadVestingTest is Test {
         vm.startPrank(BENEFICIARY);
         success = vestingContract.releaseTokens(1);
         assertTrue(success, "Token release failed");
-        
+
         // Check released amount (should be slightly more than 0% after cliff)
         uint256 expectedAmount = (1 * VESTING_AMOUNT) / VESTING_DURATION; // 1 second after cliff
         assertApproxEqRel(
@@ -133,21 +125,21 @@ contract LilypadVestingTest is Test {
             expectedAmount,
             0.01e18 // 1% tolerance
         );
-        
+
         // Fast forward to middle of vesting period
-        vm.warp(block.timestamp + VESTING_DURATION/2);
-        
+        vm.warp(block.timestamp + VESTING_DURATION / 2);
+
         // Release more tokens
         success = vestingContract.releaseTokens(1);
         assertTrue(success, "Second token release failed");
-        
+
         // Check released amount (should be ~50% at middle of vesting)
         assertApproxEqRel(
             token.balanceOf(BENEFICIARY),
-            VESTING_AMOUNT/2,
+            VESTING_AMOUNT / 2,
             0.01e18 // 1% tolerance
         );
-        
+
         vm.stopPrank();
     }
 
@@ -163,22 +155,17 @@ contract LilypadVestingTest is Test {
         startOffset = uint64(bound(startOffset, 1, 365 days));
         cliffDuration = uint64(bound(cliffDuration, 1 days, 365 days));
         vestingDuration = uint64(bound(vestingDuration, 1 days, 365 days));
-        
+
         uint64 startTime = uint64(block.timestamp + startOffset);
-        
+
         vm.startPrank(ADMIN);
-        bool success = vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            amount,
-            startTime,
-            cliffDuration,
-            vestingDuration
-        );
+        bool success =
+            vestingContract.createVestingSchedule(BENEFICIARY, amount, startTime, cliffDuration, vestingDuration);
         assertTrue(success);
-        
+
         // Check schedule count
         assertEq(vestingContract.vestingScheduleCount(), 1);
-        
+
         LilypadVesting.VestingSchedule memory schedule = vestingContract.getVestingSchedule(1);
         assertEq(schedule.totalAmount, amount);
         assertEq(schedule.startTime, startTime);
@@ -187,36 +174,24 @@ contract LilypadVestingTest is Test {
         vm.stopPrank();
     }
 
-    function testFuzz_ReleaseTokens(
-        uint256 amount,
-        uint64 timeElapsed
-    ) public {
+    function testFuzz_ReleaseTokens(uint256 amount, uint64 timeElapsed) public {
         // Bound the fuzzing inputs
         amount = bound(amount, 1000, INITIAL_SUPPLY);
         // Ensure timeElapsed is between cliff and total duration
-        timeElapsed = uint64(bound(
-            timeElapsed, 
-            CLIFF_DURATION + 1 days, 
-            CLIFF_DURATION + VESTING_DURATION
-        ));
-        
+        timeElapsed = uint64(bound(timeElapsed, CLIFF_DURATION + 1 days, CLIFF_DURATION + VESTING_DURATION));
+
         uint64 startTime = uint64(block.timestamp);
-        
+
         // Create schedule
         vm.startPrank(ADMIN);
-        bool success = vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            amount,
-            startTime,
-            CLIFF_DURATION,
-            VESTING_DURATION
-        );
+        bool success =
+            vestingContract.createVestingSchedule(BENEFICIARY, amount, startTime, CLIFF_DURATION, VESTING_DURATION);
         assertTrue(success, "Schedule creation failed");
         vm.stopPrank();
-        
+
         // Warp time
         vm.warp(startTime + timeElapsed);
-        
+
         // Calculate expected vested amount
         uint256 expectedVestedAmount;
         if (timeElapsed >= (CLIFF_DURATION + VESTING_DURATION)) {
@@ -225,20 +200,20 @@ contract LilypadVestingTest is Test {
             uint256 timeElapsedAfterCliff = timeElapsed - CLIFF_DURATION;
             expectedVestedAmount = (timeElapsedAfterCliff * amount) / VESTING_DURATION;
         }
-        
+
         // Release tokens
         vm.startPrank(BENEFICIARY);
         success = vestingContract.releaseTokens(1);
         assertTrue(success, "Token release failed");
         vm.stopPrank();
-        
+
         // Verify balance matches expected vested amount
         assertApproxEqRel(
             token.balanceOf(BENEFICIARY),
             expectedVestedAmount,
             0.01e18 // 1% tolerance
         );
-        
+
         // Verify balance is never more than total amount
         assertTrue(token.balanceOf(BENEFICIARY) <= amount, "Released more than total amount");
     }
@@ -248,11 +223,7 @@ contract LilypadVestingTest is Test {
         vm.startPrank(ADMIN);
         vm.expectRevert(LilypadVesting.LilypadVesting__InvalidBeneficiary.selector);
         vestingContract.createVestingSchedule(
-            address(0),
-            VESTING_AMOUNT,
-            uint64(block.timestamp + 1 days),
-            CLIFF_DURATION,
-            VESTING_DURATION
+            address(0), VESTING_AMOUNT, uint64(block.timestamp + 1 days), CLIFF_DURATION, VESTING_DURATION
         );
         vm.stopPrank();
     }
@@ -261,11 +232,7 @@ contract LilypadVestingTest is Test {
         vm.startPrank(ADMIN);
         vm.expectRevert(LilypadVesting.LilypadVesting__InvalidAmount.selector);
         vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            0,
-            uint64(block.timestamp + 1 days),
-            CLIFF_DURATION,
-            VESTING_DURATION
+            BENEFICIARY, 0, uint64(block.timestamp + 1 days), CLIFF_DURATION, VESTING_DURATION
         );
         vm.stopPrank();
     }
@@ -274,11 +241,7 @@ contract LilypadVestingTest is Test {
         // Create schedule
         vm.startPrank(ADMIN);
         vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            VESTING_AMOUNT,
-            uint64(block.timestamp),
-            CLIFF_DURATION,
-            VESTING_DURATION
+            BENEFICIARY, VESTING_AMOUNT, uint64(block.timestamp), CLIFF_DURATION, VESTING_DURATION
         );
         vm.stopPrank();
 
@@ -293,11 +256,7 @@ contract LilypadVestingTest is Test {
         // Create schedule
         vm.startPrank(ADMIN);
         vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            VESTING_AMOUNT,
-            uint64(block.timestamp),
-            CLIFF_DURATION,
-            VESTING_DURATION
+            BENEFICIARY, VESTING_AMOUNT, uint64(block.timestamp), CLIFF_DURATION, VESTING_DURATION
         );
         vm.stopPrank();
 
@@ -310,70 +269,52 @@ contract LilypadVestingTest is Test {
 
     function test_MultipleSchedulesForSameBeneficiary() public {
         vm.startPrank(ADMIN);
-        
+
         // Create two schedules
         vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            VESTING_AMOUNT,
-            uint64(block.timestamp),
-            CLIFF_DURATION,
-            VESTING_DURATION
+            BENEFICIARY, VESTING_AMOUNT, uint64(block.timestamp), CLIFF_DURATION, VESTING_DURATION
         );
-        
+
         vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            VESTING_AMOUNT * 2,
-            uint64(block.timestamp + 1 days),
-            CLIFF_DURATION * 2,
-            VESTING_DURATION * 2
+            BENEFICIARY, VESTING_AMOUNT * 2, uint64(block.timestamp + 1 days), CLIFF_DURATION * 2, VESTING_DURATION * 2
         );
-        
+
         // Verify schedules
         uint256[] memory scheduleIds = vestingContract.getVestingScheduleIds(BENEFICIARY);
         assertEq(scheduleIds.length, 2, "Should have two schedules");
         assertEq(scheduleIds[0], 1, "Wrong first schedule ID");
         assertEq(scheduleIds[1], 2, "Wrong second schedule ID");
-        
+
         vm.stopPrank();
     }
 
     function test_WithdrawUnusedTokens() public {
-        uint256 extraAmount = 1000 * 10**18;
-        
+        uint256 extraAmount = 1000 * 10 ** 18;
+
         vm.startPrank(ADMIN);
         // Send extra tokens to contract
         token.transfer(address(vestingContract), extraAmount);
-        
+
         // Create a vesting schedule
         vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            VESTING_AMOUNT,
-            uint64(block.timestamp),
-            CLIFF_DURATION,
-            VESTING_DURATION
+            BENEFICIARY, VESTING_AMOUNT, uint64(block.timestamp), CLIFF_DURATION, VESTING_DURATION
         );
-        
+
         // Check withdrawable amount
         assertEq(vestingContract.getWithdrawableAmount(), extraAmount);
-        
+
         // Withdraw extra tokens
         bool success = vestingContract.withdraw(extraAmount);
         assertTrue(success, "Withdrawal failed");
-        
+
         vm.stopPrank();
     }
 
     function test_CompleteVestingCycle() public {
         vm.startPrank(ADMIN);
         uint64 startTime = uint64(block.timestamp);
-        
-        vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            VESTING_AMOUNT,
-            startTime,
-            CLIFF_DURATION,
-            VESTING_DURATION
-        );
+
+        vestingContract.createVestingSchedule(BENEFICIARY, VESTING_AMOUNT, startTime, CLIFF_DURATION, VESTING_DURATION);
         vm.stopPrank();
 
         // Check at different points
@@ -385,19 +326,12 @@ contract LilypadVestingTest is Test {
         assertEq(vestingContract.calculateReleasableTokens(BENEFICIARY, 1), 0);
 
         // Middle of vesting
-        vm.warp(startTime + CLIFF_DURATION + VESTING_DURATION/2);
-        assertApproxEqRel(
-            vestingContract.calculateReleasableTokens(BENEFICIARY, 1),
-            VESTING_AMOUNT/2,
-            0.01e18
-        );
+        vm.warp(startTime + CLIFF_DURATION + VESTING_DURATION / 2);
+        assertApproxEqRel(vestingContract.calculateReleasableTokens(BENEFICIARY, 1), VESTING_AMOUNT / 2, 0.01e18);
 
         // End of vesting
         vm.warp(startTime + CLIFF_DURATION + VESTING_DURATION);
-        assertEq(
-            vestingContract.calculateReleasableTokens(BENEFICIARY, 1),
-            VESTING_AMOUNT
-        );
+        assertEq(vestingContract.calculateReleasableTokens(BENEFICIARY, 1), VESTING_AMOUNT);
     }
 
     function test_RevertWhen_WithdrawingTooMuch() public {
@@ -418,11 +352,7 @@ contract LilypadVestingTest is Test {
         vm.startPrank(ADMIN);
         vm.expectRevert(LilypadVesting.LilypadVesting__InvalidStartTime.selector);
         vestingContract.createVestingSchedule(
-            BENEFICIARY,
-            VESTING_AMOUNT,
-            uint64(block.timestamp - 1),
-            CLIFF_DURATION,
-            VESTING_DURATION
+            BENEFICIARY, VESTING_AMOUNT, uint64(block.timestamp - 1), CLIFF_DURATION, VESTING_DURATION
         );
         vm.stopPrank();
     }
@@ -430,25 +360,21 @@ contract LilypadVestingTest is Test {
     function testFuzz_WithdrawPartialAmount(uint256 withdrawAmount) public {
         uint256 extraAmount = INITIAL_SUPPLY / 2;
         withdrawAmount = bound(withdrawAmount, 1, extraAmount);
-        
+
         vm.startPrank(ADMIN);
         // Send extra tokens to contract
         token.transfer(address(vestingContract), extraAmount);
-        
+
         // Withdraw partial amount
         bool success = vestingContract.withdraw(withdrawAmount);
         assertTrue(success, "Withdrawal failed");
-        
+
         // Verify remaining amount
-        assertEq(
-            vestingContract.getWithdrawableAmount(),
-            extraAmount - withdrawAmount,
-            "Incorrect remaining amount"
-        );
+        assertEq(vestingContract.getWithdrawableAmount(), extraAmount - withdrawAmount, "Incorrect remaining amount");
         vm.stopPrank();
     }
 
-        function test_StartTimeValidationOverflow() public {
+    function test_StartTimeValidationOverflow() public {
         vm.startPrank(ADMIN);
 
         // Using values that will cause overflow
@@ -541,4 +467,4 @@ contract LilypadVestingTest is Test {
 
         vm.stopPrank();
     }
-} 
+}

@@ -7,7 +7,6 @@ import "../src/LilypadToken.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 
 contract DeployLilypadVesting is Script {
-    
     function deployToken() internal returns (LilypadToken) {
         uint256 initialSupply = 10_000_000 * 10 ** 18;
         return new LilypadToken(initialSupply);
@@ -26,11 +25,11 @@ contract DeployLilypadVesting is Script {
         vestingContract.grantRole(SharedStructs.VESTING_ROLE, address(vestingContract));
 
         vm.stopBroadcast();
-        
+
         // Log deployment summary
         console.log("\nDeployment Summary:");
         console.log("------------------");
         console.log("LilypadToken:", address(token));
         console.log("LilypadVesting:", address(vestingContract));
     }
-} 
+}
