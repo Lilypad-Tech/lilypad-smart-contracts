@@ -6,12 +6,10 @@ import "../SharedStructs.sol";
 interface ILilypadProxy {
     /**
      * @dev Accepts payment for a job associated with a specific module.
-     * @param moduleName The name of the module for which the payment is being made.
-     * @param amount The amount of payment to be accepted.
-     * @param payee The address of the payee receiving the payment.
+     * @param _amount The amount of payment to be accepted.
      * @return Returns true if the payment is successfully accepted.
      */
-    function acceptJobPayment(string memory moduleName, uint256 amount, address payee) external returns (bool);
+    function acceptJobPayment(uint256 _amount) external returns (bool);
 
     /**
      * @dev The function validators will use to pay collateral to run a validation on the network
@@ -104,14 +102,19 @@ interface ILilypadProxy {
      * @return Returns true if the state is successfully updated.
      * @notice This function is restricted to the owner role.
      */
-    function updateValidationState(string memory validationId, SharedStructs.ValidationResultStatusEnum state) external returns (bool);
+    function updateValidationState(string memory validationId, SharedStructs.ValidationResultStatusEnum state)
+        external
+        returns (bool);
 
     /**
      * @dev Retrieves the validation result for a specific validation ID.
      * @param validationId The unique identifier of the verification.
      * @return Returns a `ValidationResult` struct containing the validation result.
      */
-    function getValidationResult(string memory validationId) external view returns (SharedStructs.ValidationResult memory);
+    function getValidationResult(string memory validationId)
+        external
+        view
+        returns (SharedStructs.ValidationResult memory);
 
     /**
      * @dev Sets the validation result for a specific validation.
@@ -120,5 +123,7 @@ interface ILilypadProxy {
      * @return Returns true if the validation result is successfully saved.
      * @notice This function is restricted to the owner role.
      */
-    function setValidationResult(string memory validationId, SharedStructs.ValidationResult memory validation) external returns (bool);
+    function setValidationResult(string memory validationId, SharedStructs.ValidationResult memory validation)
+        external
+        returns (bool);
 }

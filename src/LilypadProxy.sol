@@ -43,16 +43,20 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     ILilypadPaymentEngine public paymentEngine;
     ILilypadValidation public lilypadValidation;
     ILilypadUser public lilypadUser;
-    LilypadToken public lilpadToken;
+    LilypadToken public lilypadToken;
 
     // Events
-    event ControllerRoleGranted(address indexed account, address indexed caller);
-    event ControllerRoleRevoked(address indexed account, address indexed caller);
+    event LilypadProxy__ControllerRoleGranted(address indexed account, address indexed caller);
+    event LilypadProxy__ControllerRoleRevoked(address indexed account, address indexed caller);
+    event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
 
     error LilypadProxy__ZeroAddressNotAllowed();
+    error LilypadProxy__ZeroAmountNotAllowed();
     error LilypadProxy__RoleAlreadyAssigned();
     error LilypadProxy__RoleNotFound();
     error LilypadProxy__CannotRevokeOwnRole();
+    error LilypadProxy__acceptJobPayment__NotJobCreator();
+    error LilypadProxy__NotEnoughAllowance();
 
     function initialize(
         address _storageAddress,
@@ -67,15 +71,15 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         if (_userAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         if (_tokenAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
 
-        grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
-
         lilypadStorage = ILilypadStorage(_storageAddress);
         paymentEngine = ILilypadPaymentEngine(_paymentEngineAddress);
         lilypadValidation = ILilypadValidation(_validationAddress);
         lilypadUser = ILilypadUser(_userAddress);
-        lilpadToken = LilypadToken(_tokenAddress);
+        lilypadToken = LilypadToken(_tokenAddress);
         version = "1.0.0";
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
     }
 
     function getVersion() external view returns (string memory) {
@@ -118,7 +122,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
             revert LilypadProxy__RoleAlreadyAssigned();
         }
         _grantRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit ControllerRoleGranted(account, msg.sender);
+        emit LilypadProxy__ControllerRoleGranted(account, msg.sender);
     }
 
     /**
@@ -140,28 +144,43 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         if (account == msg.sender) revert LilypadProxy__CannotRevokeOwnRole();
 
         _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit ControllerRoleRevoked(account, msg.sender);
+        emit LilypadProxy__ControllerRoleRevoked(account, msg.sender);
     }
 
-    function acceptJobPayment(
-        string memory moduleName,
-        uint256 amount,
-        address payee
-    ) external returns (bool) {
+    /**
+     * @dev Accepts a job payment from a job creator
+     * @notice
+     * - The caller of this function must call the token.approve() approving the paymentEngine contract address to recieve tokens on the callers behalf
+     * - Only job creators can call this function
+     * - Reverts if the `msg.sender` is the zero address
+     * - Reverts if the `msg.sender` does not have the job creator role
+     * - Reverts if the `_amount` is zero
+     * - Emits a `JobCreatorEscrowPayment` event upon successful payment
+     */
+    function acceptJobPayment(uint256 _amount) external returns (bool) {
+        if (msg.sender == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
+        if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.JobCreator)) {
+            revert LilypadProxy__acceptJobPayment__NotJobCreator();
+        }
+        if (_amount == 0) revert LilypadProxy__ZeroAmountNotAllowed();
+        if (lilypadToken.allowance(msg.sender, address(paymentEngine)) < _amount) {
+            revert LilypadProxy__NotEnoughAllowance();
+        }
+
+        _payDeposit(msg.sender, SharedStructs.PaymentReason.JobPayment, _amount);
+
+        emit LilypadProxy__JobCreatorEscrowPayment(msg.sender, _amount);
+        return true;
+    }
+
+    function acceptValidationCollateral(uint256 amount, address validatorAddress) external returns (bool) {
         revert("Not implemented");
     }
 
-    function acceptValidationCollateral(
-        uint256 amount,
-        address validatorAddress
-    ) external returns (bool) {
-        revert("Not implemented");
-    }
-
-    function acceptResourceProviderCollateral(
-        uint256 amount,
-        address resourceProviderAddress
-    ) external returns (bool) {
+    function acceptResourceProviderCollateral(uint256 amount, address resourceProviderAddress)
+        external
+        returns (bool)
+    {
         revert("Not implemented");
     }
 
@@ -169,11 +188,10 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         revert("Not implemented");
     }
 
-    function requestValidation(
-        address requestorAddress,
-        string memory moduleName,
-        uint256 amount
-    ) external returns (bool) {
+    function requestValidation(address requestorAddress, string memory moduleName, uint256 amount)
+        external
+        returns (bool)
+    {
         revert("Not implemented");
     }
 
@@ -193,37 +211,42 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         revert("Not implemented");
     }
 
-    function updateDealState(
-        string memory dealId,
-        SharedStructs.DealStatusEnum state
-    ) external returns (bool) {
+    function updateDealState(string memory dealId, SharedStructs.DealStatusEnum state) external returns (bool) {
         revert("Not implemented");
     }
 
-    function updateResultState(
-        string memory resultId,
-        SharedStructs.ResultStatusEnum state
-    ) external returns (bool) {
+    function updateResultState(string memory resultId, SharedStructs.ResultStatusEnum state) external returns (bool) {
         revert("Not implemented");
     }
 
-    function updateValidationState(
-        string memory validationId,
-        SharedStructs.ValidationResultStatusEnum state
-    ) external returns (bool) {
+    function updateValidationState(string memory validationId, SharedStructs.ValidationResultStatusEnum state)
+        external
+        returns (bool)
+    {
         revert("Not implemented");
     }
 
-    function getValidationResult(
-        string memory validationId
-    ) external view returns (SharedStructs.ValidationResult memory) {
+    function getValidationResult(string memory validationId)
+        external
+        view
+        returns (SharedStructs.ValidationResult memory)
+    {
         revert("Not implemented");
     }
 
-    function setValidationResult(
-        string memory validationId,
-        SharedStructs.ValidationResult memory validation
-    ) external returns (bool) {
+    function setValidationResult(string memory validationId, SharedStructs.ValidationResult memory validation)
+        external
+        returns (bool)
+    {
         revert("Not implemented");
+    }
+
+    function _payDeposit(address _payee, SharedStructs.PaymentReason _paymentReason, uint256 _amount)
+        private
+        returns (bool)
+    {
+        // Pay into the escrow
+        paymentEngine.payEscrow(_payee, _paymentReason, _amount);
+        return true;
     }
 }
