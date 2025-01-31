@@ -34,6 +34,7 @@ contract LilypadProxyTest is Test {
     event LilypadProxy__ControllerRoleGranted(address indexed account, address indexed caller);
     event LilypadProxy__ControllerRoleRevoked(address indexed account, address indexed caller);
     event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
+    event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
 
     function setUp() public {
         // Deploy implementations
@@ -281,6 +282,142 @@ contract LilypadProxyTest is Test {
 
         vm.expectRevert(); // Should revert with ERC20 insufficient balance error
         proxy.acceptJobPayment(amount);
+        vm.stopPrank();
+    }
+
+    function test_AcceptResourceProviderCollateral() public {
+        uint256 amount = 10 * 10 ** 18;
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        // RESOURCE_PROVIDER approves the paymentEngine to receive tokens
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__ResourceProviderCollateralPayment(RESOURCE_PROVIDER, amount);
+
+        bool success = proxy.acceptResourceProviderCollateral(amount);
+        assertTrue(success);
+        assertEq(token.balanceOf(RESOURCE_PROVIDER), INITIAL_USER_BALANCE - amount);
+        assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), amount);
+        assertEq(token.balanceOf(address(paymentEngine)), amount);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_NonResourceProviderAcceptsCollateral() public {
+        uint256 amount = 100 * 10 ** 18;
+
+        vm.startPrank(VALIDATOR);
+
+        vm.expectRevert(LilypadProxy.LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider.selector);
+        proxy.acceptResourceProviderCollateral(amount);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_ZeroAmountCollateral() public {
+        vm.startPrank(RESOURCE_PROVIDER);
+        vm.expectRevert(LilypadProxy.LilypadProxy__ZeroAmountNotAllowed.selector);
+        proxy.acceptResourceProviderCollateral(0);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_NotEnoughCollateralAllowance() public {
+        uint256 amount = 10 * 10 ** 18;
+        vm.startPrank(RESOURCE_PROVIDER);
+
+        // Try to call acceptResourceProviderCollateral before approving any tokens
+        vm.expectRevert(LilypadProxy.LilypadProxy__NotEnoughAllowance.selector);
+        proxy.acceptResourceProviderCollateral(amount);
+
+        // Approve insufficient amount
+        token.approve(address(paymentEngine), amount - 1);
+
+        // Should still revert with insufficient allowance
+        vm.expectRevert(LilypadProxy.LilypadProxy__NotEnoughAllowance.selector);
+        proxy.acceptResourceProviderCollateral(amount);
+
+        vm.stopPrank();
+    }
+
+    function testFuzz_AcceptResourceProviderCollateral(uint256 amount) public {
+        // Bound amount to be between 10 tokens and RESOURCE_PROVIDER's balance
+        amount = bound(amount, 10 * 10**18, INITIAL_USER_BALANCE);
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        
+        // Get initial balances for assertions
+        uint256 initialBalance = token.balanceOf(RESOURCE_PROVIDER);
+        uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
+        
+        // First approve the payment engine to spend tokens
+        token.approve(address(paymentEngine), amount);
+
+        // Record expected event
+        vm.recordLogs();
+
+        // Make the call
+        bool success = proxy.acceptResourceProviderCollateral(amount);
+        assertTrue(success);
+
+        // Get and check emitted event
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length > 0, true, "No events emitted");
+        
+        // The event we care about should be the last one
+        Vm.Log memory lastEntry = entries[entries.length - 1];
+        
+        // Check event signature
+        bytes32 expectedEventSig = keccak256("LilypadProxy__ResourceProviderCollateralPayment(address,uint256)");
+        assertEq(lastEntry.topics[0], expectedEventSig, "Wrong event signature");
+        
+        // Check indexed parameter (resource provider address)
+        assertEq(address(uint160(uint256(lastEntry.topics[1]))), RESOURCE_PROVIDER, "Wrong resource provider in event");
+        
+        // Check non-indexed parameter (amount)
+        assertEq(abi.decode(lastEntry.data, (uint256)), amount, "Wrong amount in event");
+
+        // Check final balances
+        assertEq(token.balanceOf(RESOURCE_PROVIDER), initialBalance - amount, "Wrong final resource provider balance");
+        assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), amount, "Wrong escrow balance");
+        assertEq(token.balanceOf(address(paymentEngine)), initialPaymentEngineBalance + amount, "Wrong final payment engine balance");
+        
+        vm.stopPrank();
+    }
+
+    function testFuzz_RevertWhen_InsufficientCollateralAllowance(uint256 amount, uint256 allowance) public {
+        // Bound amount to be between 1 and RESOURCE_PROVIDER's balance
+        amount = bound(amount, 1, INITIAL_USER_BALANCE);
+        // Bound allowance to be less than amount
+        allowance = bound(allowance, 0, amount - 1);
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        token.approve(address(paymentEngine), allowance);
+
+        vm.expectRevert(LilypadProxy.LilypadProxy__NotEnoughAllowance.selector);
+        proxy.acceptResourceProviderCollateral(amount);
+        vm.stopPrank();
+    }
+
+    function testFuzz_RevertWhen_InsufficientCollateralBalance(uint256 amount) public {
+        // Bound amount to be more than RESOURCE_PROVIDER's balance
+        amount = bound(amount, INITIAL_USER_BALANCE + 1, type(uint256).max);
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectRevert(); // Should revert with ERC20 insufficient balance error
+        proxy.acceptResourceProviderCollateral(amount);
+        vm.stopPrank();
+    }
+
+    function testFuzz_RevertWhen_CollateralAmountTooLow(uint256 amount) public {
+        // Bound amount to be between 1 wei and just under 10 tokens
+        amount = bound(amount, 1, 10 * 10**18 - 1);
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector);
+        proxy.acceptResourceProviderCollateral(amount);
         vm.stopPrank();
     }
 }

@@ -12,22 +12,19 @@ interface ILilypadProxy {
     function acceptJobPayment(uint256 _amount) external returns (bool);
 
     /**
+     * @dev The function Resource Providers will use to pay collateral to be able to run jobs on the network.  This method can be used to pay an initial collateral amount or to top up an existing amount
+     * @param _amount The amount of collateral to be accepted.
+     * @return Returns true if the collateral is successfully accepted.
+     */
+    function acceptResourceProviderCollateral(uint256 _amount) external returns (bool);
+
+    /**
      * @dev The function validators will use to pay collateral to run a validation on the network
      * @param amount The amount of collateral to be accepted.
      * @param validatorAddress The address of the validator providing the collateral.
      * @return Returns true if the collateral is successfully accepted.
      */
     function acceptValidationCollateral(uint256 amount, address validatorAddress) external returns (bool);
-
-    /**
-     * @dev The function Resource Providers will use to pay collateral to be able to run jobs on the network.  This method can be used to pay an initial collateral amount or to top up an existing amount
-     * @param amount The amount of collateral to be accepted.
-     * @param resourceProviderAddress The address of the resource provider providing the collateral.
-     * @return Returns true if the collateral is successfully accepted.
-     */
-    function acceptResourceProviderCollateral(uint256 amount, address resourceProviderAddress)
-        external
-        returns (bool);
 
     /**
      * @dev The function to get the escrow amount for a specific address
