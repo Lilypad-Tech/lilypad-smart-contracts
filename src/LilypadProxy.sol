@@ -241,6 +241,26 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         revert("Not implemented");
     }
 
+    function getPaymentEngineAddress() external view returns (address) {
+        return address(paymentEngine);
+    }
+
+    function getLilypadTokenAddress() external view returns (address) {
+        return address(lilypadToken);
+    }
+
+    function getStorageAddress() external view returns (address) {
+        return address(lilypadStorage);
+    }
+
+    function getValidationAddress() external view returns (address) {
+        return address(lilypadValidation);
+    }
+
+    function getUserAddress() external view returns (address) {
+        return address(lilypadUser);
+    }
+
     function _payDeposit(address _payee, SharedStructs.PaymentReason _paymentReason, uint256 _amount)
         private
         returns (bool)
