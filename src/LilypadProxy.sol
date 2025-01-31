@@ -26,10 +26,10 @@ pragma solidity ^0.8.24;
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ILilypadProxy} from "./interfaces/ILilypadProxy.sol";
-import {ILilypadStorage} from "./interfaces/ILilypadStorage.sol";
-import {ILilypadPaymentEngine} from "./interfaces/ILilypadPaymentEngine.sol";
-import {ILilypadUser} from "./interfaces/ILilypadUser.sol";
-import {ILilypadValidation} from "./interfaces/ILilypadValidation.sol";
+import {LilypadStorage} from "./LilypadStorage.sol";
+import {LilypadPaymentEngine} from "./LilypadPaymentEngine.sol";
+import {LilypadUser} from "./LilypadUser.sol";
+import {LilypadValidation} from "./LilypadValidation.sol";
 import {LilypadToken} from "./LilypadToken.sol";
 import {SharedStructs} from "./SharedStructs.sol";
 
@@ -39,10 +39,10 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
 
     address public tokenAddress;
 
-    ILilypadStorage public lilypadStorage;
-    ILilypadPaymentEngine public paymentEngine;
-    ILilypadValidation public lilypadValidation;
-    ILilypadUser public lilypadUser;
+    LilypadStorage public lilypadStorage;
+    LilypadPaymentEngine public paymentEngine;
+    LilypadValidation public lilypadValidation;
+    LilypadUser public lilypadUser;
     LilypadToken public lilypadToken;
 
     // Events
@@ -73,10 +73,10 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         if (_userAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         if (_tokenAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
 
-        lilypadStorage = ILilypadStorage(_storageAddress);
-        paymentEngine = ILilypadPaymentEngine(_paymentEngineAddress);
-        lilypadValidation = ILilypadValidation(_validationAddress);
-        lilypadUser = ILilypadUser(_userAddress);
+        lilypadStorage = LilypadStorage(_storageAddress);
+        paymentEngine = LilypadPaymentEngine(_paymentEngineAddress);
+        lilypadValidation = LilypadValidation(_validationAddress);
+        lilypadUser = LilypadUser(_userAddress);
         lilypadToken = LilypadToken(_tokenAddress);
         version = "1.0.0";
 
@@ -89,22 +89,22 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     }
 
     function setStorageContract(address _storageAddress) external returns (bool) {
-        lilypadStorage = ILilypadStorage(_storageAddress);
+        lilypadStorage = LilypadStorage(_storageAddress);
         return true;
     }
 
     function setPaymentEngineContract(address _paymentEngineAddress) external returns (bool) {
-        paymentEngine = ILilypadPaymentEngine(_paymentEngineAddress);
+        paymentEngine = LilypadPaymentEngine(_paymentEngineAddress);
         return true;
     }
 
     function setValidationContract(address _validationAddress) external returns (bool) {
-        lilypadValidation = ILilypadValidation(_validationAddress);
+        lilypadValidation = LilypadValidation(_validationAddress);
         return true;
     }
 
     function setUserContract(address _userAddress) external returns (bool) {
-        lilypadUser = ILilypadUser(_userAddress);
+        lilypadUser = LilypadUser(_userAddress);
         return true;
     }
 
@@ -280,6 +280,10 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
 
     function getUserAddress() external view returns (address) {
         return address(lilypadUser);
+    }
+
+    function getMinimumResourceProviderCollateralAmount() external view returns (uint256) {
+        return paymentEngine.MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT();
     }
 
     function _payDeposit(address _payee, SharedStructs.PaymentReason _paymentReason, uint256 _amount)
