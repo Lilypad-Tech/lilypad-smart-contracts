@@ -50,7 +50,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     event LilypadProxy__ControllerRoleRevoked(address indexed account, address indexed caller);
     event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
     event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
-
+    event LilypadProxy__ValidationCollateralPayment(address indexed validator, uint256 amount);
     error LilypadProxy__ZeroAddressNotAllowed();
     error LilypadProxy__ZeroAmountNotAllowed();
     error LilypadProxy__RoleAlreadyAssigned();
@@ -58,6 +58,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     error LilypadProxy__CannotRevokeOwnRole();
     error LilypadProxy__acceptJobPayment__NotJobCreator();
     error LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider();
+    error LilypadProxy__acceptValidationCollateral__NotValidator();
     error LilypadProxy__NotEnoughAllowance();
 
     function initialize(
@@ -201,8 +202,30 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         return true;
     }
 
-    function acceptValidationCollateral(uint256 amount, address validatorAddress) external returns (bool) {
-        revert("Not implemented");
+    /**
+     * @dev Accepts a validation collateral payment
+     * @notice
+     * - The caller of this function must call the token.approve() approving the paymentEngine contract address to recieve tokens on the callers behalf
+     * - Only validators can call this function
+     * - Reverts if the `msg.sender` is the zero address
+     * - Reverts if the `msg.sender` does not have the validator role
+     * - Reverts if the `_amount` is zero
+     * - Emits a `ValidationCollateralPayment` event upon successful payment
+     */
+    function acceptValidationCollateral(uint256 _amount) external returns (bool) {
+        if (msg.sender == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
+        if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.Validator)) {
+            revert LilypadProxy__acceptValidationCollateral__NotValidator();
+        }
+        if (_amount == 0) revert LilypadProxy__ZeroAmountNotAllowed();
+        if (lilypadToken.allowance(msg.sender, address(paymentEngine)) < _amount) {
+            revert LilypadProxy__NotEnoughAllowance();
+        }
+
+        _payDeposit(msg.sender, SharedStructs.PaymentReason.ValidationCollateral, _amount);
+
+        emit LilypadProxy__ValidationCollateralPayment(msg.sender, _amount);
+        return true;
     }
 
     function getEscrowBalance(address _address) external view returns (uint256) {

@@ -1264,7 +1264,7 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(EVE);
         token.approve(address(paymentEngine), rpCollateral);
-        paymentEngine.payEscrow(EVE, SharedStructs.PaymentReason.ValidiationCollateral, rpCollateral);
+        paymentEngine.payEscrow(EVE, SharedStructs.PaymentReason.ValidationCollateral, rpCollateral);
         vm.stopPrank();
 
         // Lock active escrow
@@ -1402,7 +1402,7 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(EVE);
         token.approve(address(paymentEngine), rpCollateral);
-        paymentEngine.payEscrow(EVE, SharedStructs.PaymentReason.ValidiationCollateral, rpCollateral);
+        paymentEngine.payEscrow(EVE, SharedStructs.PaymentReason.ValidationCollateral, rpCollateral);
         vm.stopPrank();
 
         // Lock active escrow

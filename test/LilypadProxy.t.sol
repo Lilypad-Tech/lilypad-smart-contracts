@@ -35,6 +35,7 @@ contract LilypadProxyTest is Test {
     event LilypadProxy__ControllerRoleRevoked(address indexed account, address indexed caller);
     event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
     event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
+    event LilypadProxy__ValidationCollateralPayment(address indexed validator, uint256 amount);
 
     function setUp() public {
         // Deploy implementations
@@ -418,6 +419,142 @@ contract LilypadProxyTest is Test {
 
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector);
         proxy.acceptResourceProviderCollateral(amount);
+        vm.stopPrank();
+    }
+
+    function test_AcceptValidationCollateral() public {
+        uint256 amount = 10 * 10 ** 18;
+
+        vm.startPrank(VALIDATOR);
+        // VALIDATOR approves the paymentEngine to receive tokens
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__ValidationCollateralPayment(VALIDATOR, amount);
+
+        bool success = proxy.acceptValidationCollateral(amount);
+        assertTrue(success);
+        assertEq(token.balanceOf(VALIDATOR), INITIAL_USER_BALANCE - amount);
+        assertEq(paymentEngine.escrowBalanceOf(VALIDATOR), amount);
+        assertEq(token.balanceOf(address(paymentEngine)), amount);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_NonValidatorAcceptsCollateral() public {
+        uint256 amount = 100 * 10 ** 18;
+
+        vm.startPrank(JOB_CREATOR);
+
+        vm.expectRevert(LilypadProxy.LilypadProxy__acceptValidationCollateral__NotValidator.selector);
+        proxy.acceptValidationCollateral(amount);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_ZeroAmountValidationCollateral() public {
+        vm.startPrank(VALIDATOR);
+        vm.expectRevert(LilypadProxy.LilypadProxy__ZeroAmountNotAllowed.selector);
+        proxy.acceptValidationCollateral(0);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_NotEnoughValidationCollateralAllowance() public {
+        uint256 amount = 10 * 10 ** 18;
+        vm.startPrank(VALIDATOR);
+
+        // Try to call acceptValidationCollateral before approving any tokens
+        vm.expectRevert(LilypadProxy.LilypadProxy__NotEnoughAllowance.selector);
+        proxy.acceptValidationCollateral(amount);
+
+        // Approve insufficient amount
+        token.approve(address(paymentEngine), amount - 1);
+
+        // Should still revert with insufficient allowance
+        vm.expectRevert(LilypadProxy.LilypadProxy__NotEnoughAllowance.selector);
+        proxy.acceptValidationCollateral(amount);
+
+        vm.stopPrank();
+    }
+
+    function testFuzz_AcceptValidationCollateral(uint256 amount) public {
+        // Bound amount to be between 10 tokens and VALIDATOR's balance
+        amount = bound(amount, 10 * 10**18, INITIAL_USER_BALANCE);
+
+        vm.startPrank(VALIDATOR);
+        
+        // Get initial balances for assertions
+        uint256 initialBalance = token.balanceOf(VALIDATOR);
+        uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
+        
+        // First approve the payment engine to spend tokens
+        token.approve(address(paymentEngine), amount);
+
+        // Record expected event
+        vm.recordLogs();
+
+        // Make the call
+        bool success = proxy.acceptValidationCollateral(amount);
+        assertTrue(success);
+
+        // Get and check emitted event
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length > 0, true, "No events emitted");
+        
+        // The event we care about should be the last one
+        Vm.Log memory lastEntry = entries[entries.length - 1];
+        
+        // Check event signature
+        bytes32 expectedEventSig = keccak256("LilypadProxy__ValidationCollateralPayment(address,uint256)");
+        assertEq(lastEntry.topics[0], expectedEventSig, "Wrong event signature");
+        
+        // Check indexed parameter (validator address)
+        assertEq(address(uint160(uint256(lastEntry.topics[1]))), VALIDATOR, "Wrong validator in event");
+        
+        // Check non-indexed parameter (amount)
+        assertEq(abi.decode(lastEntry.data, (uint256)), amount, "Wrong amount in event");
+
+        // Check final balances
+        assertEq(token.balanceOf(VALIDATOR), initialBalance - amount, "Wrong final validator balance");
+        assertEq(paymentEngine.escrowBalanceOf(VALIDATOR), amount, "Wrong escrow balance");
+        assertEq(token.balanceOf(address(paymentEngine)), initialPaymentEngineBalance + amount, "Wrong final payment engine balance");
+        
+        vm.stopPrank();
+    }
+
+    function testFuzz_RevertWhen_InsufficientValidationCollateralAllowance(uint256 amount, uint256 allowance) public {
+        // Bound amount to be between 1 and VALIDATOR's balance
+        amount = bound(amount, 1, INITIAL_USER_BALANCE);
+        // Bound allowance to be less than amount
+        allowance = bound(allowance, 0, amount - 1);
+
+        vm.startPrank(VALIDATOR);
+        token.approve(address(paymentEngine), allowance);
+
+        vm.expectRevert(LilypadProxy.LilypadProxy__NotEnoughAllowance.selector);
+        proxy.acceptValidationCollateral(amount);
+        vm.stopPrank();
+    }
+
+    function testFuzz_RevertWhen_InsufficientValidationCollateralBalance(uint256 amount) public {
+        // Bound amount to be more than VALIDATOR's balance
+        amount = bound(amount, INITIAL_USER_BALANCE + 1, type(uint256).max);
+
+        vm.startPrank(VALIDATOR);
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectRevert(); // Should revert with ERC20 insufficient balance error
+        proxy.acceptValidationCollateral(amount);
+        vm.stopPrank();
+    }
+
+    function testFuzz_RevertWhen_ValidationCollateralAmountTooLow(uint256 amount) public {
+        // Bound amount to be between 1 wei and just under 10 tokens
+        amount = bound(amount, 1, 10 * 10**18 - 1);
+
+        vm.startPrank(VALIDATOR);
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector);
+        proxy.acceptValidationCollateral(amount);
         vm.stopPrank();
     }
 }
