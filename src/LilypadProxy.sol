@@ -229,7 +229,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     }
 
     function getEscrowBalance(address _address) external view returns (uint256) {
-        revert("Not implemented");
+        return paymentEngine.getEscrowBalance(_address);
     }
 
     function requestValidation(address requestorAddress, string memory moduleName, uint256 amount)
