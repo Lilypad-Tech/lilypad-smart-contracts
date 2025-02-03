@@ -571,15 +571,15 @@ contract LilypadProxyTest is Test {
     }
 
     function test_SetDeal() public {
-        uint256 jobCreatorAmount = 9 * 10**18; // Total cost from JC perspective
-        uint256 rpAmount = 20 * 10**18; // More than required collateral
+        uint256 jobCreatorAmount = 9 * 10 ** 18; // Total cost from JC perspective
+        uint256 rpAmount = 20 * 10 ** 18; // More than required collateral
 
         SharedStructs.DealPaymentStructure memory paymentStructure = SharedStructs.DealPaymentStructure({
-            jobCreatorSolverFee: 1 * 10**18,
-            resourceProviderSolverFee: 1 * 10**18,
-            networkCongestionFee: 1 * 10**18,
-            moduleCreatorFee: 1 * 10**18,
-            priceOfJobWithoutFees: 5 * 10**18
+            jobCreatorSolverFee: 1 * 10 ** 18,
+            resourceProviderSolverFee: 1 * 10 ** 18,
+            networkCongestionFee: 1 * 10 ** 18,
+            moduleCreatorFee: 1 * 10 ** 18,
+            priceOfJobWithoutFees: 5 * 10 ** 18
         });
 
         SharedStructs.Deal memory deal = SharedStructs.Deal({
@@ -618,7 +618,8 @@ contract LilypadProxyTest is Test {
 
         uint256 jobCreatorCost = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.jobCreatorSolverFee
             + deal.paymentStructure.networkCongestionFee + deal.paymentStructure.moduleCreatorFee;
-        uint256 resourceProviderCost = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee;
+        uint256 resourceProviderCost =
+            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee;
 
         // Verify escrow balances
         assertEq(paymentEngine.escrowBalanceOf(JOB_CREATOR), jobCreatorAmount - jobCreatorCost);
@@ -641,11 +642,11 @@ contract LilypadProxyTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                jobCreatorSolverFee: 1 * 10**18,
-                resourceProviderSolverFee: 1 * 10**18,
-                networkCongestionFee: 1 * 10**18,
-                moduleCreatorFee: 1 * 10**18,
-                priceOfJobWithoutFees: 5 * 10**18
+                jobCreatorSolverFee: 1 * 10 ** 18,
+                resourceProviderSolverFee: 1 * 10 ** 18,
+                networkCongestionFee: 1 * 10 ** 18,
+                moduleCreatorFee: 1 * 10 ** 18,
+                priceOfJobWithoutFees: 5 * 10 ** 18
             })
         });
 
@@ -667,30 +668,29 @@ contract LilypadProxyTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                jobCreatorSolverFee: 1 * 10**18,
-                resourceProviderSolverFee: 1 * 10**18,
-                networkCongestionFee: 1 * 10**18,
-                moduleCreatorFee: 1 * 10**18,
-                priceOfJobWithoutFees: 5 * 10**18
+                jobCreatorSolverFee: 1 * 10 ** 18,
+                resourceProviderSolverFee: 1 * 10 ** 18,
+                networkCongestionFee: 1 * 10 ** 18,
+                moduleCreatorFee: 1 * 10 ** 18,
+                priceOfJobWithoutFees: 5 * 10 ** 18
             })
         });
 
         // fund resource provider's escrow but not job creator's
         vm.startPrank(RESOURCE_PROVIDER);
-        token.approve(address(paymentEngine), 10 * 10**18);
-        proxy.acceptResourceProviderCollateral(10 * 10**18);
+        token.approve(address(paymentEngine), 10 * 10 ** 18);
+        proxy.acceptResourceProviderCollateral(10 * 10 ** 18);
         vm.stopPrank();
-
 
         uint256 jobCreatorCost = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.jobCreatorSolverFee
             + deal.paymentStructure.networkCongestionFee + deal.paymentStructure.moduleCreatorFee;
 
         vm.startPrank(address(this));
-        vm.expectRevert(abi.encodeWithSelector(
-            LilypadPaymentEngine.LilypadPayment__insufficientEscrowAmount.selector,
-            0,
-            jobCreatorCost
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LilypadPaymentEngine.LilypadPayment__insufficientEscrowAmount.selector, 0, jobCreatorCost
+            )
+        );
         proxy.setDeal(deal);
         vm.stopPrank();
     }
@@ -707,28 +707,29 @@ contract LilypadProxyTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                jobCreatorSolverFee: 1 * 10**18,
-                resourceProviderSolverFee: 1 * 10**18,
-                networkCongestionFee: 1 * 10**18,
-                moduleCreatorFee: 1 * 10**18,
-                priceOfJobWithoutFees: 5 * 10**18
+                jobCreatorSolverFee: 1 * 10 ** 18,
+                resourceProviderSolverFee: 1 * 10 ** 18,
+                networkCongestionFee: 1 * 10 ** 18,
+                moduleCreatorFee: 1 * 10 ** 18,
+                priceOfJobWithoutFees: 5 * 10 ** 18
             })
         });
 
         // fund the job creator's escrow but not the resource provider's
         vm.startPrank(JOB_CREATOR);
-        token.approve(address(paymentEngine), 10 * 10**18);
-        proxy.acceptJobPayment(10 * 10**18);
+        token.approve(address(paymentEngine), 10 * 10 ** 18);
+        proxy.acceptJobPayment(10 * 10 ** 18);
         vm.stopPrank();
 
-        uint256 resourceProviderCost = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee;
+        uint256 resourceProviderCost =
+            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee;
 
         vm.startPrank(address(this));
-        vm.expectRevert(abi.encodeWithSelector(
-            LilypadPaymentEngine.LilypadPayment__insufficientEscrowAmount.selector,
-            0,
-            resourceProviderCost
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LilypadPaymentEngine.LilypadPayment__insufficientEscrowAmount.selector, 0, resourceProviderCost
+            )
+        );
         proxy.setDeal(deal);
         vm.stopPrank();
     }
@@ -745,28 +746,180 @@ contract LilypadProxyTest is Test {
             status: SharedStructs.DealStatusEnum.DealAgreed,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
-                jobCreatorSolverFee: 1 * 10**18,
-                resourceProviderSolverFee: 1 * 10**18,
-                networkCongestionFee: 1 * 10**18,
-                moduleCreatorFee: 1 * 10**18,
-                priceOfJobWithoutFees: 5 * 10**18
+                jobCreatorSolverFee: 1 * 10 ** 18,
+                resourceProviderSolverFee: 1 * 10 ** 18,
+                networkCongestionFee: 1 * 10 ** 18,
+                moduleCreatorFee: 1 * 10 ** 18,
+                priceOfJobWithoutFees: 5 * 10 ** 18
             })
         });
 
         // Setup escrow balances to ensure the test fails due to deal save, not escrow
         vm.startPrank(JOB_CREATOR);
-        token.approve(address(paymentEngine), 10 * 10**18);
-        proxy.acceptJobPayment(10 * 10**18);
+        token.approve(address(paymentEngine), 10 * 10 ** 18);
+        proxy.acceptJobPayment(10 * 10 ** 18);
         vm.stopPrank();
 
         vm.startPrank(RESOURCE_PROVIDER);
-        token.approve(address(paymentEngine), 10 * 10**18);
-        proxy.acceptResourceProviderCollateral(10 * 10**18);
+        token.approve(address(paymentEngine), 10 * 10 ** 18);
+        proxy.acceptResourceProviderCollateral(10 * 10 ** 18);
         vm.stopPrank();
 
         vm.startPrank(address(this));
         vm.expectRevert(LilypadStorage.LilypadStorage__EmptyDealId.selector);
         proxy.setDeal(deal);
+        vm.stopPrank();
+    }
+
+    function test_GetResult() public {
+        // First create and save a deal
+        string memory dealId = "test-deal-1";
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 1 * 10 ** 18,
+                resourceProviderSolverFee: 1 * 10 ** 18,
+                networkCongestionFee: 1 * 10 ** 18,
+                moduleCreatorFee: 1 * 10 ** 18,
+                priceOfJobWithoutFees: 5 * 10 ** 18
+            })
+        });
+
+        // Save the deal first
+        vm.startPrank(address(this));
+        storage_.saveDeal(dealId, deal);
+
+        // Create and save a result
+        string memory resultId = "result-1";
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: resultId,
+            dealId: dealId,
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        storage_.saveResult(resultId, result);
+        vm.stopPrank();
+
+        // Test getting result as job creator
+        vm.startPrank(JOB_CREATOR);
+        SharedStructs.Result memory retrievedResult = proxy.getResult(resultId);
+        assertEq(retrievedResult.resultId, resultId);
+        assertEq(retrievedResult.dealId, dealId);
+        assertEq(retrievedResult.resultCID, "resultCID1");
+        assertEq(uint8(retrievedResult.status), uint8(SharedStructs.ResultStatusEnum.ResultsAccepted));
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_GettingResultWithEmptyId() public {
+        vm.startPrank(JOB_CREATOR);
+        vm.expectRevert(LilypadProxy.LilypadProxy__EmptyResultId.selector);
+        proxy.getResult("");
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_UnauthorizedUserGetsResult() public {
+        // First create and save a deal
+        string memory dealId = "test-deal-1";
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 1 * 10 ** 18,
+                resourceProviderSolverFee: 1 * 10 ** 18,
+                networkCongestionFee: 1 * 10 ** 18,
+                moduleCreatorFee: 1 * 10 ** 18,
+                priceOfJobWithoutFees: 5 * 10 ** 18
+            })
+        });
+
+        // Save the deal first
+        vm.startPrank(address(this));
+        storage_.saveDeal(dealId, deal);
+
+        // Create and save a result
+        string memory resultId = "result-1";
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: resultId,
+            dealId: dealId,
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        storage_.saveResult(resultId, result);
+        vm.stopPrank();
+
+        // Try to get result as resource provider (unauthorized)
+        vm.startPrank(RESOURCE_PROVIDER);
+        vm.expectRevert(LilypadProxy.LilypadProxy__NotAuthorizedToGetResult.selector);
+        proxy.getResult(resultId);
+        vm.stopPrank();
+    }
+
+    function testFuzz_GetResult(string memory resultId, string memory dealId, string memory resultCID, uint8 status)
+        public
+    {
+        vm.assume(bytes(resultId).length > 0);
+        vm.assume(bytes(dealId).length > 0);
+        vm.assume(bytes(resultCID).length > 0);  // Add this check to prevent empty CID
+        vm.assume(status < 2); // Number of enum values in ResultStatusEnum
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 1 * 10 ** 18,
+                resourceProviderSolverFee: 1 * 10 ** 18,
+                networkCongestionFee: 1 * 10 ** 18,
+                moduleCreatorFee: 1 * 10 ** 18,
+                priceOfJobWithoutFees: 5 * 10 ** 18
+            })
+        });
+
+        // Save the deal and result
+        vm.startPrank(address(this));
+        storage_.saveDeal(dealId, deal);
+
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: resultId,
+            dealId: dealId,
+            resultCID: resultCID,
+            status: SharedStructs.ResultStatusEnum(status),
+            timestamp: block.timestamp
+        });
+        storage_.saveResult(resultId, result);
+        vm.stopPrank();
+
+        // Test retrieval
+        vm.startPrank(JOB_CREATOR);
+        SharedStructs.Result memory retrievedResult = proxy.getResult(resultId);
+        assertEq(retrievedResult.resultId, resultId);
+        assertEq(retrievedResult.dealId, dealId);
+        assertEq(retrievedResult.resultCID, resultCID);
+        assertEq(uint8(retrievedResult.status), status);
         vm.stopPrank();
     }
 }

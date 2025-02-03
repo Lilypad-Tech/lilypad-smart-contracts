@@ -45,10 +45,10 @@ interface ILilypadProxy {
 
     /**
      * @dev Retrieves the result for a specific deal.
-     * @param dealId The unique identifier of the deal.
+     * @param _resultId The unique identifier of the result.
      * @return Returns a `Result` struct or a string CID representing the result.
      */
-    function getResult(string memory dealId) external view returns (SharedStructs.Result memory);
+    function getResult(string memory _resultId) external view returns (SharedStructs.Result memory);
 
     /**
      * @dev Sets the result for a specific deal.

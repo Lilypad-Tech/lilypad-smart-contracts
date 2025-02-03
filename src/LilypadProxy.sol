@@ -63,6 +63,8 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     error LilypadProxy__NotEnoughAllowance();
     error LilypadProxy__DealFailedToSave();
     error LilypadProxy__DealFailedToLockup();
+    error LilypadProxy__EmptyResultId();
+    error LilypadProxy__NotAuthorizedToGetResult();
 
     function initialize(
         address _storageAddress,
@@ -284,8 +286,14 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         revert("Not implemented");
     }
 
-    function getResult(string memory dealId) external view returns (SharedStructs.Result memory) {
-        revert("Not implemented");
+    function getResult(string memory _resultId) external view returns (SharedStructs.Result memory) {
+        if (bytes(_resultId).length == 0) revert LilypadProxy__EmptyResultId();
+        SharedStructs.Result memory result = lilypadStorage.getResult(_resultId);
+        SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
+
+        // Only the job creator can get their result
+        if (msg.sender != deal.jobCreator) revert LilypadProxy__NotAuthorizedToGetResult();
+        return result;
     }
 
     function setResult(SharedStructs.Result memory result) external returns (bool) {
