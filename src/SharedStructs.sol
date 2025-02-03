@@ -12,8 +12,7 @@ library SharedStructs {
     }
 
     enum DealStatusEnum {
-        DealAgreed,
-        DealCompleted
+        DealCreated
     }
 
     enum ResultStatusEnum {

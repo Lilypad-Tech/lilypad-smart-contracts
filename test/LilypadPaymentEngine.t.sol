@@ -544,7 +544,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -650,7 +650,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -730,7 +730,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -813,7 +813,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -931,7 +931,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -1001,7 +1001,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -1067,7 +1067,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -1142,7 +1142,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -1242,7 +1242,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -1355,7 +1355,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -1375,7 +1375,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID2",
             resourceOfferCID: "resourceCID2",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: jobCreatorSolverFee,
@@ -1462,7 +1462,7 @@ contract LilypadPaymentEngineTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,

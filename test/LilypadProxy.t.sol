@@ -590,7 +590,7 @@ contract LilypadProxyTest is Test {
             solver: address(0x456),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: paymentStructure
         });
@@ -639,7 +639,7 @@ contract LilypadProxyTest is Test {
             solver: address(0x456),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 1 * 10 ** 18,
@@ -665,7 +665,7 @@ contract LilypadProxyTest is Test {
             solver: address(0x456),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 1 * 10 ** 18,
@@ -704,7 +704,7 @@ contract LilypadProxyTest is Test {
             solver: address(0x456),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 1 * 10 ** 18,
@@ -743,7 +743,7 @@ contract LilypadProxyTest is Test {
             solver: address(0x456),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 1 * 10 ** 18,
@@ -782,7 +782,7 @@ contract LilypadProxyTest is Test {
             solver: address(0x456),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 1 * 10 ** 18,
@@ -837,7 +837,7 @@ contract LilypadProxyTest is Test {
             solver: address(0x456),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 1 * 10 ** 18,
@@ -888,7 +888,7 @@ contract LilypadProxyTest is Test {
             solver: address(0x456),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 1 * 10 ** 18,

@@ -65,7 +65,7 @@ contract LilypadStorageTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -95,7 +95,7 @@ contract LilypadStorageTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -136,7 +136,7 @@ contract LilypadStorageTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -151,13 +151,13 @@ contract LilypadStorageTest is Test {
 
         // Change status
         vm.expectEmit(true, true, true, true);
-        emit DealStatusChanged("deal1", SharedStructs.DealStatusEnum.DealCompleted);
+        emit DealStatusChanged("deal1", SharedStructs.DealStatusEnum.DealCreated);
 
-        bool success = lilypadStorage.changeDealStatus("deal1", SharedStructs.DealStatusEnum.DealCompleted);
+        bool success = lilypadStorage.changeDealStatus("deal1", SharedStructs.DealStatusEnum.DealCreated);
         assertTrue(success);
 
         SharedStructs.Deal memory updatedDeal = lilypadStorage.getDeal("deal1");
-        assertEq(uint256(updatedDeal.status), uint256(SharedStructs.DealStatusEnum.DealCompleted));
+        assertEq(uint256(updatedDeal.status), uint256(SharedStructs.DealStatusEnum.DealCreated));
     }
 
     // Result Tests
@@ -295,7 +295,7 @@ contract LilypadStorageTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -319,7 +319,7 @@ contract LilypadStorageTest is Test {
             solver: address(0),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -387,7 +387,7 @@ contract LilypadStorageTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -399,7 +399,7 @@ contract LilypadStorageTest is Test {
         });
 
         lilypadStorage.saveDeal("deal1", deal);
-        assertEq(uint256(lilypadStorage.checkDealStatus("deal1")), uint256(SharedStructs.DealStatusEnum.DealAgreed));
+        assertEq(uint256(lilypadStorage.checkDealStatus("deal1")), uint256(SharedStructs.DealStatusEnum.DealCreated));
     }
 
     function test_CheckValidationStatus() public {
@@ -469,7 +469,7 @@ contract LilypadStorageTest is Test {
                 IAccessControl.AccessControlUnauthorizedAccount.selector, ALICE, SharedStructs.CONTROLLER_ROLE
             )
         );
-        lilypadStorage.changeDealStatus("deal1", SharedStructs.DealStatusEnum.DealCompleted);
+        lilypadStorage.changeDealStatus("deal1", SharedStructs.DealStatusEnum.DealCreated);
     }
 
     function test_RevertWhen_SavingResultWithEmptyDealId() public {
@@ -550,7 +550,7 @@ contract LilypadStorageTest is Test {
             solver: DAVE,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -597,7 +597,7 @@ contract LilypadStorageTest is Test {
             solver: solver,
             jobOfferCID: jobOfferCID,
             resourceOfferCID: resourceOfferCID,
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: 0, // Will be set by the contract
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -647,7 +647,7 @@ contract LilypadStorageTest is Test {
             solver: address(0x4),
             jobOfferCID: "jobOfferCID",
             resourceOfferCID: "resourceOfferCID",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: 0, // Will be set by the contract
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -702,7 +702,7 @@ contract LilypadStorageTest is Test {
             solver: address(0x4),
             jobOfferCID: "job_A",
             resourceOfferCID: "res_A",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: 0, // Will be set by the contract
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,
@@ -782,7 +782,7 @@ contract LilypadStorageTest is Test {
             solver: address(0x4),
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 0,

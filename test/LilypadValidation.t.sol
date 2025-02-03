@@ -222,7 +222,7 @@ contract LilypadValidationTest is Test {
             solver: VALIDATOR,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 100,
@@ -273,7 +273,7 @@ contract LilypadValidationTest is Test {
             solver: VALIDATOR,
             jobOfferCID: "jobCID1",
             resourceOfferCID: "resourceCID1",
-            status: SharedStructs.DealStatusEnum.DealAgreed,
+            status: SharedStructs.DealStatusEnum.DealCreated,
             timestamp: block.timestamp,
             paymentStructure: SharedStructs.DealPaymentStructure({
                 jobCreatorSolverFee: 100,
