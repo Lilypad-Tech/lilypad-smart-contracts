@@ -876,7 +876,7 @@ contract LilypadProxyTest is Test {
     {
         vm.assume(bytes(resultId).length > 0);
         vm.assume(bytes(dealId).length > 0);
-        vm.assume(bytes(resultCID).length > 0);  // Add this check to prevent empty CID
+        vm.assume(bytes(resultCID).length > 0); // Add this check to prevent empty CID
         vm.assume(status < 2); // Number of enum values in ResultStatusEnum
 
         // Create and save deal
