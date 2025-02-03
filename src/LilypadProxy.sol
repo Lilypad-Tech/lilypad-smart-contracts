@@ -282,10 +282,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         return true;
     }
 
-    function updateDealState(string memory dealId, SharedStructs.DealStatusEnum state) external returns (bool) {
-        revert("Not implemented");
-    }
-
     function getResult(string memory _resultId) external view returns (SharedStructs.Result memory) {
         if (bytes(_resultId).length == 0) revert LilypadProxy__EmptyResultId();
         SharedStructs.Result memory result = lilypadStorage.getResult(_resultId);
