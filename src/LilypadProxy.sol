@@ -51,6 +51,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
     event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
     event LilypadProxy__ValidationCollateralPayment(address indexed validator, uint256 amount);
+
     error LilypadProxy__ZeroAddressNotAllowed();
     error LilypadProxy__ZeroAmountNotAllowed();
     error LilypadProxy__RoleAlreadyAssigned();
@@ -60,6 +61,8 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     error LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider();
     error LilypadProxy__acceptValidationCollateral__NotValidator();
     error LilypadProxy__NotEnoughAllowance();
+    error LilypadProxy__DealFailedToSave();
+    error LilypadProxy__DealFailedToLockup();
 
     function initialize(
         address _storageAddress,
@@ -228,14 +231,56 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         return true;
     }
 
+    /**
+     * @dev Gets the escrow balance for an address
+     * @notice
+     * - Reverts if the `_address` is the zero address
+     * - Returns the escrow balance for the `_address`
+     */
     function getEscrowBalance(address _address) external view returns (uint256) {
-        return paymentEngine.getEscrowBalance(_address);
+        return paymentEngine.escrowBalanceOf(_address);
     }
 
-    function requestValidation(address requestorAddress, string memory moduleName, uint256 amount)
-        external
-        returns (bool)
-    {
+    /**
+     * @dev Gets a deal from the storage contract
+     * @notice
+     * - Reverts if the `dealId` is empty or deal does not exist
+     * - Returns the deal for the `dealId`
+     */
+    function getDeal(string memory dealId) external view returns (SharedStructs.Deal memory) {
+        return lilypadStorage.getDeal(dealId);
+    }
+
+    /**
+     * @dev Sets a deal in the storage contract and locks up the escrow in the paymentEngine contract
+     * @notice
+     * - Reverts if the `dealId` is empty or deal does not exist
+     * - Reverts if the `deal` is not valid
+     * - Reverts if the job creator and/or resource provider do not have enough escrow balance to satify running the job
+     * - Returns true if the deal is successfully saved
+     */
+    function setDeal(SharedStructs.Deal memory deal) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
+        // Save the deal to the storage contract
+        bool _dealSaveSuccess = lilypadStorage.saveDeal(deal.dealId, deal);
+        if (!_dealSaveSuccess) revert LilypadProxy__DealFailedToSave();
+
+        // Calculate the cost of the job from the job creator's perspective
+        uint256 jobCost = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.jobCreatorSolverFee
+            + deal.paymentStructure.networkCongestionFee + deal.paymentStructure.moduleCreatorFee;
+        // Calculate the cost of the job from the resource provider's perspective
+        uint256 resourceProviderCost =
+            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee;
+
+        // Lock up the escrow in active state the paymentEngine contract
+        bool _collateralLockupSuccess = paymentEngine.initiateLockupOfEscrowForJob(
+            deal.jobCreator, deal.resourceProvider, deal.dealId, jobCost, resourceProviderCost
+        );
+        if (!_collateralLockupSuccess) revert LilypadProxy__DealFailedToLockup();
+
+        return true;
+    }
+
+    function updateDealState(string memory dealId, SharedStructs.DealStatusEnum state) external returns (bool) {
         revert("Not implemented");
     }
 
@@ -247,19 +292,14 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         revert("Not implemented");
     }
 
-    function getDeal(string memory dealId) external view returns (SharedStructs.Deal memory) {
-        revert("Not implemented");
-    }
-
-    function setDeal(SharedStructs.Deal memory deal) external returns (bool) {
-        revert("Not implemented");
-    }
-
-    function updateDealState(string memory dealId, SharedStructs.DealStatusEnum state) external returns (bool) {
-        revert("Not implemented");
-    }
-
     function updateResultState(string memory resultId, SharedStructs.ResultStatusEnum state) external returns (bool) {
+        revert("Not implemented");
+    }
+
+    function requestValidation(address requestorAddress, string memory moduleName, uint256 amount)
+        external
+        returns (bool)
+    {
         revert("Not implemented");
     }
 

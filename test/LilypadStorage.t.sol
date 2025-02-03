@@ -21,7 +21,7 @@ contract LilypadStorageTest is Test {
         string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status
     );
     event ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
-    event DealSaved(string indexed dealId, address jobCreator, address resourceProvider);
+    event DealSaved(string indexed dealId, address indexed jobCreator, address indexed resourceProvider);
     event ResultSaved(string indexed resultId, string dealId);
     event ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
     event ControllerRoleGranted(address indexed newController, address indexed controller);

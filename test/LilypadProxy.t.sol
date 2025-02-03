@@ -341,14 +341,14 @@ contract LilypadProxyTest is Test {
 
     function testFuzz_AcceptResourceProviderCollateral(uint256 amount) public {
         // Bound amount to be between 10 tokens and RESOURCE_PROVIDER's balance
-        amount = bound(amount, 10 * 10**18, INITIAL_USER_BALANCE);
+        amount = bound(amount, 10 * 10 ** 18, INITIAL_USER_BALANCE);
 
         vm.startPrank(RESOURCE_PROVIDER);
-        
+
         // Get initial balances for assertions
         uint256 initialBalance = token.balanceOf(RESOURCE_PROVIDER);
         uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
-        
+
         // First approve the payment engine to spend tokens
         token.approve(address(paymentEngine), amount);
 
@@ -362,25 +362,29 @@ contract LilypadProxyTest is Test {
         // Get and check emitted event
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries.length > 0, true, "No events emitted");
-        
+
         // The event we care about should be the last one
         Vm.Log memory lastEntry = entries[entries.length - 1];
-        
+
         // Check event signature
         bytes32 expectedEventSig = keccak256("LilypadProxy__ResourceProviderCollateralPayment(address,uint256)");
         assertEq(lastEntry.topics[0], expectedEventSig, "Wrong event signature");
-        
+
         // Check indexed parameter (resource provider address)
         assertEq(address(uint160(uint256(lastEntry.topics[1]))), RESOURCE_PROVIDER, "Wrong resource provider in event");
-        
+
         // Check non-indexed parameter (amount)
         assertEq(abi.decode(lastEntry.data, (uint256)), amount, "Wrong amount in event");
 
         // Check final balances
         assertEq(token.balanceOf(RESOURCE_PROVIDER), initialBalance - amount, "Wrong final resource provider balance");
         assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), amount, "Wrong escrow balance");
-        assertEq(token.balanceOf(address(paymentEngine)), initialPaymentEngineBalance + amount, "Wrong final payment engine balance");
-        
+        assertEq(
+            token.balanceOf(address(paymentEngine)),
+            initialPaymentEngineBalance + amount,
+            "Wrong final payment engine balance"
+        );
+
         vm.stopPrank();
     }
 
@@ -412,12 +416,14 @@ contract LilypadProxyTest is Test {
 
     function testFuzz_RevertWhen_CollateralAmountTooLow(uint256 amount) public {
         // Bound amount to be between 1 wei and just under 10 tokens
-        amount = bound(amount, 1, 10 * 10**18 - 1);
+        amount = bound(amount, 1, 10 * 10 ** 18 - 1);
 
         vm.startPrank(RESOURCE_PROVIDER);
         token.approve(address(paymentEngine), amount);
 
-        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector);
+        vm.expectRevert(
+            LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector
+        );
         proxy.acceptResourceProviderCollateral(amount);
         vm.stopPrank();
     }
@@ -477,14 +483,14 @@ contract LilypadProxyTest is Test {
 
     function testFuzz_AcceptValidationCollateral(uint256 amount) public {
         // Bound amount to be between 10 tokens and VALIDATOR's balance
-        amount = bound(amount, 10 * 10**18, INITIAL_USER_BALANCE);
+        amount = bound(amount, 10 * 10 ** 18, INITIAL_USER_BALANCE);
 
         vm.startPrank(VALIDATOR);
-        
+
         // Get initial balances for assertions
         uint256 initialBalance = token.balanceOf(VALIDATOR);
         uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
-        
+
         // First approve the payment engine to spend tokens
         token.approve(address(paymentEngine), amount);
 
@@ -498,25 +504,29 @@ contract LilypadProxyTest is Test {
         // Get and check emitted event
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries.length > 0, true, "No events emitted");
-        
+
         // The event we care about should be the last one
         Vm.Log memory lastEntry = entries[entries.length - 1];
-        
+
         // Check event signature
         bytes32 expectedEventSig = keccak256("LilypadProxy__ValidationCollateralPayment(address,uint256)");
         assertEq(lastEntry.topics[0], expectedEventSig, "Wrong event signature");
-        
+
         // Check indexed parameter (validator address)
         assertEq(address(uint160(uint256(lastEntry.topics[1]))), VALIDATOR, "Wrong validator in event");
-        
+
         // Check non-indexed parameter (amount)
         assertEq(abi.decode(lastEntry.data, (uint256)), amount, "Wrong amount in event");
 
         // Check final balances
         assertEq(token.balanceOf(VALIDATOR), initialBalance - amount, "Wrong final validator balance");
         assertEq(paymentEngine.escrowBalanceOf(VALIDATOR), amount, "Wrong escrow balance");
-        assertEq(token.balanceOf(address(paymentEngine)), initialPaymentEngineBalance + amount, "Wrong final payment engine balance");
-        
+        assertEq(
+            token.balanceOf(address(paymentEngine)),
+            initialPaymentEngineBalance + amount,
+            "Wrong final payment engine balance"
+        );
+
         vm.stopPrank();
     }
 
@@ -548,13 +558,215 @@ contract LilypadProxyTest is Test {
 
     function testFuzz_RevertWhen_ValidationCollateralAmountTooLow(uint256 amount) public {
         // Bound amount to be between 1 wei and just under 10 tokens
-        amount = bound(amount, 1, 10 * 10**18 - 1);
+        amount = bound(amount, 1, 10 * 10 ** 18 - 1);
 
         vm.startPrank(VALIDATOR);
         token.approve(address(paymentEngine), amount);
 
-        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector);
+        vm.expectRevert(
+            LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector
+        );
         proxy.acceptValidationCollateral(amount);
+        vm.stopPrank();
+    }
+
+    function test_SetDeal() public {
+        uint256 jobCreatorAmount = 9 * 10**18; // Total cost from JC perspective
+        uint256 rpAmount = 20 * 10**18; // More than required collateral
+
+        SharedStructs.DealPaymentStructure memory paymentStructure = SharedStructs.DealPaymentStructure({
+            jobCreatorSolverFee: 1 * 10**18,
+            resourceProviderSolverFee: 1 * 10**18,
+            networkCongestionFee: 1 * 10**18,
+            moduleCreatorFee: 1 * 10**18,
+            priceOfJobWithoutFees: 5 * 10**18
+        });
+
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "test-deal-1",
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: paymentStructure
+        });
+
+        // Setup escrow balances
+        vm.startPrank(JOB_CREATOR);
+        token.approve(address(paymentEngine), jobCreatorAmount);
+        proxy.acceptJobPayment(jobCreatorAmount);
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        token.approve(address(paymentEngine), rpAmount);
+        proxy.acceptResourceProviderCollateral(rpAmount);
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        bool success = proxy.setDeal(deal);
+        assertTrue(success);
+
+        // Verify deal was saved
+        SharedStructs.Deal memory savedDeal = proxy.getDeal("test-deal-1");
+        assertEq(savedDeal.dealId, deal.dealId);
+        assertEq(savedDeal.jobCreator, deal.jobCreator);
+        assertEq(savedDeal.resourceProvider, deal.resourceProvider);
+
+        uint256 jobCreatorCost = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.jobCreatorSolverFee
+            + deal.paymentStructure.networkCongestionFee + deal.paymentStructure.moduleCreatorFee;
+        uint256 resourceProviderCost = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee;
+
+        // Verify escrow balances
+        assertEq(paymentEngine.escrowBalanceOf(JOB_CREATOR), jobCreatorAmount - jobCreatorCost);
+        assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), rpAmount - resourceProviderCost);
+        assertEq(paymentEngine.activeEscrowBalanceOf(JOB_CREATOR), jobCreatorCost);
+        assertEq(paymentEngine.activeEscrowBalanceOf(RESOURCE_PROVIDER), resourceProviderCost);
+        assertEq(paymentEngine.totalActiveEscrow(), jobCreatorCost + resourceProviderCost);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_NonControllerSetsDeal() public {
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "test-deal-1",
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 1 * 10**18,
+                resourceProviderSolverFee: 1 * 10**18,
+                networkCongestionFee: 1 * 10**18,
+                moduleCreatorFee: 1 * 10**18,
+                priceOfJobWithoutFees: 5 * 10**18
+            })
+        });
+
+        vm.startPrank(JOB_CREATOR);
+        vm.expectRevert();
+        proxy.setDeal(deal);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_InsufficientJobCreatorBalance() public {
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "test-deal-1",
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 1 * 10**18,
+                resourceProviderSolverFee: 1 * 10**18,
+                networkCongestionFee: 1 * 10**18,
+                moduleCreatorFee: 1 * 10**18,
+                priceOfJobWithoutFees: 5 * 10**18
+            })
+        });
+
+        // fund resource provider's escrow but not job creator's
+        vm.startPrank(RESOURCE_PROVIDER);
+        token.approve(address(paymentEngine), 10 * 10**18);
+        proxy.acceptResourceProviderCollateral(10 * 10**18);
+        vm.stopPrank();
+
+
+        uint256 jobCreatorCost = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.jobCreatorSolverFee
+            + deal.paymentStructure.networkCongestionFee + deal.paymentStructure.moduleCreatorFee;
+
+        vm.startPrank(address(this));
+        vm.expectRevert(abi.encodeWithSelector(
+            LilypadPaymentEngine.LilypadPayment__insufficientEscrowAmount.selector,
+            0,
+            jobCreatorCost
+        ));
+        proxy.setDeal(deal);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_InsufficientResourceProviderBalance() public {
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "test-deal-1",
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 1 * 10**18,
+                resourceProviderSolverFee: 1 * 10**18,
+                networkCongestionFee: 1 * 10**18,
+                moduleCreatorFee: 1 * 10**18,
+                priceOfJobWithoutFees: 5 * 10**18
+            })
+        });
+
+        // fund the job creator's escrow but not the resource provider's
+        vm.startPrank(JOB_CREATOR);
+        token.approve(address(paymentEngine), 10 * 10**18);
+        proxy.acceptJobPayment(10 * 10**18);
+        vm.stopPrank();
+
+        uint256 resourceProviderCost = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee;
+
+        vm.startPrank(address(this));
+        vm.expectRevert(abi.encodeWithSelector(
+            LilypadPaymentEngine.LilypadPayment__insufficientEscrowAmount.selector,
+            0,
+            resourceProviderCost
+        ));
+        proxy.setDeal(deal);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_DealFailsToSave() public {
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "", // Empty deal ID should cause save to fail
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealAgreed,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 1 * 10**18,
+                resourceProviderSolverFee: 1 * 10**18,
+                networkCongestionFee: 1 * 10**18,
+                moduleCreatorFee: 1 * 10**18,
+                priceOfJobWithoutFees: 5 * 10**18
+            })
+        });
+
+        // Setup escrow balances to ensure the test fails due to deal save, not escrow
+        vm.startPrank(JOB_CREATOR);
+        token.approve(address(paymentEngine), 10 * 10**18);
+        proxy.acceptJobPayment(10 * 10**18);
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        token.approve(address(paymentEngine), 10 * 10**18);
+        proxy.acceptResourceProviderCollateral(10 * 10**18);
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyDealId.selector);
+        proxy.setDeal(deal);
         vm.stopPrank();
     }
 }
