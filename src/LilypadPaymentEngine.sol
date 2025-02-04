@@ -139,6 +139,13 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         uint256 totalCostOfJob,
         uint256 resourceProviderRequiredActiveEscrow
     );
+    error LilypadPayment__HandleJobFailure__InsufficientActiveEscrowToCompleteJob(
+        string dealId,
+        uint256 jobCreatorActiveEscrow,
+        uint256 resourceProviderActiveEscrow,
+        uint256 totalCostOfJob,
+        uint256 resourceProviderRequiredActiveEscrow
+    );
     error LilypadPayment__unauthorizedWithdrawal();
     error LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet();
     error LilypadPayment__ZeroAddressNotAllowed();
@@ -763,6 +770,24 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         uint256 resoureProviderRequiredActiveEscrow = (
             deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
         ) * (resourceProviderActiveEscrowScaler / 10000);
+
+        // Get the active escrow for both parties
+        uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
+        uint256 resourceProviderActiveEscrow = activeEscrow[deal.resourceProvider];
+
+        // Check the accounting to ensure both parties have enough active escrow locked in to complete the job agreement
+        if (
+            resourceProviderActiveEscrow < resoureProviderRequiredActiveEscrow
+                || jobCreatorActiveEscrow < totalCostOfJob
+        ) {
+            revert LilypadPayment__HandleJobFailure__InsufficientActiveEscrowToCompleteJob(
+                deal.dealId,
+                jobCreatorActiveEscrow,
+                resourceProviderActiveEscrow,
+                totalCostOfJob,
+                resoureProviderRequiredActiveEscrow
+            );
+        }
 
         // Slash the resource provider
         slashEscrow(deal.resourceProvider, SharedStructs.UserType.ResourceProvider, resoureProviderRequiredActiveEscrow);

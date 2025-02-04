@@ -1224,6 +1224,69 @@ contract LilypadPaymentEngineTest is Test {
         vm.stopPrank();
     }
 
+    function test_HandleJobFailure_RevertWhen_InsufficientActiveEscrow() public {
+        // Setup fees and costs
+        uint256 jobCreatorSolverFee = 1 * 10 ** 18;
+        uint256 resourceProviderSolverFee = 1 * 10 ** 18;
+        uint256 moduleCreatorFee = 1 * 10 ** 18;
+        uint256 networkCongestionFee = 1 * 10 ** 18;
+        uint256 basePayment = 5 * 10 ** 18;
+        uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
+        uint256 jobCost = basePayment + totalFees;
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealCreated,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment
+            })
+        });
+
+        vm.startPrank(address(this));
+        lilypadStorage.saveDeal("deal1", deal);
+        vm.stopPrank();
+
+        // Calculate required escrows
+        uint256 rpRequiredEscrow =
+            (basePayment + resourceProviderSolverFee) * (paymentEngine.resourceProviderActiveEscrowScaler() / 10000);
+
+        // Skip the lockup of escrow for job creator and resource provider
+
+        // Test: Insufficient escrow
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LilypadPaymentEngine.LilypadPayment__HandleJobFailure__InsufficientActiveEscrowToCompleteJob.selector,
+                "deal1",
+                0, // jobCreatorActiveEscrow
+                0, // resourceProviderActiveEscrow
+                jobCost,
+                rpRequiredEscrow
+            )
+        );
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsRejected,
+            timestamp: block.timestamp
+        });
+        paymentEngine.handleJobFailure(result);
+        vm.stopPrank();
+    }
+
     function test_HandleValidationPassed() public {
         // Setup initial job
         uint256 basePayment = 5 * 10 ** 18;
