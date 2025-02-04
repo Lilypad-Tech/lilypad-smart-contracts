@@ -795,4 +795,129 @@ contract LilypadStorageTest is Test {
         vm.expectRevert(LilypadStorage.LilypadStorage__InvalidResourceProviderAddress.selector);
         lilypadStorage.saveDeal("deal1", deal);
     }
+
+    function test_SaveValidationRequest() public {
+        string memory validationRequestId = "validation-request-1";
+        string memory resultId = "result-1";
+        string memory dealId = "deal-1";
+        address validator = address(0x123);
+
+        SharedStructs.ValidationRequest memory request = SharedStructs.ValidationRequest({
+            validationRequestId: validationRequestId,
+            resultId: resultId,
+            dealId: dealId,
+            timestamp: block.timestamp,
+            validator: validator
+        });
+
+        vm.startPrank(address(this));
+        bool success = lilypadStorage.saveValidationRequest(validationRequestId, request);
+        assertTrue(success);
+
+        // Verify the saved request
+        SharedStructs.ValidationRequest memory savedRequest = lilypadStorage.getValidationRequest(validationRequestId);
+        assertEq(savedRequest.validationRequestId, validationRequestId);
+        assertEq(savedRequest.resultId, resultId);
+        assertEq(savedRequest.dealId, dealId);
+        assertEq(savedRequest.validator, validator);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_SaveValidationRequestWithEmptyId() public {
+        string memory validationRequestId = "";
+        string memory resultId = "result-1";
+        string memory dealId = "deal-1";
+        address validator = address(0x123);
+
+        SharedStructs.ValidationRequest memory request = SharedStructs.ValidationRequest({
+            validationRequestId: validationRequestId,
+            resultId: resultId,
+            dealId: dealId,
+            timestamp: block.timestamp,
+            validator: validator
+        });
+
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyValidationRequestId.selector);
+        lilypadStorage.saveValidationRequest(validationRequestId, request);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_SaveValidationRequestWithEmptyResultId() public {
+        string memory validationRequestId = "validation-request-1";
+        string memory resultId = "";
+        string memory dealId = "deal-1";
+        address validator = address(0x123);
+
+        SharedStructs.ValidationRequest memory request = SharedStructs.ValidationRequest({
+            validationRequestId: validationRequestId,
+            resultId: resultId,
+            dealId: dealId,
+            timestamp: block.timestamp,
+            validator: validator
+        });
+
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyResultId.selector);
+        lilypadStorage.saveValidationRequest(validationRequestId, request);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_SaveValidationRequestWithEmptyDealId() public {
+        string memory validationRequestId = "validation-request-1";
+        string memory resultId = "result-1";
+        string memory dealId = "";
+        address validator = address(0x123);
+
+        SharedStructs.ValidationRequest memory request = SharedStructs.ValidationRequest({
+            validationRequestId: validationRequestId,
+            resultId: resultId,
+            dealId: dealId,
+            timestamp: block.timestamp,
+            validator: validator
+        });
+
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyDealId.selector);
+        lilypadStorage.saveValidationRequest(validationRequestId, request);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_SaveValidationRequestWithInvalidValidator() public {
+        string memory validationRequestId = "validation-request-1";
+        string memory resultId = "result-1";
+        string memory dealId = "deal-1";
+        address validator = address(0);
+
+        SharedStructs.ValidationRequest memory request = SharedStructs.ValidationRequest({
+            validationRequestId: validationRequestId,
+            resultId: resultId,
+            dealId: dealId,
+            timestamp: block.timestamp,
+            validator: validator
+        });
+
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadStorage.LilypadStorage__InvalidValidatorAddress.selector);
+        lilypadStorage.saveValidationRequest(validationRequestId, request);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_GetNonexistentValidationRequest() public {
+        string memory validationRequestId = "nonexistent-request";
+
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadStorage.LilypadStorage__ValidationRequestNotFound.selector);
+        lilypadStorage.getValidationRequest(validationRequestId);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_GetValidationRequestWithEmptyId() public {
+        string memory validationRequestId = "";
+
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyValidationRequestId.selector);
+        lilypadStorage.getValidationRequest(validationRequestId);
+        vm.stopPrank();
+    }
 }
