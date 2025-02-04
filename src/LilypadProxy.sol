@@ -314,10 +314,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         return true;
     }
 
-    function updateResultState(string memory resultId, SharedStructs.ResultStatusEnum state) external returns (bool) {
-        revert("Not implemented");
-    }
-
     function requestValidation(address requestorAddress, string memory moduleName, uint256 amount)
         external
         returns (bool)

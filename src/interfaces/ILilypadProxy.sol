@@ -74,15 +74,6 @@ interface ILilypadProxy {
     function setDeal(SharedStructs.Deal memory deal) external returns (bool);
 
     /**
-     * @dev Updates the state of a specific Result.
-     * @param resultId The unique identifier of the deal to update.
-     * @param state The new state to assign to the deal (enum).
-     * @return Returns true if the state is successfully updated.
-     * @notice This function is restricted to the owner role.
-     */
-    function updateResultState(string memory resultId, SharedStructs.ResultStatusEnum state) external returns (bool);
-
-    /**
      * @dev Updates the state of a specific validation.
      * @param validationId The unique identifier of the deal to update.
      * @param state The new state to assign to the deal (enum).
