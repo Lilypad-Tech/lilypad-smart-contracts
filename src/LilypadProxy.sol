@@ -63,8 +63,8 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     error LilypadProxy__NotEnoughAllowance();
     error LilypadProxy__DealFailedToSave();
     error LilypadProxy__DealFailedToLockup();
-    error LilypadProxy__EmptyResultId();
     error LilypadProxy__NotAuthorizedToGetResult();
+    error LilypadProxy__ResultFailedToSave();
 
     function initialize(
         address _storageAddress,
@@ -262,7 +262,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
      * - Returns true if the deal is successfully saved
      */
     function setDeal(SharedStructs.Deal memory deal) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        // Save the deal to the storage contract
+        // Save the deal to the storage contract where the checks on the object are done in the storage contract
         bool _dealSaveSuccess = lilypadStorage.saveDeal(deal.dealId, deal);
         if (!_dealSaveSuccess) revert LilypadProxy__DealFailedToSave();
 
@@ -283,8 +283,9 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     }
 
     function getResult(string memory _resultId) external view returns (SharedStructs.Result memory) {
-        if (bytes(_resultId).length == 0) revert LilypadProxy__EmptyResultId();
+        // Retrieve the result from the storage contract, if it doesn't exist, the storage contract will revert
         SharedStructs.Result memory result = lilypadStorage.getResult(_resultId);
+        // Retrieve the deal from the storage contract, if it doesn't exist, the storage contract will revert
         SharedStructs.Deal memory deal = lilypadStorage.getDeal(result.dealId);
 
         // Only the job creator can get their result
@@ -292,8 +293,25 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         return result;
     }
 
-    function setResult(SharedStructs.Result memory result) external returns (bool) {
-        revert("Not implemented");
+    function setResult(SharedStructs.Result memory result)
+        external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
+        // Save the Result Object to the storage contract where the checks on the object are done in the storage contract
+        bool _resultSaveSuccess = lilypadStorage.saveResult(result.resultId, result);
+        if (!_resultSaveSuccess) revert LilypadProxy__ResultFailedToSave();
+
+        // Check if the result status is ResultAccepted, if so call handleJobCompletion
+        if (result.status == SharedStructs.ResultStatusEnum.ResultsAccepted) {
+            // This will handle finalizing the payouts for all the respective parties
+            paymentEngine.handleJobCompletion(result);
+        } else {
+            // This will handle finalizing the payouts for all the respective parties as well as slashing the resource provider for failing to provide a result
+            paymentEngine.handleJobFailure(result);
+        }
+
+        return true;
     }
 
     function updateResultState(string memory resultId, SharedStructs.ResultStatusEnum state) external returns (bool) {

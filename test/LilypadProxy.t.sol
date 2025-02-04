@@ -48,8 +48,6 @@ contract LilypadProxyTest is Test {
         // Deploy token
         token = new LilypadToken(INITIAL_SUPPLY);
 
-        //vm.startPrank(ADMIN);
-
         // Initialize proxies
         ERC1967Proxy storageProxy =
             new ERC1967Proxy(address(storageImpl), abi.encodeWithSelector(LilypadStorage.initialize.selector));
@@ -92,12 +90,14 @@ contract LilypadProxyTest is Test {
         );
         proxy = LilypadProxy(address(proxyProxy));
 
-        // Grant controller roles
-        token.grantRole(SharedStructs.MINTER_ROLE, address(this));
+        // Grant roles to proxy
         storage_.grantRole(SharedStructs.CONTROLLER_ROLE, address(proxy));
         user.grantRole(SharedStructs.CONTROLLER_ROLE, address(proxy));
         paymentEngine.grantRole(SharedStructs.CONTROLLER_ROLE, address(proxy));
         validation.grantRole(SharedStructs.CONTROLLER_ROLE, address(proxy));
+
+        // Grant roles to payment engine
+        storage_.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
 
         // Set up JOB_CREATOR role
         user.insertUser(JOB_CREATOR, "metadata", "url", SharedStructs.UserType.JobCreator);
@@ -107,8 +107,6 @@ contract LilypadProxyTest is Test {
         token.mint(JOB_CREATOR, INITIAL_USER_BALANCE);
         token.mint(VALIDATOR, INITIAL_USER_BALANCE);
         token.mint(RESOURCE_PROVIDER, INITIAL_USER_BALANCE);
-
-        //vm.stopPrank();
     }
 
     function test_InitialState() public {
@@ -120,6 +118,16 @@ contract LilypadProxyTest is Test {
         assertEq(address(proxy.lilypadToken()), address(token));
         assertTrue(proxy.hasRole(bytes32(0x00), address(this))); // Check DEFAULT_ADMIN_ROLE first
         assertTrue(proxy.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
+        assertTrue(storage_.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
+        assertTrue(storage_.hasRole(bytes32(0x00), address(this)));
+        assertTrue(paymentEngine.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
+        assertTrue(paymentEngine.hasRole(bytes32(0x00), address(this)));
+        assertTrue(validation.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
+        assertTrue(validation.hasRole(bytes32(0x00), address(this)));
+        assertTrue(user.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
+        assertTrue(user.hasRole(bytes32(0x00), address(this)));
+        assertTrue(token.hasRole(SharedStructs.MINTER_ROLE, address(this)));
+        assertTrue(token.hasRole(bytes32(0x00), address(this)));
     }
 
     function test_GetVersion() public {
@@ -821,7 +829,7 @@ contract LilypadProxyTest is Test {
 
     function test_RevertWhen_GettingResultWithEmptyId() public {
         vm.startPrank(JOB_CREATOR);
-        vm.expectRevert(LilypadProxy.LilypadProxy__EmptyResultId.selector);
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyResultId.selector);
         proxy.getResult("");
         vm.stopPrank();
     }
@@ -920,6 +928,235 @@ contract LilypadProxyTest is Test {
         assertEq(retrievedResult.dealId, dealId);
         assertEq(retrievedResult.resultCID, resultCID);
         assertEq(uint8(retrievedResult.status), status);
+        vm.stopPrank();
+    }
+
+    function test_SetResult_Calling_HanleJobCompletion() public {
+        string memory dealId = "test-deal-1";
+        uint256 basePayment = 5 * 10 ** 18;
+        uint256 jobCreatorSolverFee = 1 * 10 ** 18;
+        uint256 resourceProviderSolverFee = 1 * 10 ** 18;
+        uint256 networkCongestionFee = 1 * 10 ** 18;
+        uint256 moduleCreatorFee = 1 * 10 ** 18;
+
+        uint256 totalCost = basePayment + jobCreatorSolverFee + networkCongestionFee + moduleCreatorFee;
+        uint256 rpCollateral = paymentEngine.MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT();
+
+        // Setup escrow
+        vm.startPrank(JOB_CREATOR);
+        token.approve(address(paymentEngine), totalCost);
+        paymentEngine.payEscrow(JOB_CREATOR, SharedStructs.PaymentReason.JobFee, totalCost);
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(RESOURCE_PROVIDER, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
+        vm.stopPrank();
+
+        vm.prank(address(proxy));
+        paymentEngine.initiateLockupOfEscrowForJob(JOB_CREATOR, RESOURCE_PROVIDER, dealId, totalCost, rpCollateral);
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealCreated,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment
+            })
+        });
+
+        vm.startPrank(address(this));
+        storage_.saveDeal(dealId, deal);
+
+        // Create and set result
+        string memory resultId = "result-1";
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: resultId,
+            dealId: dealId,
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+
+        bool success = proxy.setResult(result);
+        assertTrue(success);
+
+        // Verify result and balances
+        SharedStructs.Result memory savedResult = storage_.getResult(resultId);
+        assertEq(savedResult.resultId, resultId);
+        assertEq(savedResult.dealId, dealId);
+        assertEq(savedResult.resultCID, "resultCID1");
+        assertEq(uint8(savedResult.status), uint8(SharedStructs.ResultStatusEnum.ResultsAccepted));
+
+        vm.stopPrank();
+    }
+
+    function test_SetResult_Calling_HandleJobFailed() public {
+        string memory dealId = "test-deal-1";
+        uint256 basePayment = 5 * 10 ** 18;
+        uint256 jobCreatorSolverFee = 1 * 10 ** 18;
+        uint256 resourceProviderSolverFee = 1 * 10 ** 18;
+        uint256 networkCongestionFee = 1 * 10 ** 18;
+        uint256 moduleCreatorFee = 1 * 10 ** 18;
+
+        uint256 totalCost = basePayment + jobCreatorSolverFee + networkCongestionFee + moduleCreatorFee;
+        uint256 rpCollateral = paymentEngine.MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT();
+
+        // Setup escrow
+        vm.startPrank(JOB_CREATOR);
+        token.approve(address(paymentEngine), totalCost);
+        paymentEngine.payEscrow(JOB_CREATOR, SharedStructs.PaymentReason.JobFee, totalCost);
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(RESOURCE_PROVIDER, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
+        vm.stopPrank();
+
+        vm.prank(address(proxy));
+        paymentEngine.initiateLockupOfEscrowForJob(JOB_CREATOR, RESOURCE_PROVIDER, dealId, totalCost, rpCollateral);
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealCreated,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment
+            })
+        });
+
+        vm.startPrank(address(this));
+        storage_.saveDeal(dealId, deal);
+
+        // Create and set result
+        string memory resultId = "result-1";
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: resultId,
+            dealId: dealId,
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsRejected,
+            timestamp: block.timestamp
+        });
+
+        bool success = proxy.setResult(result);
+        assertTrue(success);
+
+        // Verify result and balances
+        SharedStructs.Result memory savedResult = storage_.getResult(resultId);
+        assertEq(savedResult.resultId, resultId);
+        assertEq(savedResult.dealId, dealId);
+        assertEq(savedResult.resultCID, "resultCID1");
+        assertEq(uint8(savedResult.status), uint8(SharedStructs.ResultStatusEnum.ResultsRejected));
+
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_NonControllerSetsResult() public {
+        vm.startPrank(JOB_CREATOR);
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result-1",
+            dealId: "deal-1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+
+        vm.expectRevert();
+        proxy.setResult(result);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_SettingResultForNonexistentDeal() public {
+        vm.startPrank(address(this));
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result-1",
+            dealId: "nonexistent-deal",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+
+        vm.expectRevert(
+            abi.encodeWithSelector(LilypadStorage.LilypadStorage__DealNotFound.selector, "nonexistent-deal")
+        );
+        proxy.setResult(result);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_SettingResultWithNoResultID() public {
+        vm.startPrank(address(this));
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "",
+            dealId: "nonexistent-deal",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+
+        vm.expectRevert(
+            abi.encodeWithSelector(LilypadStorage.LilypadStorage__EmptyResultId.selector)
+        );
+        proxy.setResult(result);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_SettingResultWithEmptyCID() public {
+        // First create and save a deal
+        string memory dealId = "test-deal-1";
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: dealId,
+            jobCreator: JOB_CREATOR,
+            resourceProvider: RESOURCE_PROVIDER,
+            moduleCreator: address(0x123),
+            solver: address(0x456),
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealCreated,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: 1 * 10 ** 18,
+                resourceProviderSolverFee: 1 * 10 ** 18,
+                networkCongestionFee: 1 * 10 ** 18,
+                moduleCreatorFee: 1 * 10 ** 18,
+                priceOfJobWithoutFees: 5 * 10 ** 18
+            })
+        });
+
+        vm.startPrank(address(this));
+        storage_.saveDeal(dealId, deal);
+
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result-1",
+            dealId: dealId,
+            resultCID: "", // Empty CID
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+
+        vm.expectRevert(LilypadStorage.LilypadStorage__EmptyCID.selector);
+        proxy.setResult(result);
         vm.stopPrank();
     }
 }
