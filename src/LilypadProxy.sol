@@ -51,6 +51,9 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
     event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
     event LilypadProxy__ValidationCollateralPayment(address indexed validator, uint256 amount);
+    event LilypadProxy__JobCreatorInserted(address indexed jobCreator);
+    event LilypadProxy__ResourceProviderInserted(address indexed resourceProvider);
+    event LilypadProxy__ValidatorInserted(address indexed validator);
 
     error LilypadProxy__ZeroAddressNotAllowed();
     error LilypadProxy__ZeroAmountNotAllowed();
@@ -160,6 +163,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
      * @notice
      * - The caller of this function must call the token.approve() approving the paymentEngine contract address to recieve tokens on the callers behalf
      * - Only job creators can call this function
+     * - If the `msg.sender` does not exist in the lilypadUser contract, a new user is created and registered as a job creator
      * - Reverts if the `msg.sender` is the zero address
      * - Reverts if the `msg.sender` does not have the job creator role
      * - Reverts if the `_amount` is zero
@@ -167,12 +171,21 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
      */
     function acceptJobPayment(uint256 _amount) external returns (bool) {
         if (msg.sender == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
-        if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.JobCreator)) {
-            revert LilypadProxy__acceptJobPayment__NotJobCreator();
-        }
         if (_amount == 0) revert LilypadProxy__ZeroAmountNotAllowed();
         if (lilypadToken.allowance(msg.sender, address(paymentEngine)) < _amount) {
             revert LilypadProxy__NotEnoughAllowance();
+        }
+
+        // Check if the user exists in the lilypadUser contract
+        try lilypadUser.getUser(msg.sender) returns (SharedStructs.User memory user) {
+            // If the user exists and they are not a job creator, revert as they are supposed to use either the acceptResourceProviderCollateral or acceptValidationCollateral functions depending on their role
+            if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.JobCreator)) {
+                revert LilypadProxy__acceptJobPayment__NotJobCreator();
+            }
+        } catch {
+            // if the user does not exist, create a new user and register them as a job creator, the metadataID and url are purposesly left blank at the outset
+            lilypadUser.insertUser(msg.sender, "", "", SharedStructs.UserType.JobCreator);
+            emit LilypadProxy__JobCreatorInserted(msg.sender);
         }
 
         _payDeposit(msg.sender, SharedStructs.PaymentReason.JobPayment, _amount);
@@ -186,19 +199,30 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
      * @notice
      * - The caller of this function must call the token.approve() approving the paymentEngine contract address to recieve tokens on the callers behalf
      * - Only resource providers can call this function
+     * - If the `msg.sender` does not exist in the lilypadUser contract, a new user is created and registered as a resource provider
      * - Reverts if the `msg.sender` is the zero address
      * - Reverts if the `msg.sender` does not have the resource provider role
      * - Reverts if the `_amount` is zero
+     * - Reverts if the `_amount` is less than the minimum resource provider collateral amount (call getMinimumResourceProviderCollateralAmount() to get the minimum amount)
      * - Emits a `ResourceProviderCollateralPayment` event upon successful payment
      */
     function acceptResourceProviderCollateral(uint256 _amount) external returns (bool) {
         if (msg.sender == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
-        if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.ResourceProvider)) {
-            revert LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider();
-        }
         if (_amount == 0) revert LilypadProxy__ZeroAmountNotAllowed();
         if (lilypadToken.allowance(msg.sender, address(paymentEngine)) < _amount) {
             revert LilypadProxy__NotEnoughAllowance();
+        }
+
+        // Check if the user exists in the lilypadUser contract
+        try lilypadUser.getUser(msg.sender) returns (SharedStructs.User memory user) {
+            // If the user exists and they are not a job creator, revert as they are supposed to use either the acceptResourceProviderCollateral or acceptValidationCollateral functions depending on their role
+            if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.ResourceProvider)) {
+                revert LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider();
+            }
+        } catch {
+            // if the user does not exist, create a new user and register them as a resource provider, the metadataID and url are purposesly left blank at the outset
+            lilypadUser.insertUser(msg.sender, "", "", SharedStructs.UserType.ResourceProvider);
+            emit LilypadProxy__ResourceProviderInserted(msg.sender);
         }
 
         _payDeposit(msg.sender, SharedStructs.PaymentReason.ResourceProviderCollateral, _amount);
@@ -212,6 +236,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
      * @notice
      * - The caller of this function must call the token.approve() approving the paymentEngine contract address to recieve tokens on the callers behalf
      * - Only validators can call this function
+     * - If the `msg.sender` does not exist in the lilypadUser contract, a new user is created and registered as a validator
      * - Reverts if the `msg.sender` is the zero address
      * - Reverts if the `msg.sender` does not have the validator role
      * - Reverts if the `_amount` is zero
@@ -219,12 +244,21 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
      */
     function acceptValidationCollateral(uint256 _amount) external returns (bool) {
         if (msg.sender == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
-        if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.Validator)) {
-            revert LilypadProxy__acceptValidationCollateral__NotValidator();
-        }
         if (_amount == 0) revert LilypadProxy__ZeroAmountNotAllowed();
         if (lilypadToken.allowance(msg.sender, address(paymentEngine)) < _amount) {
             revert LilypadProxy__NotEnoughAllowance();
+        }
+
+         // Check if the user exists in the lilypadUser contract
+        try lilypadUser.getUser(msg.sender) returns (SharedStructs.User memory user) {
+            // If the user exists and they are not a validator, revert as they are supposed to use either the acceptResourceProviderCollateral or acceptValidationCollateral functions depending on their role
+            if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.Validator)) {
+                revert LilypadProxy__acceptValidationCollateral__NotValidator();
+            }
+        } catch {
+            // if the user does not exist, create a new user and register them as a validator, the metadataID and url are purposesly left blank at the outset
+            lilypadUser.insertUser(msg.sender, "", "", SharedStructs.UserType.Validator);
+            emit LilypadProxy__ValidatorInserted(msg.sender);
         }
 
         _payDeposit(msg.sender, SharedStructs.PaymentReason.ValidationCollateral, _amount);

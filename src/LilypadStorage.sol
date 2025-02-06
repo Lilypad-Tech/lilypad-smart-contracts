@@ -52,7 +52,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     event ControllerRoleGranted(address indexed account, address indexed sender);
     event ControllerRoleRevoked(address indexed account, address indexed sender);
     event ValidationRequestSaved(string indexed validationRequestId, string indexed resultId, string indexed dealId);
-    event ValidationRequested(string indexed validationRequestId, address indexed requestor, string dealId, string resultId);
+    event ValidationRequested(
+        string indexed validationRequestId, address indexed requestor, string dealId, string resultId
+    );
 
     // Mappings to store deal, validationResult, and result data
     mapping(string => SharedStructs.Deal) private deals;
@@ -301,8 +303,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         return true;
     }
 
-
-    /** 
+    /**
      * @dev Gets a validation request object
      * @notice
      * - View function that returns a ValidationRequest struct
@@ -323,7 +324,6 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         return validationRequest;
     }
 
-
     /**
      * @dev Saves a validation request object with a status
      * @notice
@@ -334,11 +334,10 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * - Sets timestamp to current block timestamp
      * - Emits a ValidationRequestSaved event upon successful save
      */
-    function saveValidationRequest(string memory validationRequestId, SharedStructs.ValidationRequest memory validationRequest)
-        external
-        onlyRole(SharedStructs.CONTROLLER_ROLE)
-        returns (bool)
-    {
+    function saveValidationRequest(
+        string memory validationRequestId,
+        SharedStructs.ValidationRequest memory validationRequest
+    ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
         if (bytes(validationRequestId).length == 0) revert LilypadStorage__EmptyValidationRequestId();
         if (bytes(validationRequest.resultId).length == 0) revert LilypadStorage__EmptyResultId();
         if (bytes(validationRequest.dealId).length == 0) revert LilypadStorage__EmptyDealId();

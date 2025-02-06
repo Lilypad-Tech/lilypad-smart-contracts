@@ -27,7 +27,7 @@ contract LilypadProxyTest is Test {
     address public constant TREASURY = address(0x5);
     address public constant VALUE_REWARDS = address(0x6);
     address public constant VALIDATION_POOL = address(0x7);
-
+    address public constant NEW_USER = address(0x8);
     uint256 public constant INITIAL_SUPPLY = 1_000_000 * 10 ** 18;
     uint256 public constant INITIAL_USER_BALANCE = 100 * 10 ** 18;
 
@@ -36,6 +36,9 @@ contract LilypadProxyTest is Test {
     event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
     event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
     event LilypadProxy__ValidationCollateralPayment(address indexed validator, uint256 amount);
+    event LilypadProxy__JobCreatorInserted(address indexed jobCreator);
+    event LilypadProxy__ResourceProviderInserted(address indexed resourceProvider);
+    event LilypadProxy__ValidatorInserted(address indexed validator);
 
     function setUp() public {
         // Deploy implementations
@@ -107,6 +110,7 @@ contract LilypadProxyTest is Test {
         token.mint(JOB_CREATOR, INITIAL_USER_BALANCE);
         token.mint(VALIDATOR, INITIAL_USER_BALANCE);
         token.mint(RESOURCE_PROVIDER, INITIAL_USER_BALANCE);
+        token.mint(NEW_USER, INITIAL_USER_BALANCE);
     }
 
     function test_InitialState() public {
@@ -213,10 +217,34 @@ contract LilypadProxyTest is Test {
         vm.stopPrank();
     }
 
+    function test_AcceptJobPaymentWhenUserDoesNotExist() public {
+        uint256 amount = 10 * 10 ** 18;
+
+        vm.startPrank(NEW_USER);
+        // JOB_CREATOR approves the paymentEngine to receive tokens
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__JobCreatorInserted(NEW_USER);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__JobCreatorEscrowPayment(NEW_USER, amount);
+
+        bool success = proxy.acceptJobPayment(amount);
+
+        assertTrue(success);
+        assertEq(user.hasRole(NEW_USER, SharedStructs.UserType.JobCreator), true);
+        assertEq(token.balanceOf(NEW_USER), INITIAL_USER_BALANCE - amount);
+        assertEq(paymentEngine.escrowBalanceOf(NEW_USER), amount);
+        assertEq(token.balanceOf(address(paymentEngine)), amount);
+        vm.stopPrank();
+    }
+
     function test_RevertWhen_NonJobCreatorAcceptsJobPayment() public {
         uint256 amount = 100 * 10 ** 18;
 
         vm.startPrank(VALIDATOR);
+        token.approve(address(paymentEngine), amount);
 
         vm.expectRevert(LilypadProxy.LilypadProxy__acceptJobPayment__NotJobCreator.selector);
         proxy.acceptJobPayment(amount);
@@ -312,10 +340,34 @@ contract LilypadProxyTest is Test {
         vm.stopPrank();
     }
 
+    function test_AcceptResourceProviderCollateralWhenUserDoesNotExist() public {
+        uint256 amount = 10 * 10 ** 18;
+
+        vm.startPrank(NEW_USER);
+        // RESOURCE_PROVIDER approves the paymentEngine to receive tokens
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__ResourceProviderInserted(NEW_USER);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__ResourceProviderCollateralPayment(NEW_USER, amount);
+
+        bool success = proxy.acceptResourceProviderCollateral(amount);
+
+        assertTrue(success);
+        assertEq(user.hasRole(NEW_USER, SharedStructs.UserType.ResourceProvider), true);
+        assertEq(token.balanceOf(NEW_USER), INITIAL_USER_BALANCE - amount);
+        assertEq(paymentEngine.escrowBalanceOf(NEW_USER), amount);
+        assertEq(token.balanceOf(address(paymentEngine)), amount);
+        vm.stopPrank();
+    }
+
     function test_RevertWhen_NonResourceProviderAcceptsCollateral() public {
         uint256 amount = 100 * 10 ** 18;
 
-        vm.startPrank(VALIDATOR);
+        vm.startPrank(JOB_CREATOR);
+        token.approve(address(paymentEngine), amount);
 
         vm.expectRevert(LilypadProxy.LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider.selector);
         proxy.acceptResourceProviderCollateral(amount);
@@ -454,10 +506,34 @@ contract LilypadProxyTest is Test {
         vm.stopPrank();
     }
 
+    function test_AcceptValidationCollateralWhenUserDoesNotExist() public {
+        uint256 amount = 10 * 10 ** 18;
+
+        vm.startPrank(NEW_USER);
+        // VALIDATOR approves the paymentEngine to receive tokens
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__ValidatorInserted(NEW_USER);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__ValidationCollateralPayment(NEW_USER, amount);
+
+        bool success = proxy.acceptValidationCollateral(amount);
+
+        assertTrue(success);
+        assertEq(user.hasRole(NEW_USER, SharedStructs.UserType.Validator), true);
+        assertEq(token.balanceOf(NEW_USER), INITIAL_USER_BALANCE - amount);
+        assertEq(paymentEngine.escrowBalanceOf(NEW_USER), amount);
+        assertEq(token.balanceOf(address(paymentEngine)), amount);
+        vm.stopPrank();
+    }
+
     function test_RevertWhen_NonValidatorAcceptsCollateral() public {
         uint256 amount = 100 * 10 ** 18;
 
         vm.startPrank(JOB_CREATOR);
+        token.approve(address(paymentEngine), amount);
 
         vm.expectRevert(LilypadProxy.LilypadProxy__acceptValidationCollateral__NotValidator.selector);
         proxy.acceptValidationCollateral(amount);
@@ -1115,9 +1191,7 @@ contract LilypadProxyTest is Test {
             timestamp: block.timestamp
         });
 
-        vm.expectRevert(
-            abi.encodeWithSelector(LilypadStorage.LilypadStorage__EmptyResultId.selector)
-        );
+        vm.expectRevert(abi.encodeWithSelector(LilypadStorage.LilypadStorage__EmptyResultId.selector));
         proxy.setResult(result);
         vm.stopPrank();
     }
