@@ -47,6 +47,10 @@ contract LilypadPaymentEngineTest is Test {
     event LilypadPayment__ValidationFailed(
         address indexed jobCreator, address indexed resourceProvider, address indexed validator, uint256 amount
     );
+    event LilypadPayment__TokenomicsParameterUpdated(string indexed parameter, uint256 value);
+    event LilypadPayment__TreasuryWalletUpdated(address indexed treasuryWallet);
+    event LilypadPayment__ValueBasedRewardsWalletUpdated(address indexed valueBasedRewardsWallet);
+    event LilypadPayment__ValidationPoolWalletUpdated(address indexed validationPoolWallet);
 
     function setUp() public {
         // Deploy token with initial supply (using 1 million instead of 1 billion for initial supply)
@@ -284,6 +288,8 @@ contract LilypadPaymentEngineTest is Test {
         vm.startPrank(address(this));
 
         uint256 _newP2 = 10000 - paymentEngine.p1() - paymentEngine.p3();
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TokenomicsParameterUpdated("p2", _newP2);
 
         // Set p2 to complete the 10000 total
         paymentEngine.setP2(_newP2);
@@ -312,6 +318,8 @@ contract LilypadPaymentEngineTest is Test {
 
         // Set p1 and p2 to make sum equal 10000
         uint256 _newP3 = 10000 - paymentEngine.p1() - paymentEngine.p2();
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TokenomicsParameterUpdated("p3", _newP3);
 
         // Set p3 to complete the 10000 total
         paymentEngine.setP3(_newP3);
@@ -338,6 +346,10 @@ contract LilypadPaymentEngineTest is Test {
 
     function test_SetP() public {
         vm.startPrank(address(this));
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TokenomicsParameterUpdated("p", 2000);
+        
         paymentEngine.setP(2000);
         assertEq(paymentEngine.p(), 2000);
         vm.stopPrank();
@@ -353,8 +365,14 @@ contract LilypadPaymentEngineTest is Test {
     function test_SetV1() public {
         vm.startPrank(address(this));
         // First set v2 to a lower value
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TokenomicsParameterUpdated("v2", 100);
         paymentEngine.setV2(100);
+        
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TokenomicsParameterUpdated("v1", 200);
         paymentEngine.setV1(200);
+        
         assertEq(paymentEngine.v1(), 200);
         vm.stopPrank();
     }
@@ -400,6 +418,9 @@ contract LilypadPaymentEngineTest is Test {
     function test_SetTreasuryWallet() public {
         vm.startPrank(address(this));
         address newTreasuryWallet = address(5);
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TreasuryWalletUpdated(newTreasuryWallet);
+
         paymentEngine.setTreasuryWallet(newTreasuryWallet);
         assertEq(paymentEngine.treasuryWallet(), newTreasuryWallet);
         vm.stopPrank();
@@ -422,6 +443,9 @@ contract LilypadPaymentEngineTest is Test {
     function test_SetValueBasedRewardsWallet() public {
         vm.startPrank(address(this));
         address newValueBasedRewardsWallet = address(5);
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__ValueBasedRewardsWalletUpdated(newValueBasedRewardsWallet);
+
         paymentEngine.setValueBasedRewardsWallet(newValueBasedRewardsWallet);
         assertEq(paymentEngine.valueBasedRewardsWallet(), newValueBasedRewardsWallet);
         vm.stopPrank();
@@ -444,6 +468,9 @@ contract LilypadPaymentEngineTest is Test {
     function test_SetValidationPoolWallet() public {
         vm.startPrank(address(this));
         address newValidationPoolWallet = address(5);
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__ValidationPoolWalletUpdated(newValidationPoolWallet);
+        
         paymentEngine.setValidationPoolWallet(newValidationPoolWallet);
         assertEq(paymentEngine.validationPoolWallet(), newValidationPoolWallet);
         vm.stopPrank();

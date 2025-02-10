@@ -100,9 +100,12 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     event LilypadPayment__ActiveEscrowLockedForJob(
         address indexed jobCreator, address indexed resourceProvider, string indexed dealId, uint256 cost
     );
-    event TokenomicsParameterUpdated(string indexed parameter, uint256 value);
-    event ActiveCollateralLockupPercentageUpdated(uint256 percentage);
+    event LilypadPayment__TokenomicsParameterUpdated(string indexed parameter, uint256 value);
+    event LilypadPayment__ActiveCollateralLockupPercentageUpdated(uint256 percentage);
     event LilypadPayment__JobCompleted(address indexed jobCreator, address indexed resourceProvider, string dealId);
+    event LilypadPayment__TreasuryWalletUpdated(address indexed treasuryWallet);
+    event LilypadPayment__ValueBasedRewardsWalletUpdated(address indexed valueBasedRewardsWallet);
+    event LilypadPayment__ValidationPoolWalletUpdated(address indexed validationPoolWallet);
     event LilypadPayment__TotalFeesGeneratedByJob(
         address indexed resourceProvider, address indexed jobCreator, string dealId, uint256 amount
     );
@@ -273,7 +276,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setP1(uint256 _p1) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_p1 + p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p1 = _p1;
-        emit TokenomicsParameterUpdated("p1", _p1);
+        emit LilypadPayment__TokenomicsParameterUpdated("p1", _p1);
     }
 
     /**
@@ -284,7 +287,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setP2(uint256 _p2) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (p1 + _p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p2 = _p2;
-        emit TokenomicsParameterUpdated("p2", _p2);
+        emit LilypadPayment__TokenomicsParameterUpdated("p2", _p2);
     }
 
     /**
@@ -295,7 +298,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setP3(uint256 _p3) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (p1 + p2 + _p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p3 = _p3;
-        emit TokenomicsParameterUpdated("p3", _p3);
+        emit LilypadPayment__TokenomicsParameterUpdated("p3", _p3);
     }
 
     /**
@@ -304,7 +307,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      */
     function setP(uint256 _p) external onlyRole(DEFAULT_ADMIN_ROLE) {
         p = _p;
-        emit TokenomicsParameterUpdated("p", _p);
+        emit LilypadPayment__TokenomicsParameterUpdated("p", _p);
     }
 
     /**
@@ -313,7 +316,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      */
     function setM(uint256 _m) external onlyRole(DEFAULT_ADMIN_ROLE) {
         m = _m;
-        emit TokenomicsParameterUpdated("m", _m);
+        emit LilypadPayment__TokenomicsParameterUpdated("m", _m);
     }
 
     /**
@@ -322,7 +325,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      */
     function setAlpha(uint256 _alpha) external onlyRole(DEFAULT_ADMIN_ROLE) {
         alpha = _alpha;
-        emit TokenomicsParameterUpdated("alpha", _alpha);
+        emit LilypadPayment__TokenomicsParameterUpdated("alpha", _alpha);
     }
 
     /**
@@ -332,7 +335,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setV1(uint256 _v1) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_v1 <= v2) revert LilypadPayment__V1MustBeGreaterThanV2();
         v1 = _v1;
-        emit TokenomicsParameterUpdated("v1", _v1);
+        emit LilypadPayment__TokenomicsParameterUpdated("v1", _v1);
     }
 
     /**
@@ -342,7 +345,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setV2(uint256 _v2) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_v2 >= v1) revert LilypadPayment__V2MustBeLessThanV1();
         v2 = _v2;
-        emit TokenomicsParameterUpdated("v2", _v2);
+        emit LilypadPayment__TokenomicsParameterUpdated("v2", _v2);
     }
 
     /**
@@ -354,7 +357,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         resourceProviderActiveEscrowScaler = _resourceProviderActiveEscrowScaler;
-        emit TokenomicsParameterUpdated("resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler);
+        emit LilypadPayment__TokenomicsParameterUpdated("resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler);
     }
 
     /**
@@ -364,6 +367,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setTreasuryWallet(address _treasuryWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
         treasuryWallet = _treasuryWallet;
+        emit LilypadPayment__TreasuryWalletUpdated(_treasuryWallet);
     }
 
     /**
@@ -373,6 +377,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setValueBasedRewardsWallet(address _valueBasedRewardsWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
         valueBasedRewardsWallet = _valueBasedRewardsWallet;
+        emit LilypadPayment__ValueBasedRewardsWalletUpdated(_valueBasedRewardsWallet);
     }
 
     /**
@@ -382,6 +387,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setValidationPoolWallet(address _validationPoolWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
         validationPoolWallet = _validationPoolWallet;
+        emit LilypadPayment__ValidationPoolWalletUpdated(_validationPoolWallet);
     }
 
     /**
@@ -520,7 +526,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
 
     /**
      * @dev Withdraws a specified amount from an escrow balance.
-     * @notice This function is restricted to the CONTROLLER_ROLE.
+     * @notice Only Resource Providers and Validators can withdraw their escrow
      */
     function withdrawEscrow(address _withdrawer, uint256 _amount)
         external
