@@ -44,7 +44,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status
     );
     event ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
-    event DealSaved(string indexed dealId, address jobCreator, address resourceProvider);
+    event DealSaved(string indexed dealId, address indexed jobCreator, address indexed resourceProvider);
     event ResultSaved(string indexed resultId, string dealId);
     event ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
     event ControllerRoleGranted(address indexed account, address indexed sender);
@@ -206,7 +206,12 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * - Reverts if resultId is empty
      * - Reverts if result does not exist
      */
-    function getResult(string memory resultId) external view returns (SharedStructs.Result memory) {
+    function getResult(string memory resultId)
+        external
+        view
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (SharedStructs.Result memory)
+    {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
         SharedStructs.Result memory result = results[resultId];
         if (result.timestamp == 0) revert LilypadStorage__ResultNotFound(resultId);
@@ -248,7 +253,12 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * - Reverts if dealId is empty
      * - Reverts if deal does not exist
      */
-    function getDeal(string memory dealId) external view returns (SharedStructs.Deal memory) {
+    function getDeal(string memory dealId)
+        external
+        view
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (SharedStructs.Deal memory)
+    {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
         SharedStructs.Deal memory deal = deals[dealId];
         if (deal.timestamp == 0) revert LilypadStorage__DealNotFound(dealId);
@@ -296,6 +306,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     function getValidationResult(string memory validationResultId)
         external
         view
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (SharedStructs.ValidationResult memory)
     {
         if (bytes(validationResultId).length == 0) {
@@ -348,7 +359,12 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * - Reverts if dealId is empty
      * - Reverts if deal does not exist
      */
-    function checkDealStatus(string memory dealId) external view returns (SharedStructs.DealStatusEnum) {
+    function checkDealStatus(string memory dealId)
+        external
+        view
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (SharedStructs.DealStatusEnum)
+    {
         if (bytes(dealId).length == 0) revert LilypadStorage__EmptyDealId();
         SharedStructs.Deal storage deal = deals[dealId];
         if (deal.timestamp == 0) revert LilypadStorage__DealNotFound(dealId);
@@ -365,6 +381,7 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     function checkValidationResultStatus(string memory validationResultId)
         external
         view
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (SharedStructs.ValidationResultStatusEnum)
     {
         if (bytes(validationResultId).length == 0) {
@@ -384,7 +401,12 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      * - Reverts if resultId is empty
      * - Reverts if result does not exist
      */
-    function checkResultStatus(string memory resultId) external view returns (SharedStructs.ResultStatusEnum) {
+    function checkResultStatus(string memory resultId)
+        external
+        view
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (SharedStructs.ResultStatusEnum)
+    {
         if (bytes(resultId).length == 0) revert LilypadStorage__EmptyResultId();
         SharedStructs.Result storage result = results[resultId];
         if (result.timestamp == 0) revert LilypadStorage__ResultNotFound(resultId);
