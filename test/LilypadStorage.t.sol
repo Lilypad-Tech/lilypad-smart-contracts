@@ -16,16 +16,16 @@ contract LilypadStorageTest is Test {
     address public constant CONTROLLER = address(0x3);
 
     // Events
-    event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
-    event ValidationResultStatusChanged(
+    event LilypadStorage__DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
+    event LilypadStorage__ValidationResultStatusChanged(
         string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status
     );
-    event ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
-    event DealSaved(string indexed dealId, address indexed jobCreator, address indexed resourceProvider);
-    event ResultSaved(string indexed resultId, string dealId);
-    event ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
-    event ControllerRoleGranted(address indexed newController, address indexed controller);
-    event ControllerRoleRevoked(address indexed revokedController, address indexed controller);
+    event LilypadStorage__ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
+    event LilypadStorage__DealSaved(string indexed dealId, address indexed jobCreator, address indexed resourceProvider);
+    event LilypadStorage__ResultSaved(string indexed resultId, string dealId);
+    event LilypadStorage__ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
+    event LilypadStorage__ControllerRoleGranted(address indexed newController, address indexed controller);
+    event LilypadStorage__ControllerRoleRevoked(address indexed revokedController, address indexed controller);
 
     function setUp() public {
         // Deploy implementation
@@ -107,7 +107,7 @@ contract LilypadStorageTest is Test {
         });
 
         vm.expectEmit(true, true, true, true);
-        emit DealSaved("deal1", ALICE, BOB);
+        emit LilypadStorage__DealSaved("deal1", ALICE, BOB);
 
         bool success = lilypadStorage.saveDeal("deal1", deal);
         assertTrue(success);
@@ -151,7 +151,7 @@ contract LilypadStorageTest is Test {
 
         // Change status
         vm.expectEmit(true, true, true, true);
-        emit DealStatusChanged("deal1", SharedStructs.DealStatusEnum.DealCreated);
+        emit LilypadStorage__DealStatusChanged("deal1", SharedStructs.DealStatusEnum.DealCreated);
 
         bool success = lilypadStorage.changeDealStatus("deal1", SharedStructs.DealStatusEnum.DealCreated);
         assertTrue(success);
@@ -173,7 +173,7 @@ contract LilypadStorageTest is Test {
         });
 
         vm.expectEmit(true, true, true, true);
-        emit ResultSaved("result1", "deal1");
+        emit LilypadStorage__ResultSaved("result1", "deal1");
 
         bool success = lilypadStorage.saveResult("result1", result);
         assertTrue(success);
@@ -202,7 +202,7 @@ contract LilypadStorageTest is Test {
 
         // Change status
         vm.expectEmit(true, true, true, true);
-        emit ResultStatusChanged("result1", SharedStructs.ResultStatusEnum.ResultsRejected);
+        emit LilypadStorage__ResultStatusChanged("result1", SharedStructs.ResultStatusEnum.ResultsRejected);
 
         bool success = lilypadStorage.changeResultStatus("result1", SharedStructs.ResultStatusEnum.ResultsRejected);
         assertTrue(success);
@@ -225,7 +225,7 @@ contract LilypadStorageTest is Test {
         });
 
         vm.expectEmit(true, true, true, true);
-        emit ValidationResultSaved("validation1", "result1", BOB);
+        emit LilypadStorage__ValidationResultSaved("validation1", "result1", BOB);
 
         bool success = lilypadStorage.saveValidationResult("validation1", validationResult);
         assertTrue(success);
@@ -256,7 +256,7 @@ contract LilypadStorageTest is Test {
 
         // Change status
         vm.expectEmit(true, true, true, true);
-        emit ValidationResultStatusChanged("validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted);
+        emit LilypadStorage__ValidationResultStatusChanged("validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted);
 
         bool success = lilypadStorage.changeValidationResultStatus(
             "validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted
@@ -338,7 +338,7 @@ contract LilypadStorageTest is Test {
         address newController = address(0x4);
 
         vm.expectEmit(true, true, true, true);
-        emit ControllerRoleGranted(newController, address(this));
+        emit LilypadStorage__ControllerRoleGranted(newController, address(this));
 
         lilypadStorage.grantControllerRole(newController);
         assertTrue(lilypadStorage.hasControllerRole(newController));
@@ -349,7 +349,7 @@ contract LilypadStorageTest is Test {
         lilypadStorage.grantControllerRole(newController);
 
         vm.expectEmit(true, true, true, true);
-        emit ControllerRoleRevoked(newController, address(this));
+        emit LilypadStorage__ControllerRoleRevoked(newController, address(this));
 
         lilypadStorage.revokeControllerRole(newController);
         assertFalse(lilypadStorage.hasControllerRole(newController));
@@ -609,7 +609,7 @@ contract LilypadStorageTest is Test {
         });
 
         vm.expectEmit(true, true, true, true);
-        emit DealSaved(dealId, jobCreator, resourceProvider);
+        emit LilypadStorage__DealSaved(dealId, jobCreator, resourceProvider);
 
         lilypadStorage.saveDeal(dealId, deal);
         SharedStructs.Deal memory retrievedDeal = lilypadStorage.getDeal(dealId);
