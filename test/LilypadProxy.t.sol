@@ -6,7 +6,6 @@ import "../src/LilypadProxy.sol";
 import "../src/LilypadToken.sol";
 import "../src/LilypadStorage.sol";
 import "../src/LilypadPaymentEngine.sol";
-import "../src/LilypadValidation.sol";
 import "../src/LilypadUser.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -21,7 +20,6 @@ contract LilypadProxyTest is Test {
 
     address public constant ADMIN = address(0x1);
     address public constant JOB_CREATOR = address(0x2);
-    address public constant VALIDATOR = address(0x3);
     address public constant RESOURCE_PROVIDER = address(0x4);
     address public constant TREASURY = address(0x5);
     address public constant VALUE_REWARDS = address(0x6);
@@ -92,7 +90,6 @@ contract LilypadProxyTest is Test {
 
         // Set up JOB_CREATOR role
         user.insertUser(JOB_CREATOR, "metadata", "url", SharedStructs.UserType.JobCreator);
-        user.insertUser(VALIDATOR, "metadata", "url", SharedStructs.UserType.Validator);
         user.insertUser(RESOURCE_PROVIDER, "metadata", "url", SharedStructs.UserType.ResourceProvider);
 
         token.mint(JOB_CREATOR, INITIAL_USER_BALANCE);
@@ -167,7 +164,6 @@ contract LilypadProxyTest is Test {
 
         address newStorage = address(0x123);
         address newPaymentEngine = address(0x456);
-        address newValidation = address(0x789);
         address newUser = address(0xabc);
 
         assertTrue(proxy.setStorageContract(newStorage));
@@ -225,7 +221,7 @@ contract LilypadProxyTest is Test {
     function test_RevertWhen_NonJobCreatorAcceptsJobPayment() public {
         uint256 amount = 100 * 10 ** 18;
 
-        vm.startPrank(VALIDATOR);
+        vm.startPrank(RESOURCE_PROVIDER);
         token.approve(address(paymentEngine), amount);
 
         vm.expectRevert(LilypadProxy.LilypadProxy__acceptJobPayment__NotJobCreator.selector);
