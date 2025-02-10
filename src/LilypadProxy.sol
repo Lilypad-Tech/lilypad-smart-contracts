@@ -50,10 +50,8 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     event LilypadProxy__ControllerRoleRevoked(address indexed account, address indexed caller);
     event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
     event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
-    event LilypadProxy__ValidationCollateralPayment(address indexed validator, uint256 amount);
     event LilypadProxy__JobCreatorInserted(address indexed jobCreator);
     event LilypadProxy__ResourceProviderInserted(address indexed resourceProvider);
-    event LilypadProxy__ValidatorInserted(address indexed validator);
 
     error LilypadProxy__ZeroAddressNotAllowed();
     error LilypadProxy__ZeroAmountNotAllowed();
@@ -62,7 +60,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     error LilypadProxy__CannotRevokeOwnRole();
     error LilypadProxy__acceptJobPayment__NotJobCreator();
     error LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider();
-    error LilypadProxy__acceptValidationCollateral__NotValidator();
     error LilypadProxy__NotEnoughAllowance();
     error LilypadProxy__DealFailedToSave();
     error LilypadProxy__DealFailedToLockup();
@@ -177,7 +174,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         }
 
         // Check if the user exists in the lilypadUser contract
-        try lilypadUser.getUser(msg.sender) returns (SharedStructs.User memory user) {
+        try lilypadUser.getUser(msg.sender) {
             // If the user exists and they are not a job creator, revert as they are supposed to use either the acceptResourceProviderCollateral or acceptValidationCollateral functions depending on their role
             if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.JobCreator)) {
                 revert LilypadProxy__acceptJobPayment__NotJobCreator();
@@ -214,7 +211,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         }
 
         // Check if the user exists in the lilypadUser contract
-        try lilypadUser.getUser(msg.sender) returns (SharedStructs.User memory user) {
+        try lilypadUser.getUser(msg.sender) {
             // If the user exists and they are not a job creator, revert as they are supposed to use either the acceptResourceProviderCollateral or acceptValidationCollateral functions depending on their role
             if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.ResourceProvider)) {
                 revert LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider();
@@ -228,42 +225,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         _payDeposit(msg.sender, SharedStructs.PaymentReason.ResourceProviderCollateral, _amount);
 
         emit LilypadProxy__ResourceProviderCollateralPayment(msg.sender, _amount);
-        return true;
-    }
-
-    /**
-     * @dev Accepts a validation collateral payment
-     * @notice
-     * - The caller of this function must call the token.approve() approving the paymentEngine contract address to recieve tokens on the callers behalf
-     * - Only validators can call this function
-     * - If the `msg.sender` does not exist in the lilypadUser contract, a new user is created and registered as a validator
-     * - Reverts if the `msg.sender` is the zero address
-     * - Reverts if the `msg.sender` does not have the validator role
-     * - Reverts if the `_amount` is zero
-     * - Emits a `ValidationCollateralPayment` event upon successful payment
-     */
-    function acceptValidationCollateral(uint256 _amount) external returns (bool) {
-        if (msg.sender == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
-        if (_amount == 0) revert LilypadProxy__ZeroAmountNotAllowed();
-        if (lilypadToken.allowance(msg.sender, address(paymentEngine)) < _amount) {
-            revert LilypadProxy__NotEnoughAllowance();
-        }
-
-         // Check if the user exists in the lilypadUser contract
-        try lilypadUser.getUser(msg.sender) returns (SharedStructs.User memory user) {
-            // If the user exists and they are not a validator, revert as they are supposed to use either the acceptResourceProviderCollateral or acceptValidationCollateral functions depending on their role
-            if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.Validator)) {
-                revert LilypadProxy__acceptValidationCollateral__NotValidator();
-            }
-        } catch {
-            // if the user does not exist, create a new user and register them as a validator, the metadataID and url are purposesly left blank at the outset
-            lilypadUser.insertUser(msg.sender, "", "", SharedStructs.UserType.Validator);
-            emit LilypadProxy__ValidatorInserted(msg.sender);
-        }
-
-        _payDeposit(msg.sender, SharedStructs.PaymentReason.ValidationCollateral, _amount);
-
-        emit LilypadProxy__ValidationCollateralPayment(msg.sender, _amount);
         return true;
     }
 
@@ -346,35 +307,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         }
 
         return true;
-    }
-
-    function requestValidation(address requestorAddress, string memory moduleName, uint256 amount)
-        external
-        returns (bool)
-    {
-        revert("Not implemented");
-    }
-
-    function updateValidationState(string memory validationId, SharedStructs.ValidationResultStatusEnum state)
-        external
-        returns (bool)
-    {
-        revert("Not implemented");
-    }
-
-    function getValidationResult(string memory validationId)
-        external
-        view
-        returns (SharedStructs.ValidationResult memory)
-    {
-        revert("Not implemented");
-    }
-
-    function setValidationResult(string memory validationId, SharedStructs.ValidationResult memory validation)
-        external
-        returns (bool)
-    {
-        revert("Not implemented");
     }
 
     function getPaymentEngineAddress() external view returns (address) {
