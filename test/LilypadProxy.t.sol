@@ -17,7 +17,6 @@ contract LilypadProxyTest is Test {
     LilypadToken public token;
     LilypadStorage public storage_;
     LilypadPaymentEngine public paymentEngine;
-    LilypadValidation public validation;
     LilypadUser public user;
 
     address public constant ADMIN = address(0x1);
@@ -35,17 +34,14 @@ contract LilypadProxyTest is Test {
     event LilypadProxy__ControllerRoleRevoked(address indexed account, address indexed caller);
     event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
     event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
-    event LilypadProxy__ValidationCollateralPayment(address indexed validator, uint256 amount);
     event LilypadProxy__JobCreatorInserted(address indexed jobCreator);
     event LilypadProxy__ResourceProviderInserted(address indexed resourceProvider);
-    event LilypadProxy__ValidatorInserted(address indexed validator);
 
     function setUp() public {
         // Deploy implementations
         LilypadStorage storageImpl = new LilypadStorage();
         LilypadUser userImpl = new LilypadUser();
         LilypadPaymentEngine paymentEngineImpl = new LilypadPaymentEngine();
-        LilypadValidation validationImpl = new LilypadValidation();
         LilypadProxy proxyImpl = new LilypadProxy();
 
         // Deploy token
@@ -74,19 +70,12 @@ contract LilypadProxyTest is Test {
         );
         paymentEngine = LilypadPaymentEngine(address(paymentEngineProxy));
 
-        ERC1967Proxy validationProxy = new ERC1967Proxy(
-            address(validationImpl),
-            abi.encodeWithSelector(LilypadValidation.initialize.selector, address(storage_), address(user))
-        );
-        validation = LilypadValidation(address(validationProxy));
-
         ERC1967Proxy proxyProxy = new ERC1967Proxy(
             address(proxyImpl),
             abi.encodeWithSelector(
                 LilypadProxy.initialize.selector,
                 address(storage_),
                 address(paymentEngine),
-                address(validation),
                 address(user),
                 address(token)
             )
@@ -97,7 +86,6 @@ contract LilypadProxyTest is Test {
         storage_.grantRole(SharedStructs.CONTROLLER_ROLE, address(proxy));
         user.grantRole(SharedStructs.CONTROLLER_ROLE, address(proxy));
         paymentEngine.grantRole(SharedStructs.CONTROLLER_ROLE, address(proxy));
-        validation.grantRole(SharedStructs.CONTROLLER_ROLE, address(proxy));
 
         // Grant roles to payment engine
         storage_.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
@@ -117,7 +105,6 @@ contract LilypadProxyTest is Test {
         assertEq(proxy.version(), "1.0.0");
         assertEq(address(proxy.lilypadStorage()), address(storage_));
         assertEq(address(proxy.paymentEngine()), address(paymentEngine));
-        assertEq(address(proxy.lilypadValidation()), address(validation));
         assertEq(address(proxy.lilypadUser()), address(user));
         assertEq(address(proxy.lilypadToken()), address(token));
         assertTrue(proxy.hasRole(bytes32(0x00), address(this))); // Check DEFAULT_ADMIN_ROLE first
@@ -126,8 +113,6 @@ contract LilypadProxyTest is Test {
         assertTrue(storage_.hasRole(bytes32(0x00), address(this)));
         assertTrue(paymentEngine.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
         assertTrue(paymentEngine.hasRole(bytes32(0x00), address(this)));
-        assertTrue(validation.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
-        assertTrue(validation.hasRole(bytes32(0x00), address(this)));
         assertTrue(user.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
         assertTrue(user.hasRole(bytes32(0x00), address(this)));
         assertTrue(token.hasRole(SharedStructs.MINTER_ROLE, address(this)));
@@ -188,12 +173,10 @@ contract LilypadProxyTest is Test {
 
         assertTrue(proxy.setStorageContract(newStorage));
         assertTrue(proxy.setPaymentEngineContract(newPaymentEngine));
-        assertTrue(proxy.setValidationContract(newValidation));
         assertTrue(proxy.setUserContract(newUser));
 
         assertEq(address(proxy.lilypadStorage()), newStorage);
         assertEq(address(proxy.paymentEngine()), newPaymentEngine);
-        assertEq(address(proxy.lilypadValidation()), newValidation);
         assertEq(address(proxy.lilypadUser()), newUser);
 
         vm.stopPrank();
