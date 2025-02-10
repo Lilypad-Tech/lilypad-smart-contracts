@@ -300,6 +300,153 @@ contract LilypadProxyTest is Test {
         vm.stopPrank();
     }
 
+    function test_AcceptJobPaymentWithMaxUint256() public {
+        // Get the token's initial supply (from deployment it's 167_500_000 * 10 ** 18)
+        uint256 initialSupply = 167_500_000 * 10 ** 18;
+
+        // First clear any existing balance from the payment engine
+        vm.startPrank(address(this));
+        uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
+        if (initialPaymentEngineBalance > 0) {
+            token.burn(initialPaymentEngineBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(JOB_CREATOR);
+        // Clear job creator's balance
+        uint256 initialBalance = token.balanceOf(JOB_CREATOR);
+        if (initialBalance > 0) {
+            token.burn(initialBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        // Now mint exactly the initial supply
+        token.mint(JOB_CREATOR, initialSupply);
+        vm.stopPrank();
+
+        vm.startPrank(JOB_CREATOR);
+
+        // Verify initial balance matches initial supply exactly
+        assertEq(token.balanceOf(JOB_CREATOR), initialSupply, "Initial balance should match initial supply");
+
+        // Approve payment engine to spend tokens
+        token.approve(address(paymentEngine), initialSupply);
+
+        // Expect the job payment event
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__JobCreatorEscrowPayment(JOB_CREATOR, initialSupply);
+
+        // Attempt the payment
+        bool success = proxy.acceptJobPayment(initialSupply);
+        assertTrue(success);
+
+        // Verify final balances
+        assertEq(token.balanceOf(JOB_CREATOR), 0, "Job creator should have 0 balance");
+        assertEq(
+            token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
+        );
+        assertEq(
+            paymentEngine.escrowBalanceOf(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
+        );
+
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_AcceptJobPaymentExceedsBalance() public {
+        uint256 maxAmount = type(uint256).max;
+        uint256 actualBalance = 1000 * 10 ** 18; // Some smaller amount
+
+        // First clear any existing balances
+        vm.startPrank(address(this));
+        uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
+        if (initialPaymentEngineBalance > 0) {
+            token.burn(initialPaymentEngineBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(JOB_CREATOR);
+        uint256 initialBalance = token.balanceOf(JOB_CREATOR);
+        if (initialBalance > 0) {
+            token.burn(initialBalance);
+        }
+        vm.stopPrank();
+
+        // Mint a limited amount of tokens
+        vm.startPrank(address(this));
+        token.mint(JOB_CREATOR, actualBalance);
+        vm.stopPrank();
+
+        vm.startPrank(JOB_CREATOR);
+        // Approve spending of max amount (even though we don't have it)
+        token.approve(address(paymentEngine), maxAmount);
+
+        // Expect revert with ERC20InsufficientBalance error
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                bytes4(keccak256("ERC20InsufficientBalance(address,uint256,uint256)")),
+                JOB_CREATOR,
+                actualBalance,
+                maxAmount
+            )
+        );
+        proxy.acceptJobPayment(maxAmount);
+        vm.stopPrank();
+    }
+
+    function test_AcceptJobPaymentWithMaxAllowedAmount() public {
+        // Get the token's initial supply (from deployment it's 167_500_000 * 10 ** 18)
+        uint256 initialSupply = 167_500_000 * 10 ** 18;
+
+        // First clear any existing balance from the payment engine
+        vm.startPrank(address(this));
+        uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
+        if (initialPaymentEngineBalance > 0) {
+            token.burn(initialPaymentEngineBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(JOB_CREATOR);
+        // Clear job creator's balance
+        uint256 initialBalance = token.balanceOf(JOB_CREATOR);
+        if (initialBalance > 0) {
+            token.burn(initialBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        // Now mint exactly the initial supply
+        token.mint(JOB_CREATOR, initialSupply);
+        vm.stopPrank();
+
+        vm.startPrank(JOB_CREATOR);
+
+        // Verify initial balance matches initial supply exactly
+        assertEq(token.balanceOf(JOB_CREATOR), initialSupply, "Initial balance should match max supply");
+
+        // Approve payment engine to spend tokens
+        token.approve(address(paymentEngine), initialSupply);
+
+        // Expect the job payment event
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__JobCreatorEscrowPayment(JOB_CREATOR, initialSupply);
+
+        // Attempt the payment
+        bool success = proxy.acceptJobPayment(initialSupply);
+        assertTrue(success);
+
+        // Verify final balances
+        assertEq(token.balanceOf(JOB_CREATOR), 0, "Job creator should have 0 balance");
+        assertEq(
+            token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
+        );
+        assertEq(
+            paymentEngine.escrowBalanceOf(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
+        );
+
+        vm.stopPrank();
+    }
+
     function test_AcceptResourceProviderCollateral() public {
         uint256 amount = 10 * 10 ** 18;
 
@@ -463,6 +610,157 @@ contract LilypadProxyTest is Test {
             LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector
         );
         proxy.acceptResourceProviderCollateral(amount);
+        vm.stopPrank();
+    }
+
+    function test_AcceptResourceProviderCollateralWithMaxUint256() public {
+        // Get the token's initial supply (from deployment it's 167_500_000 * 10 ** 18)
+        uint256 initialSupply = 167_500_000 * 10 ** 18;
+
+        // First clear any existing balance from the payment engine
+        vm.startPrank(address(this));
+        uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
+        if (initialPaymentEngineBalance > 0) {
+            token.burn(initialPaymentEngineBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        // Clear job creator's balance
+        uint256 initialBalance = token.balanceOf(RESOURCE_PROVIDER);
+        if (initialBalance > 0) {
+            token.burn(initialBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        // Now mint exactly the initial supply
+        token.mint(RESOURCE_PROVIDER, initialSupply);
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+
+        // Verify initial balance matches initial supply exactly
+        assertEq(token.balanceOf(RESOURCE_PROVIDER), initialSupply, "Initial balance should match initial supply");
+
+        // Approve payment engine to spend tokens
+        token.approve(address(paymentEngine), initialSupply);
+
+        // Expect the job payment event
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__ResourceProviderCollateralPayment(RESOURCE_PROVIDER, initialSupply);
+
+        // Attempt the payment
+        bool success = proxy.acceptResourceProviderCollateral(initialSupply);
+        assertTrue(success);
+
+        // Verify final balances
+        assertEq(token.balanceOf(RESOURCE_PROVIDER), 0, "Resource provider should have 0 balance");
+        assertEq(
+            token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
+        );
+        assertEq(
+            paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER),
+            initialSupply,
+            "Escrow balance should be exactly initial supply"
+        );
+
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_AcceptResourceProviderCollateralExceedsBalance() public {
+        uint256 maxAmount = type(uint256).max;
+        uint256 actualBalance = 1000 * 10 ** 18; // Some smaller amount
+
+        // First clear any existing balances
+        vm.startPrank(address(this));
+        uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
+        if (initialPaymentEngineBalance > 0) {
+            token.burn(initialPaymentEngineBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        uint256 initialBalance = token.balanceOf(RESOURCE_PROVIDER);
+        if (initialBalance > 0) {
+            token.burn(initialBalance);
+        }
+        vm.stopPrank();
+
+        // Mint a limited amount of tokens
+        vm.startPrank(address(this));
+        token.mint(RESOURCE_PROVIDER, actualBalance);
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        // Approve spending of max amount (even though we don't have it)
+        token.approve(address(paymentEngine), maxAmount);
+
+        // Expect revert with ERC20InsufficientBalance error
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                bytes4(keccak256("ERC20InsufficientBalance(address,uint256,uint256)")),
+                RESOURCE_PROVIDER,
+                actualBalance,
+                maxAmount
+            )
+        );
+        proxy.acceptResourceProviderCollateral(maxAmount);
+        vm.stopPrank();
+    }
+
+    function test_AcceptResourceProviderCollateralWithMaxAllowedAmount() public {
+        // Get the token's initial supply (from deployment it's 167_500_000 * 10 ** 18)
+        uint256 initialSupply = 167_500_000 * 10 ** 18;
+
+        // First clear any existing balance from the payment engine
+        vm.startPrank(address(this));
+        uint256 initialPaymentEngineBalance = token.balanceOf(address(paymentEngine));
+        if (initialPaymentEngineBalance > 0) {
+            token.burn(initialPaymentEngineBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+        // Clear job creator's balance
+        uint256 initialBalance = token.balanceOf(RESOURCE_PROVIDER);
+        if (initialBalance > 0) {
+            token.burn(initialBalance);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(address(this));
+        // Now mint exactly the initial supply
+        token.mint(RESOURCE_PROVIDER, initialSupply);
+        vm.stopPrank();
+
+        vm.startPrank(RESOURCE_PROVIDER);
+
+        // Verify initial balance matches initial supply exactly
+        assertEq(token.balanceOf(RESOURCE_PROVIDER), initialSupply, "Initial balance should match max supply");
+
+        // Approve payment engine to spend tokens
+        token.approve(address(paymentEngine), initialSupply);
+
+        // Expect the job payment event
+        vm.expectEmit(true, true, true, true);
+        emit LilypadProxy__ResourceProviderCollateralPayment(RESOURCE_PROVIDER, initialSupply);
+
+        // Attempt the payment
+        bool success = proxy.acceptResourceProviderCollateral(initialSupply);
+        assertTrue(success);
+
+        // Verify final balances
+        assertEq(token.balanceOf(RESOURCE_PROVIDER), 0, "Resource provider should have 0 balance");
+        assertEq(
+            token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
+        );
+        assertEq(
+            paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER),
+            initialSupply,
+            "Escrow balance should be exactly initial supply"
+        );
+
         vm.stopPrank();
     }
 
