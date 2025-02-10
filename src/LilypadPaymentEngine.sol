@@ -1,5 +1,5 @@
 // SPX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.24;
 
 import {ILilypadPaymentEngine} from "./interfaces/ILilypadPaymentEngine.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
