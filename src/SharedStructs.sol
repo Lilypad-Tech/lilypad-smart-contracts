@@ -123,14 +123,6 @@ library SharedStructs {
         address validator;
     }
 
-    struct ValidationRequest {
-        string validationRequestId;
-        string resultId;
-        string dealId;
-        uint256 timestamp;
-        address validator;
-    }
-
     struct Module {
         address moduleOwner;
         string moduleName;

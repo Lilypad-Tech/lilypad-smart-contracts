@@ -37,8 +37,6 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     error LilypadStorage__InvalidValidatorAddress();
     error LilypadStorage__InvalidModuleCreatorAddress();
     error LilypadStorage__InvalidSolverAddress();
-    error LilypadStorage__EmptyValidationRequestId();
-    error LilypadStorage__ValidationRequestNotFound();
 
     // Events for important state changes
     event DealStatusChanged(string indexed dealId, SharedStructs.DealStatusEnum status);
@@ -51,14 +49,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     event ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
     event ControllerRoleGranted(address indexed account, address indexed sender);
     event ControllerRoleRevoked(address indexed account, address indexed sender);
-    event ValidationRequestSaved(string indexed validationRequestId, string indexed resultId, string indexed dealId);
-    event ValidationRequested(
-        string indexed validationRequestId, address indexed requestor, string dealId, string resultId
-    );
 
     // Mappings to store deal, validationResult, and result data
     mapping(string => SharedStructs.Deal) private deals;
-    mapping(string => SharedStructs.ValidationRequest) private validationRequests;
     mapping(string => SharedStructs.ValidationResult) private validationResults;
     mapping(string => SharedStructs.Result) private results;
 
@@ -300,51 +293,6 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         deal.timestamp = block.timestamp;
         deals[dealId] = deal;
         emit DealSaved(dealId, deal.jobCreator, deal.resourceProvider);
-        return true;
-    }
-
-    /**
-     * @dev Gets a validation request object
-     * @notice
-     * - View function that returns a ValidationRequest struct
-     * - Reverts if validationRequestId is empty
-     * - Reverts if validation request does not exist
-     */
-    function getValidationRequest(string memory validationRequestId)
-        external
-        view
-        onlyRole(SharedStructs.CONTROLLER_ROLE)
-        returns (SharedStructs.ValidationRequest memory)
-    {
-        if (bytes(validationRequestId).length == 0) {
-            revert LilypadStorage__EmptyValidationRequestId();
-        }
-        SharedStructs.ValidationRequest memory validationRequest = validationRequests[validationRequestId];
-        if (validationRequest.timestamp == 0) revert LilypadStorage__ValidationRequestNotFound();
-        return validationRequest;
-    }
-
-    /**
-     * @dev Saves a validation request object with a status
-     * @notice
-     * - Only accounts with the CONTROLLER_ROLE can call this function
-     * - Reverts if validationRequestId is empty
-     * - Reverts if validationRequest.resultId is empty
-     * - Reverts if validationRequest.dealId is empty
-     * - Sets timestamp to current block timestamp
-     * - Emits a ValidationRequestSaved event upon successful save
-     */
-    function saveValidationRequest(
-        string memory validationRequestId,
-        SharedStructs.ValidationRequest memory validationRequest
-    ) external onlyRole(SharedStructs.CONTROLLER_ROLE) returns (bool) {
-        if (bytes(validationRequestId).length == 0) revert LilypadStorage__EmptyValidationRequestId();
-        if (bytes(validationRequest.resultId).length == 0) revert LilypadStorage__EmptyResultId();
-        if (bytes(validationRequest.dealId).length == 0) revert LilypadStorage__EmptyDealId();
-        if (validationRequest.validator == address(0)) revert LilypadStorage__InvalidValidatorAddress();
-        validationRequest.timestamp = block.timestamp;
-        validationRequests[validationRequestId] = validationRequest;
-        emit ValidationRequestSaved(validationRequestId, validationRequest.resultId, validationRequest.dealId);
         return true;
     }
 
