@@ -96,7 +96,6 @@ contract LilypadProxyTest is Test {
         user.insertUser(RESOURCE_PROVIDER, "metadata", "url", SharedStructs.UserType.ResourceProvider);
 
         token.mint(JOB_CREATOR, INITIAL_USER_BALANCE);
-        token.mint(VALIDATOR, INITIAL_USER_BALANCE);
         token.mint(RESOURCE_PROVIDER, INITIAL_USER_BALANCE);
         token.mint(NEW_USER, INITIAL_USER_BALANCE);
     }
