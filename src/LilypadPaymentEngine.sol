@@ -1,4 +1,4 @@
-// SPX-License-Identifier: MIT
+// SPX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
 import {ILilypadPaymentEngine} from "./interfaces/ILilypadPaymentEngine.sol";
