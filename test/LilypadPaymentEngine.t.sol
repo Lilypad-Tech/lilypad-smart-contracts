@@ -349,7 +349,7 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.expectEmit(true, true, true, true);
         emit LilypadPayment__TokenomicsParameterUpdated("p", 2000);
-        
+
         paymentEngine.setP(2000);
         assertEq(paymentEngine.p(), 2000);
         vm.stopPrank();
@@ -368,11 +368,11 @@ contract LilypadPaymentEngineTest is Test {
         vm.expectEmit(true, true, true, true);
         emit LilypadPayment__TokenomicsParameterUpdated("v2", 100);
         paymentEngine.setV2(100);
-        
+
         vm.expectEmit(true, true, true, true);
         emit LilypadPayment__TokenomicsParameterUpdated("v1", 200);
         paymentEngine.setV1(200);
-        
+
         assertEq(paymentEngine.v1(), 200);
         vm.stopPrank();
     }
@@ -470,7 +470,7 @@ contract LilypadPaymentEngineTest is Test {
         address newValidationPoolWallet = address(5);
         vm.expectEmit(true, true, true, true);
         emit LilypadPayment__ValidationPoolWalletUpdated(newValidationPoolWallet);
-        
+
         paymentEngine.setValidationPoolWallet(newValidationPoolWallet);
         assertEq(paymentEngine.validationPoolWallet(), newValidationPoolWallet);
         vm.stopPrank();

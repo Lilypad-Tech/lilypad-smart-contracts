@@ -357,7 +357,9 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         resourceProviderActiveEscrowScaler = _resourceProviderActiveEscrowScaler;
-        emit LilypadPayment__TokenomicsParameterUpdated("resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler);
+        emit LilypadPayment__TokenomicsParameterUpdated(
+            "resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler
+        );
     }
 
     /**

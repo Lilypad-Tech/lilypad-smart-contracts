@@ -23,7 +23,13 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
     // Version
     string public version;
 
-    event LilypadUser__UserManagementEvent(address indexed walletAddress, string metadataID, string url, SharedStructs.UserType role, SharedStructs.UserOperation operation);
+    event LilypadUser__UserManagementEvent(
+        address indexed walletAddress,
+        string metadataID,
+        string url,
+        SharedStructs.UserType role,
+        SharedStructs.UserOperation operation
+    );
 
     error LilypadUser__UserAlreadyExists();
     error LilypadUser__UserNotFound();
@@ -97,7 +103,9 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
         users[walletAddress].metadataID = metadataID;
         users[walletAddress].url = url;
 
-        emit LilypadUser__UserManagementEvent(walletAddress, metadataID, url, SharedStructs.UserType.JobCreator, SharedStructs.UserOperation.UpdateUser);
+        emit LilypadUser__UserManagementEvent(
+            walletAddress, metadataID, url, SharedStructs.UserType.JobCreator, SharedStructs.UserOperation.UpdateUser
+        );
 
         return true;
     }
@@ -151,7 +159,9 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
             validatorAddresses.push(walletAddress);
         }
 
-        emit LilypadUser__UserManagementEvent(walletAddress, user.metadataID, user.url, role, SharedStructs.UserOperation.RoleAdded);
+        emit LilypadUser__UserManagementEvent(
+            walletAddress, user.metadataID, user.url, role, SharedStructs.UserOperation.RoleAdded
+        );
 
         return true;
     }
@@ -194,7 +204,13 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
             }
         }
 
-        emit LilypadUser__UserManagementEvent(walletAddress, users[walletAddress].metadataID, users[walletAddress].url, role, SharedStructs.UserOperation.RoleRemoved);
+        emit LilypadUser__UserManagementEvent(
+            walletAddress,
+            users[walletAddress].metadataID,
+            users[walletAddress].url,
+            role,
+            SharedStructs.UserOperation.RoleRemoved
+        );
 
         return true;
     }

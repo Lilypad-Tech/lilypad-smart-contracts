@@ -21,7 +21,9 @@ contract LilypadStorageTest is Test {
         string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status
     );
     event LilypadStorage__ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
-    event LilypadStorage__DealSaved(string indexed dealId, address indexed jobCreator, address indexed resourceProvider);
+    event LilypadStorage__DealSaved(
+        string indexed dealId, address indexed jobCreator, address indexed resourceProvider
+    );
     event LilypadStorage__ResultSaved(string indexed resultId, string dealId);
     event LilypadStorage__ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
     event LilypadStorage__ControllerRoleGranted(address indexed newController, address indexed controller);
@@ -256,7 +258,9 @@ contract LilypadStorageTest is Test {
 
         // Change status
         vm.expectEmit(true, true, true, true);
-        emit LilypadStorage__ValidationResultStatusChanged("validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted);
+        emit LilypadStorage__ValidationResultStatusChanged(
+            "validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted
+        );
 
         bool success = lilypadStorage.changeValidationResultStatus(
             "validation1", SharedStructs.ValidationResultStatusEnum.ValidationAccepted

@@ -44,7 +44,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         string indexed validationResultId, SharedStructs.ValidationResultStatusEnum status
     );
     event LilypadStorage__ResultStatusChanged(string indexed resultId, SharedStructs.ResultStatusEnum status);
-    event LilypadStorage__DealSaved(string indexed dealId, address indexed jobCreator, address indexed resourceProvider);
+    event LilypadStorage__DealSaved(
+        string indexed dealId, address indexed jobCreator, address indexed resourceProvider
+    );
     event LilypadStorage__ResultSaved(string indexed resultId, string dealId);
     event LilypadStorage__ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
     event LilypadStorage__ControllerRoleGranted(address indexed account, address indexed sender);
@@ -348,7 +350,9 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
         }
         validationResult.timestamp = block.timestamp;
         validationResults[validationResultId] = validationResult;
-        emit LilypadStorage__ValidationResultSaved(validationResultId, validationResult.resultId, validationResult.validator);
+        emit LilypadStorage__ValidationResultSaved(
+            validationResultId, validationResult.resultId, validationResult.validator
+        );
         return true;
     }
 
