@@ -3,12 +3,14 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../src/LilypadModuleDirectory.sol";
+import {LilypadUser} from "../src/LilypadUser.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract LilypadModuleDirectoryTest is Test {
     LilypadModuleDirectory public moduleDirectory;
+    LilypadUser public lilypadUser;
     address public constant ALICE = address(0x1);
     address public constant BOB = address(0x2);
     address public constant CONTROLLER = address(0x3);
@@ -25,13 +27,18 @@ contract LilypadModuleDirectoryTest is Test {
     event ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
     event ControllerRoleGranted(address indexed controller, address indexed grantedBy);
     event ControllerRoleRevoked(address indexed controller, address indexed revokedBy);
+    event LilypadModuleDirectory__ModuleCreatorRegistered(address indexed creator);
 
     function setUp() public {
+        // Deploy lilypadUser
+        lilypadUser = new LilypadUser();
+        lilypadUser.initialize();
+
         // Deploy implementation
         LilypadModuleDirectory implementation = new LilypadModuleDirectory();
 
         // Encode initialization data
-        bytes memory initData = abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector);
+        bytes memory initData = abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector, address(lilypadUser));
 
         // Deploy proxy
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
@@ -41,6 +48,8 @@ contract LilypadModuleDirectoryTest is Test {
 
         // Grant controller role to CONTROLLER address
         moduleDirectory.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
+        lilypadUser.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
+        lilypadUser.grantRole(SharedStructs.CONTROLLER_ROLE, address(moduleDirectory));
     }
 
     // Version Tests
@@ -385,6 +394,74 @@ contract LilypadModuleDirectoryTest is Test {
         vm.startPrank(ALICE);
         bool success = moduleDirectory.RevokeTransferApproval(ALICE, "module1");
         assertTrue(success);
+    }
+
+    // Module Creator Registration Tests
+    function test_RegisterModuleCreator() public {
+        address creator = address(0x123);
+        
+        vm.startPrank(CONTROLLER);
+        
+        // vm.expectEmit(true, true, true, true);
+        // emit LilypadModuleDirectory__ModuleCreatorRegistered(creator);
+        
+        bool success = moduleDirectory.registerModuleCreator(creator);
+        assertTrue(success);
+        
+        SharedStructs.User memory user = lilypadUser.getUser(creator);
+        assertEq(user.userAddress, creator);
+        assertTrue(lilypadUser.hasRole(creator, SharedStructs.UserType.ModuleCreator));
+        
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_RegisteringZeroAddress() public {
+        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__InvalidAddress.selector);
+        moduleDirectory.registerModuleCreator(address(0));
+    }
+
+    function test_RegisterModuleCreatorWithExistingUser() public {
+        address newUser = address(0x123);
+        
+        vm.startPrank(CONTROLLER);
+        lilypadUser.insertUser(newUser, "", "", SharedStructs.UserType.ModuleCreator);
+       
+        vm.expectRevert(abi.encodeWithSelector(LilypadModuleDirectory.LilypadModuleDirectory__ModuleCreatorAlreadyExists.selector, newUser));
+        moduleDirectory.registerModuleCreator(newUser);
+
+        vm.stopPrank();
+    }
+
+    function testFuzz_RegisterModuleCreator(address creator) public {
+        vm.assume(creator != address(0));
+        
+        vm.startPrank(CONTROLLER);
+        
+        vm.expectEmit(true, true, true, true);
+        emit LilypadModuleDirectory__ModuleCreatorRegistered(creator);
+        
+        bool success = moduleDirectory.registerModuleCreator(creator);
+        assertTrue(success);
+        
+        // Verify the user exists and has the correct role
+        SharedStructs.User memory user = lilypadUser.getUser(creator);
+        assertEq(user.userAddress, creator);
+        assertTrue(lilypadUser.hasRole(creator, SharedStructs.UserType.ModuleCreator));
+        
+        vm.stopPrank();
+    }
+
+    function testFuzz_RevertWhen_RegisteringDuplicateModuleCreator(address creator) public {
+        vm.assume(creator != address(0));
+        
+        vm.startPrank(CONTROLLER);
+        // First registration
+        moduleDirectory.registerModuleCreator(creator);
+        
+        // Second registration should fail
+        vm.expectRevert(abi.encodeWithSelector(LilypadModuleDirectory.LilypadModuleDirectory__ModuleCreatorAlreadyExists.selector, creator));
+        moduleDirectory.registerModuleCreator(creator);
+        vm.stopPrank();
     }
 
     // Fuzz Tests

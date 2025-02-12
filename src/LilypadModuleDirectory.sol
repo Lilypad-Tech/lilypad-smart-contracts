@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-import "./interfaces/ILilypadModuleDirectory.sol";
+import {ILilypadModuleDirectory} from "./interfaces/ILilypadModuleDirectory.sol";
+import {LilypadUser} from "./LilypadUser.sol";
 import {SharedStructs} from "./SharedStructs.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -9,6 +10,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, AccessControlUpgradeable {
     // Version
     string public version;
+
+    LilypadUser public lilypadUser;
 
     // Custom Errors
     error LilypadModuleDirectory__NotController();
@@ -24,8 +27,11 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     error LilypadModuleDirectory__RoleAlreadyAssigned();
     error LilypadModuleDirectory__RoleNotFound();
     error LilypadModuleDirectory__CannotRevokeOwnRole();
-
+    error LilypadModuleDirectory__InvalidAddressForLilypadUser();
+    error LilypadModuleDirectory__ModuleCreatorAlreadyExists(address moduleCreator);
+    error LilypadModuleDirectory__ModuleCreatorRegistrationFailedWithReason(bytes reason);
     // Events
+
     event ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
 
     event ModuleNameUpdated(address indexed owner, string oldModuleName, string newModuleName);
@@ -44,6 +50,8 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
 
     event ControllerRoleRevoked(address indexed account, address indexed sender);
 
+    event LilypadModuleDirectory__ModuleCreatorRegistered(address indexed moduleCreator);
+
     // Mapping from owner address to array of modules
     mapping(address => SharedStructs.Module[]) private _ownedModules;
 
@@ -61,11 +69,15 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         _disableInitializers();
     }
 
-    function initialize() public initializer {
+    function initialize(address _lilypadUser) public initializer {
         __AccessControl_init();
+        if (_lilypadUser == address(0)) {
+            revert LilypadModuleDirectory__InvalidAddressForLilypadUser();
+        }
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
         version = "1.0.0";
+        lilypadUser = LilypadUser(_lilypadUser);
     }
 
     /**
@@ -92,6 +104,30 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
             revert LilypadModuleDirectory__NotModuleOwner();
         }
         _;
+    }
+
+    /**
+     * @dev Registers a module creator
+     * @notice
+     * - The caller of this function must have the controller role
+     */
+    function registerModuleCreator(address moduleCreator) external override onlyController returns (bool) {
+        if (moduleCreator == address(0)) {
+            revert LilypadModuleDirectory__InvalidAddress();
+        }
+        // check if the user exists in the lilypadUser contract
+        try lilypadUser.getUser(moduleCreator) {
+            // if the user exists and they are not a module creator, revert as they are supposed to use the registerModuleCreator function
+            if (lilypadUser.hasRole(moduleCreator, SharedStructs.UserType.ModuleCreator)) {
+                revert LilypadModuleDirectory__ModuleCreatorAlreadyExists(moduleCreator);
+            }
+        } catch {
+            // if the user does not exist, create a new user and register them as a module creator, the metadataID and url are purposesly left blank at the outset
+            lilypadUser.insertUser(moduleCreator, "", "", SharedStructs.UserType.ModuleCreator);
+            emit LilypadModuleDirectory__ModuleCreatorRegistered(moduleCreator);
+        }
+
+        return true;
     }
 
     function RegisterModuleForCreator(address moduleOwner, string memory moduleName, string memory moduleUrl)

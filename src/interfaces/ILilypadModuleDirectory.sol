@@ -5,6 +5,14 @@ import "../SharedStructs.sol";
 
 interface ILilypadModuleDirectory {
     /**
+     * @dev Registers a module creator
+     * @param moduleCreator The address of the module creator
+     * @return bool Indicates whether the registration was successful
+     * @notice This function is restricted to the controller role
+     */
+    function registerModuleCreator(address moduleCreator) external returns (bool);
+
+    /**
      * @dev Registers a module for a specific creator (module owner)
      * @param moduleOwner The address of the module owner
      * @param moduleName The name of the module to be registered
