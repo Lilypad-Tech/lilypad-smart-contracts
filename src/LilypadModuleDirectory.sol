@@ -32,23 +32,23 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     error LilypadModuleDirectory__ModuleCreatorRegistrationFailedWithReason(bytes reason);
     // Events
 
-    event ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
+    event LilypadModuleDirectory__ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
 
-    event ModuleNameUpdated(address indexed owner, string oldModuleName, string newModuleName);
+    event LilypadModuleDirectory__ModuleNameUpdated(address indexed owner, string oldModuleName, string newModuleName);
 
-    event ModuleUrlUpdated(address indexed owner, string moduleName, string newModuleUrl);
+    event LilypadModuleDirectory__ModuleUrlUpdated(address indexed owner, string moduleName, string newModuleUrl);
 
-    event ModuleTransferApproved(address indexed owner, address indexed purchaser, string moduleName, string moduleUrl);
+    event LilypadModuleDirectory__ModuleTransferApproved(address indexed owner, address indexed purchaser, string moduleName, string moduleUrl);
 
-    event ModuleTransferred(
+    event LilypadModuleDirectory__ModuleTransferred(
         address indexed newOwner, address indexed previousOwner, string moduleName, string moduleUrl
     );
 
-    event ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
+    event LilypadModuleDirectory__ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
 
-    event ControllerRoleGranted(address indexed account, address indexed sender);
+    event LilypadModuleDirectory__ControllerRoleGranted(address indexed account, address indexed sender);
 
-    event ControllerRoleRevoked(address indexed account, address indexed sender);
+    event LilypadModuleDirectory__ControllerRoleRevoked(address indexed account, address indexed sender);
 
     event LilypadModuleDirectory__ModuleCreatorRegistered(address indexed moduleCreator);
 
@@ -157,7 +157,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         _moduleExists[moduleOwner][moduleName] = true;
         _moduleIndices[moduleOwner][moduleName] = newIndex;
 
-        emit ModuleRegistered(moduleOwner, moduleName, moduleUrl);
+        emit LilypadModuleDirectory__ModuleRegistered(moduleOwner, moduleName, moduleUrl);
 
         return true;
     }
@@ -184,7 +184,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         _moduleIndices[moduleOwner][newModuleName] = moduleIndex;
         modules[moduleIndex].moduleName = newModuleName;
 
-        emit ModuleNameUpdated(moduleOwner, moduleName, newModuleName);
+        emit LilypadModuleDirectory__ModuleNameUpdated(moduleOwner, moduleName, newModuleName);
         return true;
     }
 
@@ -200,7 +200,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         uint256 moduleIndex = _moduleIndices[moduleOwner][moduleName];
         SharedStructs.Module[] storage modules = _ownedModules[moduleOwner];
         modules[moduleIndex].moduleUrl = newModuleUrl;
-        emit ModuleUrlUpdated(moduleOwner, moduleName, newModuleUrl);
+        emit LilypadModuleDirectory__ModuleUrlUpdated(moduleOwner, moduleName, newModuleUrl);
         return true;
     }
 
@@ -225,7 +225,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         }
 
         _transferApprovals[moduleOwner][moduleName] = newOwner;
-        emit ModuleTransferApproved(moduleOwner, newOwner, moduleName, moduleUrl);
+        emit LilypadModuleDirectory__ModuleTransferApproved(moduleOwner, newOwner, moduleName, moduleUrl);
         return true;
     }
 
@@ -274,7 +274,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         // Clear transfer approval
         delete _transferApprovals[moduleOwner][moduleName];
 
-        emit ModuleTransferred(newOwner, moduleOwner, moduleName, moduleUrl);
+        emit LilypadModuleDirectory__ModuleTransferred(newOwner, moduleOwner, moduleName, moduleUrl);
         return true;
     }
 
@@ -285,7 +285,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     {
         address approvedAddress = _transferApprovals[moduleOwner][moduleName];
         delete _transferApprovals[moduleOwner][moduleName];
-        emit ModuleTransferRevoked(moduleOwner, approvedAddress, moduleName);
+        emit LilypadModuleDirectory__ModuleTransferRevoked(moduleOwner, approvedAddress, moduleName);
         return true;
     }
 
@@ -306,7 +306,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
             revert LilypadModuleDirectory__RoleAlreadyAssigned();
         }
         _grantRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit ControllerRoleGranted(account, msg.sender);
+        emit LilypadModuleDirectory__ControllerRoleGranted(account, msg.sender);
     }
 
     function revokeControllerRole(address account) external override onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -319,7 +319,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         if (account == msg.sender) revert LilypadModuleDirectory__CannotRevokeOwnRole();
 
         _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit ControllerRoleRevoked(account, msg.sender);
+        emit LilypadModuleDirectory__ControllerRoleRevoked(account, msg.sender);
     }
 
     function hasControllerRole(address account) external view override returns (bool) {

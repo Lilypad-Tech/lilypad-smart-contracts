@@ -17,16 +17,16 @@ contract LilypadModuleDirectoryTest is Test {
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 
     // Events
-    event ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
-    event ModuleNameUpdated(address indexed owner, string oldModuleName, string newModuleName);
-    event ModuleUrlUpdated(address indexed owner, string moduleName, string newModuleUrl);
-    event ModuleTransferApproved(address indexed owner, address indexed purchaser, string moduleName, string moduleUrl);
-    event ModuleTransferred(
+    event LilypadModuleDirectory__ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
+    event LilypadModuleDirectory__ModuleNameUpdated(address indexed owner, string oldModuleName, string newModuleName);
+    event LilypadModuleDirectory__ModuleUrlUpdated(address indexed owner, string moduleName, string newModuleUrl);
+    event LilypadModuleDirectory__ModuleTransferApproved(address indexed owner, address indexed purchaser, string moduleName, string moduleUrl);
+    event LilypadModuleDirectory__ModuleTransferred(
         address indexed newOwner, address indexed previousOwner, string moduleName, string moduleUrl
     );
-    event ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
-    event ControllerRoleGranted(address indexed controller, address indexed grantedBy);
-    event ControllerRoleRevoked(address indexed controller, address indexed revokedBy);
+    event LilypadModuleDirectory__ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
+    event LilypadModuleDirectory__ControllerRoleGranted(address indexed controller, address indexed grantedBy);
+    event LilypadModuleDirectory__ControllerRoleRevoked(address indexed controller, address indexed revokedBy);
     event LilypadModuleDirectory__ModuleCreatorRegistered(address indexed creator);
 
     function setUp() public {
@@ -93,7 +93,7 @@ contract LilypadModuleDirectoryTest is Test {
 
         // Test granting role
         vm.expectEmit(true, true, true, true);
-        emit ControllerRoleGranted(newController, address(this));
+        emit LilypadModuleDirectory__ControllerRoleGranted(newController, address(this));
         moduleDirectory.grantControllerRole(newController);
         assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
 
@@ -108,7 +108,7 @@ contract LilypadModuleDirectoryTest is Test {
         // Test revoking role
         vm.startPrank(address(this));
         vm.expectEmit(true, true, true, true);
-        emit ControllerRoleRevoked(newController, address(this));
+        emit LilypadModuleDirectory__ControllerRoleRevoked(newController, address(this));
         moduleDirectory.revokeControllerRole(newController);
         assertFalse(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
 
@@ -137,7 +137,7 @@ contract LilypadModuleDirectoryTest is Test {
         vm.startPrank(CONTROLLER);
 
         vm.expectEmit(true, true, true, true);
-        emit ModuleRegistered(ALICE, "module1", "url1");
+        emit LilypadModuleDirectory__ModuleRegistered(ALICE, "module1", "url1");
 
         bool success = moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
         assertTrue(success);
@@ -214,7 +214,7 @@ contract LilypadModuleDirectoryTest is Test {
 
         vm.startPrank(ALICE);
         vm.expectEmit(true, true, true, true);
-        emit ModuleNameUpdated(ALICE, "module1", "newModule1");
+        emit LilypadModuleDirectory__ModuleNameUpdated(ALICE, "module1", "newModule1");
 
         bool success = moduleDirectory.updateModuleName(ALICE, "module1", "newModule1");
         assertTrue(success);
@@ -229,7 +229,7 @@ contract LilypadModuleDirectoryTest is Test {
 
         vm.startPrank(ALICE);
         vm.expectEmit(true, true, true, true);
-        emit ModuleUrlUpdated(ALICE, "module1", "newUrl1");
+        emit LilypadModuleDirectory__ModuleUrlUpdated(ALICE, "module1", "newUrl1");
 
         bool success = moduleDirectory.updateModuleUrl(ALICE, "module1", "newUrl1");
         assertTrue(success);
@@ -245,7 +245,7 @@ contract LilypadModuleDirectoryTest is Test {
 
         vm.startPrank(ALICE);
         vm.expectEmit(true, true, true, true);
-        emit ModuleTransferApproved(ALICE, BOB, "module1", "url1");
+        emit LilypadModuleDirectory__ModuleTransferApproved(ALICE, BOB, "module1", "url1");
 
         bool approvalSuccess = moduleDirectory.approveTransfer(ALICE, BOB, "module1", "url1");
         assertTrue(approvalSuccess);
@@ -285,7 +285,7 @@ contract LilypadModuleDirectoryTest is Test {
         moduleDirectory.approveTransfer(ALICE, BOB, "module1", "url1");
 
         vm.expectEmit(true, true, true, true);
-        emit ModuleTransferRevoked(ALICE, BOB, "module1");
+        emit LilypadModuleDirectory__ModuleTransferRevoked(ALICE, BOB, "module1");
 
         bool success = moduleDirectory.revokeTransferApproval(ALICE, "module1");
         assertTrue(success);
@@ -474,7 +474,7 @@ contract LilypadModuleDirectoryTest is Test {
         vm.startPrank(CONTROLLER);
 
         vm.expectEmit(true, true, true, true);
-        emit ModuleRegistered(owner, moduleName, moduleUrl);
+        emit LilypadModuleDirectory__ModuleRegistered(owner, moduleName, moduleUrl);
 
         bool success = moduleDirectory.registerModuleForCreator(owner, moduleName, moduleUrl);
         assertTrue(success);
