@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import {ILilypadModuleDirectory} from "./interfaces/ILilypadModuleDirectory.sol";
 import {LilypadUser} from "./LilypadUser.sol";
 import {SharedStructs} from "./SharedStructs.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, AccessControlUpgradeable {
     // Version
