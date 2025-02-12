@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../src/LilypadUser.sol";
@@ -13,7 +13,13 @@ contract LilypadUserTest is Test {
     address public constant BOB = address(0x2);
     address public constant CONTROLLER = address(0x3);
 
-    event UserManagementEvent(address walletAddress, string metadataID, string url, SharedStructs.UserType role);
+    event LilypadUser__UserManagementEvent(
+        address indexed walletAddress,
+        string metadataID,
+        string url,
+        SharedStructs.UserType role,
+        SharedStructs.UserOperation operation
+    );
 
     function setUp() public {
         lilypadUser = new LilypadUser();
@@ -73,7 +79,13 @@ contract LilypadUserTest is Test {
     // Unit Tests
     function test_InsertUser() public {
         vm.expectEmit(true, true, true, true);
-        emit UserManagementEvent(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+        emit LilypadUser__UserManagementEvent(
+            ALICE,
+            "metadata1",
+            "http://example.com",
+            SharedStructs.UserType.JobCreator,
+            SharedStructs.UserOperation.NewUser
+        );
 
         bool success =
             lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
@@ -94,10 +106,16 @@ contract LilypadUserTest is Test {
     }
 
     function test_updateUserMetadata() public {
-        vm.expectEmit(true, true, true, true);
-        emit UserManagementEvent(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
-
         lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadUser__UserManagementEvent(
+            ALICE,
+            "metadata2",
+            "http://updated.com",
+            SharedStructs.UserType.JobCreator,
+            SharedStructs.UserOperation.UpdateUser
+        );
 
         bool success = lilypadUser.updateUserMetadata(ALICE, "metadata2", "http://updated.com");
         assertTrue(success);
@@ -117,7 +135,13 @@ contract LilypadUserTest is Test {
         lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
 
         vm.expectEmit(true, true, true, true);
-        emit UserManagementEvent(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.ModuleCreator);
+        emit LilypadUser__UserManagementEvent(
+            ALICE,
+            "metadata1",
+            "http://example.com",
+            SharedStructs.UserType.ModuleCreator,
+            SharedStructs.UserOperation.RoleAdded
+        );
 
         bool success = lilypadUser.addRole(ALICE, SharedStructs.UserType.ModuleCreator);
         assertTrue(success);
@@ -162,7 +186,13 @@ contract LilypadUserTest is Test {
         lilypadUser.addRole(ALICE, SharedStructs.UserType.ModuleCreator);
 
         vm.expectEmit(true, true, true, true);
-        emit UserManagementEvent(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.ModuleCreator);
+        emit LilypadUser__UserManagementEvent(
+            ALICE,
+            "metadata1",
+            "http://example.com",
+            SharedStructs.UserType.ModuleCreator,
+            SharedStructs.UserOperation.RoleRemoved
+        );
 
         bool success = lilypadUser.removeRole(ALICE, SharedStructs.UserType.ModuleCreator);
         assertTrue(success);
@@ -176,7 +206,13 @@ contract LilypadUserTest is Test {
         lilypadUser.insertUser(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
 
         vm.expectEmit(true, true, true, true);
-        emit UserManagementEvent(ALICE, "metadata1", "http://example.com", SharedStructs.UserType.JobCreator);
+        emit LilypadUser__UserManagementEvent(
+            ALICE,
+            "metadata1",
+            "http://example.com",
+            SharedStructs.UserType.JobCreator,
+            SharedStructs.UserOperation.RoleRemoved
+        );
 
         bool success = lilypadUser.removeRole(ALICE, SharedStructs.UserType.JobCreator);
         assertTrue(success);

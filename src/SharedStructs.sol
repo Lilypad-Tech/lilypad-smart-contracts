@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.24;
 
 library SharedStructs {
     enum UserType {
@@ -58,6 +58,13 @@ library SharedStructs {
         Slashed,
         // money that is burnt
         Burned
+    }
+
+    enum UserOperation {
+        NewUser,
+        UpdateUser,
+        RoleAdded,
+        RoleRemoved
     }
 
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");

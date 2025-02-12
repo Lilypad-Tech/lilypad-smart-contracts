@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.24;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
@@ -23,7 +23,13 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
     // Version
     string public version;
 
-    event UserManagementEvent(address walletAddress, string metadataID, string url, SharedStructs.UserType role);
+    event LilypadUser__UserManagementEvent(
+        address indexed walletAddress,
+        string metadataID,
+        string url,
+        SharedStructs.UserType role,
+        SharedStructs.UserOperation operation
+    );
 
     error LilypadUser__UserAlreadyExists();
     error LilypadUser__UserNotFound();
@@ -73,7 +79,7 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
             validatorAddresses.push(walletAddress);
         }
 
-        emit UserManagementEvent(walletAddress, metadataID, url, role);
+        emit LilypadUser__UserManagementEvent(walletAddress, metadataID, url, role, SharedStructs.UserOperation.NewUser);
 
         return true;
     }
@@ -97,7 +103,9 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
         users[walletAddress].metadataID = metadataID;
         users[walletAddress].url = url;
 
-        emit UserManagementEvent(walletAddress, metadataID, url, SharedStructs.UserType.JobCreator);
+        emit LilypadUser__UserManagementEvent(
+            walletAddress, metadataID, url, SharedStructs.UserType.JobCreator, SharedStructs.UserOperation.UpdateUser
+        );
 
         return true;
     }
@@ -151,7 +159,9 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
             validatorAddresses.push(walletAddress);
         }
 
-        emit UserManagementEvent(walletAddress, user.metadataID, user.url, role);
+        emit LilypadUser__UserManagementEvent(
+            walletAddress, user.metadataID, user.url, role, SharedStructs.UserOperation.RoleAdded
+        );
 
         return true;
     }
@@ -194,7 +204,13 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
             }
         }
 
-        emit UserManagementEvent(walletAddress, users[walletAddress].metadataID, users[walletAddress].url, role);
+        emit LilypadUser__UserManagementEvent(
+            walletAddress,
+            users[walletAddress].metadataID,
+            users[walletAddress].url,
+            role,
+            SharedStructs.UserOperation.RoleRemoved
+        );
 
         return true;
     }
