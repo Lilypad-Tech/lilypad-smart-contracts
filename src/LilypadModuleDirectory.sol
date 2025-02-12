@@ -130,7 +130,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
-    function RegisterModuleForCreator(address moduleOwner, string memory moduleName, string memory moduleUrl)
+    function registerModuleForCreator(address moduleOwner, string memory moduleName, string memory moduleUrl)
         external
         override
         onlyController
@@ -162,7 +162,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
-    function UpdateModuleName(address moduleOwner, string memory moduleName, string memory newModuleName)
+    function updateModuleName(address moduleOwner, string memory moduleName, string memory newModuleName)
         external
         override
         moduleOwnerOnly(moduleOwner, moduleName)
@@ -188,7 +188,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
-    function UpdateModuleUrl(address moduleOwner, string memory moduleName, string memory newModuleUrl)
+    function updateModuleUrl(address moduleOwner, string memory moduleName, string memory newModuleUrl)
         external
         override
         moduleOwnerOnly(moduleOwner, moduleName)
@@ -204,11 +204,11 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
-    function GetOwnedModules(address moduleOwner) external view override returns (SharedStructs.Module[] memory) {
+    function getOwnedModules(address moduleOwner) external view override returns (SharedStructs.Module[] memory) {
         return _ownedModules[moduleOwner];
     }
 
-    function ApproveTransfer(address moduleOwner, address newOwner, string memory moduleName, string memory moduleUrl)
+    function approveTransfer(address moduleOwner, address newOwner, string memory moduleName, string memory moduleUrl)
         external
         override
         moduleOwnerOnly(moduleOwner, moduleName)
@@ -229,7 +229,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
-    function TransferModuleOwnership(
+    function transferModuleOwnership(
         address moduleOwner,
         address newOwner,
         string memory moduleName,
@@ -278,7 +278,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
-    function RevokeTransferApproval(address moduleOwner, string memory moduleName)
+    function revokeTransferApproval(address moduleOwner, string memory moduleName)
         external
         moduleOwnerOnly(moduleOwner, moduleName)
         returns (bool)
@@ -289,7 +289,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
-    function IsTransferApproved(address moduleOwner, string memory moduleName, address purchaser)
+    function isTransferApproved(address moduleOwner, string memory moduleName, address purchaser)
         external
         view
         override

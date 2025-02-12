@@ -103,7 +103,7 @@ contract LilypadModuleDirectoryTest is Test {
 
         // Test new controller can register
         vm.startPrank(newController);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         // Test revoking role
         vm.startPrank(address(this));
@@ -123,14 +123,14 @@ contract LilypadModuleDirectoryTest is Test {
         // Test revoked controller cannot register
         vm.startPrank(newController);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__NotController.selector);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module2", "url2");
+        moduleDirectory.registerModuleForCreator(ALICE, "module2", "url2");
     }
 
     // Module Registration Tests
     function test_RevertWhen_NonControllerRegistersModule() public {
         vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__NotController.selector);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
     }
 
     function test_RegisterAndGetModule() public {
@@ -139,9 +139,9 @@ contract LilypadModuleDirectoryTest is Test {
         vm.expectEmit(true, true, true, true);
         emit ModuleRegistered(ALICE, "module1", "url1");
 
-        bool success = moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        bool success = moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
         assertTrue(success);
-        SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(ALICE);
+        SharedStructs.Module[] memory modules = moduleDirectory.getOwnedModules(ALICE);
 
         assertEq(modules.length, 1);
         assertEq(modules[0].moduleOwner, ALICE);
@@ -156,10 +156,10 @@ contract LilypadModuleDirectoryTest is Test {
             "https://this-is-a-very-long-url-that-should-still-work-fine-with-the-contract.com/some/very/long/path";
 
         vm.startPrank(CONTROLLER);
-        bool success = moduleDirectory.RegisterModuleForCreator(ALICE, longModuleName, longUrl);
+        bool success = moduleDirectory.registerModuleForCreator(ALICE, longModuleName, longUrl);
         assertTrue(success);
 
-        SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(ALICE);
+        SharedStructs.Module[] memory modules = moduleDirectory.getOwnedModules(ALICE);
         assertEq(modules[0].moduleName, longModuleName);
         assertEq(modules[0].moduleUrl, longUrl);
     }
@@ -168,14 +168,14 @@ contract LilypadModuleDirectoryTest is Test {
         vm.startPrank(CONTROLLER);
 
         // Register the first module with name "Module1"
-        bool success1 = moduleDirectory.RegisterModuleForCreator(ALICE, "Module1", "url1");
+        bool success1 = moduleDirectory.registerModuleForCreator(ALICE, "Module1", "url1");
         assertTrue(success1);
 
         // Register the second module with name "module1" (different casing)
-        bool success2 = moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url2");
+        bool success2 = moduleDirectory.registerModuleForCreator(ALICE, "module1", "url2");
         assertTrue(success2);
 
-        SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(ALICE);
+        SharedStructs.Module[] memory modules = moduleDirectory.getOwnedModules(ALICE);
 
         // Assert that both modules are registered
         assertEq(modules.length, 2);
@@ -192,12 +192,12 @@ contract LilypadModuleDirectoryTest is Test {
         string[3] memory urls = ["url1", "url2", "url3"];
 
         for (uint256 i = 0; i < moduleNames.length; i++) {
-            bool success = moduleDirectory.RegisterModuleForCreator(ALICE, moduleNames[i], urls[i]);
+            bool success = moduleDirectory.registerModuleForCreator(ALICE, moduleNames[i], urls[i]);
             assertTrue(success);
         }
 
         // Verify all modules
-        SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(ALICE);
+        SharedStructs.Module[] memory modules = moduleDirectory.getOwnedModules(ALICE);
         assertEq(modules.length, 3);
 
         for (uint256 i = 0; i < modules.length; i++) {
@@ -210,52 +210,52 @@ contract LilypadModuleDirectoryTest is Test {
     // Module Update Tests
     function test_UpdateModuleName() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(ALICE);
         vm.expectEmit(true, true, true, true);
         emit ModuleNameUpdated(ALICE, "module1", "newModule1");
 
-        bool success = moduleDirectory.UpdateModuleName(ALICE, "module1", "newModule1");
+        bool success = moduleDirectory.updateModuleName(ALICE, "module1", "newModule1");
         assertTrue(success);
 
-        SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(ALICE);
+        SharedStructs.Module[] memory modules = moduleDirectory.getOwnedModules(ALICE);
         assertEq(modules[0].moduleName, "newModule1");
     }
 
     function test_UpdateModuleUrl() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(ALICE);
         vm.expectEmit(true, true, true, true);
         emit ModuleUrlUpdated(ALICE, "module1", "newUrl1");
 
-        bool success = moduleDirectory.UpdateModuleUrl(ALICE, "module1", "newUrl1");
+        bool success = moduleDirectory.updateModuleUrl(ALICE, "module1", "newUrl1");
         assertTrue(success);
 
-        SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(ALICE);
+        SharedStructs.Module[] memory modules = moduleDirectory.getOwnedModules(ALICE);
         assertEq(modules[0].moduleUrl, "newUrl1");
     }
 
     // Module Transfer Tests
     function test_ApproveAndTransferModule() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(ALICE);
         vm.expectEmit(true, true, true, true);
         emit ModuleTransferApproved(ALICE, BOB, "module1", "url1");
 
-        bool approvalSuccess = moduleDirectory.ApproveTransfer(ALICE, BOB, "module1", "url1");
+        bool approvalSuccess = moduleDirectory.approveTransfer(ALICE, BOB, "module1", "url1");
         assertTrue(approvalSuccess);
-        assertTrue(moduleDirectory.IsTransferApproved(ALICE, "module1", BOB));
+        assertTrue(moduleDirectory.isTransferApproved(ALICE, "module1", BOB));
 
-        bool transferSuccess = moduleDirectory.TransferModuleOwnership(ALICE, BOB, "module1", "url1");
+        bool transferSuccess = moduleDirectory.transferModuleOwnership(ALICE, BOB, "module1", "url1");
         assertTrue(transferSuccess);
 
-        SharedStructs.Module[] memory aliceModules = moduleDirectory.GetOwnedModules(ALICE);
-        SharedStructs.Module[] memory bobModules = moduleDirectory.GetOwnedModules(BOB);
+        SharedStructs.Module[] memory aliceModules = moduleDirectory.getOwnedModules(ALICE);
+        SharedStructs.Module[] memory bobModules = moduleDirectory.getOwnedModules(BOB);
 
         assertEq(aliceModules.length, 0);
         assertEq(bobModules.length, 1);
@@ -265,134 +265,134 @@ contract LilypadModuleDirectoryTest is Test {
 
     function test_IsTransferApproved() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
-        assertFalse(moduleDirectory.IsTransferApproved(ALICE, "module1", BOB));
+        assertFalse(moduleDirectory.isTransferApproved(ALICE, "module1", BOB));
 
         vm.startPrank(ALICE);
-        moduleDirectory.ApproveTransfer(ALICE, BOB, "module1", "url1");
-        assertTrue(moduleDirectory.IsTransferApproved(ALICE, "module1", BOB));
+        moduleDirectory.approveTransfer(ALICE, BOB, "module1", "url1");
+        assertTrue(moduleDirectory.isTransferApproved(ALICE, "module1", BOB));
 
-        moduleDirectory.RevokeTransferApproval(ALICE, "module1");
-        assertFalse(moduleDirectory.IsTransferApproved(ALICE, "module1", BOB));
+        moduleDirectory.revokeTransferApproval(ALICE, "module1");
+        assertFalse(moduleDirectory.isTransferApproved(ALICE, "module1", BOB));
     }
 
     function test_RevokeTransferApproval() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(ALICE);
-        moduleDirectory.ApproveTransfer(ALICE, BOB, "module1", "url1");
+        moduleDirectory.approveTransfer(ALICE, BOB, "module1", "url1");
 
         vm.expectEmit(true, true, true, true);
         emit ModuleTransferRevoked(ALICE, BOB, "module1");
 
-        bool success = moduleDirectory.RevokeTransferApproval(ALICE, "module1");
+        bool success = moduleDirectory.revokeTransferApproval(ALICE, "module1");
         assertTrue(success);
-        assertFalse(moduleDirectory.IsTransferApproved(ALICE, "module1", BOB));
+        assertFalse(moduleDirectory.isTransferApproved(ALICE, "module1", BOB));
     }
 
     // Error Tests UpdateModuleName
     function test_RevertWhen_UpdatingNonexistentModule() public {
         vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__ModuleNotFound.selector);
-        moduleDirectory.UpdateModuleName(ALICE, "nonexistent", "newName");
+        moduleDirectory.updateModuleName(ALICE, "nonexistent", "newName");
     }
 
     function test_RevertWhen_NonOwnerUpdatesModule() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(BOB);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__NotModuleOwner.selector);
-        moduleDirectory.UpdateModuleName(ALICE, "module1", "newName");
+        moduleDirectory.updateModuleName(ALICE, "module1", "newName");
     }
 
     function test_RevertWhen_UpdatingToExistingModuleName() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module2", "url2");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module2", "url2");
 
         vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__ModuleAlreadyExists.selector);
-        moduleDirectory.UpdateModuleName(ALICE, "module1", "module2");
+        moduleDirectory.updateModuleName(ALICE, "module1", "module2");
     }
 
     // Error Tests UpdateModuleUrl
     function test_RevertWhen_UpdatingModuleUrlWithEmptyString() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__EmptyModuleUrl.selector);
-        moduleDirectory.UpdateModuleUrl(ALICE, "module1", "");
+        moduleDirectory.updateModuleUrl(ALICE, "module1", "");
     }
 
     // Error Tests RegisterModuleForCreator
     function test_RevertWhen_RegisteringWithEmptyModuleName() public {
         vm.startPrank(CONTROLLER);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__EmptyModuleName.selector);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "", "url1");
     }
 
     function test_RevertWhen_RegisteringWithZeroAddress() public {
         vm.startPrank(CONTROLLER);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__InvalidAddress.selector);
-        moduleDirectory.RegisterModuleForCreator(address(0), "module1", "url1");
+        moduleDirectory.registerModuleForCreator(address(0), "module1", "url1");
     }
 
     // Error Tests ApproveTransfer
     function test_RevertWhen_ApprovingTransferToZeroAddress() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__InvalidAddress.selector);
-        moduleDirectory.ApproveTransfer(ALICE, address(0), "module1", "url1");
+        moduleDirectory.approveTransfer(ALICE, address(0), "module1", "url1");
     }
 
     function test_RevertWhen_ApprovingTransferToSameOwner() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__SameOwnerAddress.selector);
-        moduleDirectory.ApproveTransfer(ALICE, ALICE, "module1", "url1");
+        moduleDirectory.approveTransfer(ALICE, ALICE, "module1", "url1");
     }
 
     function test_RevertWhen_TransferringToAddressWithSameModuleName() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
-        moduleDirectory.RegisterModuleForCreator(BOB, "module1", "url2");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(BOB, "module1", "url2");
 
         vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__ModuleAlreadyExists.selector);
-        moduleDirectory.ApproveTransfer(ALICE, BOB, "module1", "url1");
+        moduleDirectory.approveTransfer(ALICE, BOB, "module1", "url1");
     }
 
     // Error Tests TransferModuleOwnership
     function test_RevertWhen_TransferringWithoutApproval() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(BOB);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__TransferNotApproved.selector);
-        moduleDirectory.TransferModuleOwnership(ALICE, BOB, "module1", "url1");
+        moduleDirectory.transferModuleOwnership(ALICE, BOB, "module1", "url1");
     }
 
     function test_RevertWhen_TransferringNonExistentModule() public {
         vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__ModuleNotFound.selector);
-        moduleDirectory.TransferModuleOwnership(ALICE, BOB, "nonexistent", "url1");
+        moduleDirectory.transferModuleOwnership(ALICE, BOB, "nonexistent", "url1");
     }
 
     // Error Tests RevokeTransferApproval
     function test_RevokeNonExistentTransferApproval() public {
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "url1");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
         vm.startPrank(ALICE);
-        bool success = moduleDirectory.RevokeTransferApproval(ALICE, "module1");
+        bool success = moduleDirectory.revokeTransferApproval(ALICE, "module1");
         assertTrue(success);
     }
 
@@ -476,9 +476,9 @@ contract LilypadModuleDirectoryTest is Test {
         vm.expectEmit(true, true, true, true);
         emit ModuleRegistered(owner, moduleName, moduleUrl);
 
-        bool success = moduleDirectory.RegisterModuleForCreator(owner, moduleName, moduleUrl);
+        bool success = moduleDirectory.registerModuleForCreator(owner, moduleName, moduleUrl);
         assertTrue(success);
-        SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(owner);
+        SharedStructs.Module[] memory modules = moduleDirectory.getOwnedModules(owner);
 
         assertEq(modules.length, 1);
         assertEq(modules[0].moduleOwner, owner);
@@ -494,13 +494,13 @@ contract LilypadModuleDirectoryTest is Test {
         string memory newUrl = string(abi.encodePacked("url_", uint8(newUrlSeed % 26 + 65)));
 
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(owner, moduleName, oldUrl);
+        moduleDirectory.registerModuleForCreator(owner, moduleName, oldUrl);
 
         vm.startPrank(owner);
-        bool success = moduleDirectory.UpdateModuleUrl(owner, moduleName, newUrl);
+        bool success = moduleDirectory.updateModuleUrl(owner, moduleName, newUrl);
         assertTrue(success);
 
-        SharedStructs.Module[] memory modules = moduleDirectory.GetOwnedModules(owner);
+        SharedStructs.Module[] memory modules = moduleDirectory.getOwnedModules(owner);
         assertEq(modules[0].moduleUrl, newUrl);
     }
 
@@ -515,15 +515,15 @@ contract LilypadModuleDirectoryTest is Test {
         string memory moduleUrl = string(abi.encodePacked("url_", uint8(moduleUrlSeed % 26 + 65)));
 
         vm.startPrank(CONTROLLER);
-        moduleDirectory.RegisterModuleForCreator(originalOwner, moduleName, moduleUrl);
+        moduleDirectory.registerModuleForCreator(originalOwner, moduleName, moduleUrl);
 
         vm.startPrank(originalOwner);
-        moduleDirectory.ApproveTransfer(originalOwner, newOwner, moduleName, moduleUrl);
+        moduleDirectory.approveTransfer(originalOwner, newOwner, moduleName, moduleUrl);
 
-        bool success = moduleDirectory.TransferModuleOwnership(originalOwner, newOwner, moduleName, moduleUrl);
+        bool success = moduleDirectory.transferModuleOwnership(originalOwner, newOwner, moduleName, moduleUrl);
         assertTrue(success);
 
-        SharedStructs.Module[] memory newOwnerModules = moduleDirectory.GetOwnedModules(newOwner);
+        SharedStructs.Module[] memory newOwnerModules = moduleDirectory.getOwnedModules(newOwner);
         assertEq(newOwnerModules[0].moduleOwner, newOwner);
         assertEq(newOwnerModules[0].moduleName, moduleName);
         assertEq(newOwnerModules[0].moduleUrl, moduleUrl);
@@ -532,6 +532,6 @@ contract LilypadModuleDirectoryTest is Test {
     function test_RevertWhen_RegisteringWithEmptyModuleUrl() public {
         vm.startPrank(CONTROLLER);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__EmptyModuleUrl.selector);
-        moduleDirectory.RegisterModuleForCreator(ALICE, "module1", "");
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "");
     }
 }
