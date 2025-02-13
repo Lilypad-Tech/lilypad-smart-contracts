@@ -20,11 +20,15 @@ contract LilypadModuleDirectoryTest is Test {
     event LilypadModuleDirectory__ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
     event LilypadModuleDirectory__ModuleNameUpdated(address indexed owner, string oldModuleName, string newModuleName);
     event LilypadModuleDirectory__ModuleUrlUpdated(address indexed owner, string moduleName, string newModuleUrl);
-    event LilypadModuleDirectory__ModuleTransferApproved(address indexed owner, address indexed purchaser, string moduleName, string moduleUrl);
+    event LilypadModuleDirectory__ModuleTransferApproved(
+        address indexed owner, address indexed purchaser, string moduleName, string moduleUrl
+    );
     event LilypadModuleDirectory__ModuleTransferred(
         address indexed newOwner, address indexed previousOwner, string moduleName, string moduleUrl
     );
-    event LilypadModuleDirectory__ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
+    event LilypadModuleDirectory__ModuleTransferRevoked(
+        address indexed owner, address indexed revokedFrom, string moduleName
+    );
     event LilypadModuleDirectory__ControllerRoleGranted(address indexed controller, address indexed grantedBy);
     event LilypadModuleDirectory__ControllerRoleRevoked(address indexed controller, address indexed revokedBy);
     event LilypadModuleDirectory__ModuleCreatorRegistered(address indexed creator);
@@ -205,6 +209,23 @@ contract LilypadModuleDirectoryTest is Test {
             assertEq(modules[i].moduleName, moduleNames[i]);
             assertEq(modules[i].moduleUrl, urls[i]);
         }
+    }
+
+    function test_ModuleRegistrationWithNewModuleCreatorBeingCreated() public {
+        vm.startPrank(CONTROLLER);
+
+        vm.expectRevert(LilypadUser.LilypadUser__UserNotFound.selector);
+        lilypadUser.getUser(BOB);
+
+        moduleDirectory.registerModuleForCreator(BOB, "module1", "url1");
+
+        SharedStructs.User memory user = lilypadUser.getUser(BOB);
+        assertEq(user.userAddress, BOB);
+        assertTrue(lilypadUser.hasRole(BOB, SharedStructs.UserType.ModuleCreator));
+        assertEq(user.metadataID, "");
+        assertEq(user.url, "");
+
+        vm.stopPrank();
     }
 
     // Module Update Tests
@@ -399,19 +420,39 @@ contract LilypadModuleDirectoryTest is Test {
     // Module Creator Registration Tests
     function test_RegisterModuleCreator() public {
         address creator = address(0x123);
-        
+
         vm.startPrank(CONTROLLER);
-        
-        // vm.expectEmit(true, true, true, true);
-        // emit LilypadModuleDirectory__ModuleCreatorRegistered(creator);
-        
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadModuleDirectory__ModuleCreatorRegistered(creator);
+
         bool success = moduleDirectory.registerModuleCreator(creator);
         assertTrue(success);
-        
+
         SharedStructs.User memory user = lilypadUser.getUser(creator);
         assertEq(user.userAddress, creator);
         assertTrue(lilypadUser.hasRole(creator, SharedStructs.UserType.ModuleCreator));
-        
+
+        vm.stopPrank();
+    }
+
+    function test_RegisterModuleCreatorWithExistingUserThatHoldsADifferentRole() public {
+        address creator = address(0x123);
+
+        vm.startPrank(CONTROLLER);
+        lilypadUser.insertUser(creator, "", "", SharedStructs.UserType.ResourceProvider);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadModuleDirectory__ModuleCreatorRegistered(creator);
+
+        bool success = moduleDirectory.registerModuleCreator(creator);
+        assertTrue(success);
+
+        SharedStructs.User memory user = lilypadUser.getUser(creator);
+        assertEq(user.userAddress, creator);
+        assertTrue(lilypadUser.hasRole(creator, SharedStructs.UserType.ModuleCreator));
+        assertTrue(lilypadUser.hasRole(creator, SharedStructs.UserType.ResourceProvider));
+
         vm.stopPrank();
     }
 
@@ -422,11 +463,15 @@ contract LilypadModuleDirectoryTest is Test {
 
     function test_RegisterModuleCreatorWithExistingUser() public {
         address newUser = address(0x123);
-        
+
         vm.startPrank(CONTROLLER);
         lilypadUser.insertUser(newUser, "", "", SharedStructs.UserType.ModuleCreator);
-       
-        vm.expectRevert(abi.encodeWithSelector(LilypadModuleDirectory.LilypadModuleDirectory__ModuleCreatorAlreadyExists.selector, newUser));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LilypadModuleDirectory.LilypadModuleDirectory__ModuleCreatorAlreadyExists.selector, newUser
+            )
+        );
         moduleDirectory.registerModuleCreator(newUser);
 
         vm.stopPrank();
@@ -434,32 +479,36 @@ contract LilypadModuleDirectoryTest is Test {
 
     function testFuzz_RegisterModuleCreator(address creator) public {
         vm.assume(creator != address(0));
-        
+
         vm.startPrank(CONTROLLER);
-        
+
         vm.expectEmit(true, true, true, true);
         emit LilypadModuleDirectory__ModuleCreatorRegistered(creator);
-        
+
         bool success = moduleDirectory.registerModuleCreator(creator);
         assertTrue(success);
-        
+
         // Verify the user exists and has the correct role
         SharedStructs.User memory user = lilypadUser.getUser(creator);
         assertEq(user.userAddress, creator);
         assertTrue(lilypadUser.hasRole(creator, SharedStructs.UserType.ModuleCreator));
-        
+
         vm.stopPrank();
     }
 
     function testFuzz_RevertWhen_RegisteringDuplicateModuleCreator(address creator) public {
         vm.assume(creator != address(0));
-        
+
         vm.startPrank(CONTROLLER);
         // First registration
         moduleDirectory.registerModuleCreator(creator);
-        
+
         // Second registration should fail
-        vm.expectRevert(abi.encodeWithSelector(LilypadModuleDirectory.LilypadModuleDirectory__ModuleCreatorAlreadyExists.selector, creator));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LilypadModuleDirectory.LilypadModuleDirectory__ModuleCreatorAlreadyExists.selector, creator
+            )
+        );
         moduleDirectory.registerModuleCreator(creator);
         vm.stopPrank();
     }

@@ -29,22 +29,25 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     error LilypadModuleDirectory__CannotRevokeOwnRole();
     error LilypadModuleDirectory__InvalidAddressForLilypadUser();
     error LilypadModuleDirectory__ModuleCreatorAlreadyExists(address moduleCreator);
-    error LilypadModuleDirectory__ModuleCreatorRegistrationFailedWithReason(bytes reason);
-    // Events
 
+    // Events
     event LilypadModuleDirectory__ModuleRegistered(address indexed owner, string moduleName, string moduleUrl);
 
     event LilypadModuleDirectory__ModuleNameUpdated(address indexed owner, string oldModuleName, string newModuleName);
 
     event LilypadModuleDirectory__ModuleUrlUpdated(address indexed owner, string moduleName, string newModuleUrl);
 
-    event LilypadModuleDirectory__ModuleTransferApproved(address indexed owner, address indexed purchaser, string moduleName, string moduleUrl);
+    event LilypadModuleDirectory__ModuleTransferApproved(
+        address indexed owner, address indexed purchaser, string moduleName, string moduleUrl
+    );
 
     event LilypadModuleDirectory__ModuleTransferred(
         address indexed newOwner, address indexed previousOwner, string moduleName, string moduleUrl
     );
 
-    event LilypadModuleDirectory__ModuleTransferRevoked(address indexed owner, address indexed revokedFrom, string moduleName);
+    event LilypadModuleDirectory__ModuleTransferRevoked(
+        address indexed owner, address indexed revokedFrom, string moduleName
+    );
 
     event LilypadModuleDirectory__ControllerRoleGranted(address indexed account, address indexed sender);
 
@@ -116,20 +119,19 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
             revert LilypadModuleDirectory__InvalidAddress();
         }
         // check if the user exists in the lilypadUser contract
-        try lilypadUser.getUser(moduleCreator) {
-            // if the user exists and they are not a module creator, revert as they are supposed to use the registerModuleCreator function
-            if (lilypadUser.hasRole(moduleCreator, SharedStructs.UserType.ModuleCreator)) {
-                revert LilypadModuleDirectory__ModuleCreatorAlreadyExists(moduleCreator);
-            }
-        } catch {
-            // if the user does not exist, create a new user and register them as a module creator, the metadataID and url are purposesly left blank at the outset
-            lilypadUser.insertUser(moduleCreator, "", "", SharedStructs.UserType.ModuleCreator);
-            emit LilypadModuleDirectory__ModuleCreatorRegistered(moduleCreator);
+        bool success = _checkAndInsertModuleCreator(moduleCreator);
+        if (!success) {
+            revert LilypadModuleDirectory__ModuleCreatorAlreadyExists(moduleCreator);
         }
 
         return true;
     }
 
+    /**
+     * @dev Registers a module for a module creator
+     * @notice
+     * - The caller of this function must have the controller role
+     */
     function registerModuleForCreator(address moduleOwner, string memory moduleName, string memory moduleUrl)
         external
         override
@@ -149,6 +151,9 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
             revert LilypadModuleDirectory__ModuleAlreadyExists();
         }
 
+        // Check if the module owner already exists, if not, create a new user and register them as a module creator
+        _checkAndInsertModuleCreator(moduleOwner);
+
         SharedStructs.Module memory newModule =
             SharedStructs.Module({moduleOwner: moduleOwner, moduleName: moduleName, moduleUrl: moduleUrl});
 
@@ -162,6 +167,11 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
+    /**
+     * @dev Updates the name of a module
+     * @notice
+     * - The caller of this function must be the owner of the module
+     */
     function updateModuleName(address moduleOwner, string memory moduleName, string memory newModuleName)
         external
         override
@@ -188,6 +198,11 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
+    /**
+     * @dev Updates the URL of a module
+     * @notice
+     * - The caller of this function must be the owner of the module
+     */
     function updateModuleUrl(address moduleOwner, string memory moduleName, string memory newModuleUrl)
         external
         override
@@ -204,6 +219,11 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
+    /**
+     * @dev Returns the modules owned by a module owner
+     * @notice
+     * - The caller of this function must be the owner of the module
+     */
     function getOwnedModules(address moduleOwner) external view override returns (SharedStructs.Module[] memory) {
         return _ownedModules[moduleOwner];
     }
@@ -229,6 +249,12 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
+    /**
+     * @dev Transfers the ownership of a module
+     * @notice
+     * - The caller of this function must be the owner of the module
+     * - The onwer of this module must have called the approveTransfer function
+     */
     function transferModuleOwnership(
         address moduleOwner,
         address newOwner,
@@ -278,6 +304,11 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
+    /**
+     * @dev Revokes a previously approved transfer for a module
+     * @notice
+     * - The caller of this function must be the owner of the module
+     */
     function revokeTransferApproval(address moduleOwner, string memory moduleName)
         external
         moduleOwnerOnly(moduleOwner, moduleName)
@@ -289,6 +320,11 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return true;
     }
 
+    /**
+     * @dev Checks if a transfer is approved for a specific module and purchaser
+     * @notice
+     * - The caller of this function must be the owner of the module
+     */
     function isTransferApproved(address moduleOwner, string memory moduleName, address purchaser)
         external
         view
@@ -298,6 +334,11 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         return _transferApprovals[moduleOwner][moduleName] == purchaser;
     }
 
+    /**
+     * @dev Grants the controller role to an account
+     * @notice
+     * - The caller of this function must have the DEFAULT_ADMIN_ROLE
+     */
     function grantControllerRole(address account) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         if (account == address(0)) {
             revert LilypadModuleDirectory__ZeroAddressNotAllowed();
@@ -309,6 +350,11 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         emit LilypadModuleDirectory__ControllerRoleGranted(account, msg.sender);
     }
 
+    /**
+     * @dev Revokes the controller role from an account
+     * @notice
+     * - The caller of this function must have the DEFAULT_ADMIN_ROLE
+     */
     function revokeControllerRole(address account) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         if (account == address(0)) {
             revert LilypadModuleDirectory__ZeroAddressNotAllowed();
@@ -322,7 +368,35 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         emit LilypadModuleDirectory__ControllerRoleRevoked(account, msg.sender);
     }
 
+    /**
+     * @dev Checks if an account has the controller role
+     * @notice
+     * - The caller of this function must be the controller role
+     */
     function hasControllerRole(address account) external view override returns (bool) {
         return hasRole(SharedStructs.CONTROLLER_ROLE, account);
+    }
+
+    /**
+     * @dev Checks if a user exists and if they do, it checks if they hold the ModuleCreator role, if they do not, it assigns it.  If the user does not exist, it creates a new user and registers them as a module creator.
+     * @notice
+     * - The caller of this function must be the controller role
+     */
+    function _checkAndInsertModuleCreator(address moduleCreator) private onlyController returns (bool) {
+        try lilypadUser.getUser(moduleCreator) {
+            // if the user exists and already has the module creator role, return false
+            if (lilypadUser.hasRole(moduleCreator, SharedStructs.UserType.ModuleCreator)) {
+                return false;
+            } else {
+                // The user exists but does not hold the ModuleCreator role, so we need to assign it
+                lilypadUser.addRole(moduleCreator, SharedStructs.UserType.ModuleCreator);
+            }
+        } catch {
+            // if the user does not exist, create a new user and register them as a module creator, the metadataID and url are purposesly left blank at the outset
+            lilypadUser.insertUser(moduleCreator, "", "", SharedStructs.UserType.ModuleCreator);
+        }
+
+        emit LilypadModuleDirectory__ModuleCreatorRegistered(moduleCreator);
+        return true;
     }
 }
