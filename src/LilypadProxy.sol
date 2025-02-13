@@ -143,7 +143,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
 
         // Check if the user exists in the lilypadUser contract
         try lilypadUser.getUser(msg.sender) {
-            // If the user exists and they are not a job creator, revert as they are supposed to use either the acceptResourceProviderCollateral or acceptValidationCollateral functions depending on their role
+            // If the user exists and they are not a job creator, revert as they are supposed to use either the acceptResourceProviderCollateral instead
             if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.JobCreator)) {
                 revert LilypadProxy__acceptJobPayment__NotJobCreator();
             }
@@ -180,7 +180,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
 
         // Check if the user exists in the lilypadUser contract
         try lilypadUser.getUser(msg.sender) {
-            // If the user exists and they are not a job creator, revert as they are supposed to use either the acceptResourceProviderCollateral or acceptValidationCollateral functions depending on their role
+            // If the user exists and they are not a ResourceProvider, revert as they are supposed to use the acceptJobPayment function
             if (!lilypadUser.hasRole(msg.sender, SharedStructs.UserType.ResourceProvider)) {
                 revert LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider();
             }
