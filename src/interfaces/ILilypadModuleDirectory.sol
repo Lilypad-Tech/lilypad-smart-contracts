@@ -5,6 +5,14 @@ import "../SharedStructs.sol";
 
 interface ILilypadModuleDirectory {
     /**
+     * @dev Registers a module creator
+     * @param moduleCreator The address of the module creator
+     * @return bool Indicates whether the registration was successful
+     * @notice This function is restricted to the controller role
+     */
+    function registerModuleCreator(address moduleCreator) external returns (bool);
+
+    /**
      * @dev Registers a module for a specific creator (module owner)
      * @param moduleOwner The address of the module owner
      * @param moduleName The name of the module to be registered
@@ -12,7 +20,7 @@ interface ILilypadModuleDirectory {
      * @return bool Indicates whether the registration was successful
      * @notice This function is restricted to the controller role
      */
-    function RegisterModuleForCreator(address moduleOwner, string memory moduleName, string memory moduleUrl)
+    function registerModuleForCreator(address moduleOwner, string memory moduleName, string memory moduleUrl)
         external
         returns (bool);
 
@@ -23,7 +31,7 @@ interface ILilypadModuleDirectory {
      * @param newModuleName The new name to associate with the module
      * @return bool Indicates whether the update was successful
      */
-    function UpdateModuleName(address moduleOwner, string memory moduleName, string memory newModuleName)
+    function updateModuleName(address moduleOwner, string memory moduleName, string memory newModuleName)
         external
         returns (bool);
 
@@ -34,7 +42,7 @@ interface ILilypadModuleDirectory {
      * @param newModuleUrl The new url to associate with the module
      * @return bool Indicates whether the update was successful
      */
-    function UpdateModuleUrl(address moduleOwner, string memory moduleName, string memory newModuleUrl)
+    function updateModuleUrl(address moduleOwner, string memory moduleName, string memory newModuleUrl)
         external
         returns (bool);
 
@@ -43,7 +51,7 @@ interface ILilypadModuleDirectory {
      * @param moduleOwner The address of the module owner
      * @return Module[] An array of Module structs representing the modules owned by the specified address
      */
-    function GetOwnedModules(address moduleOwner) external view returns (SharedStructs.Module[] memory);
+    function getOwnedModules(address moduleOwner) external view returns (SharedStructs.Module[] memory);
 
     /**
      * @dev This method will be used as a means for a module creator to authorize transfer of ownership of a module to a given address
@@ -53,7 +61,7 @@ interface ILilypadModuleDirectory {
      * @param moduleUrl The URL associated with the module
      * @return bool Indicates whether the transfer approval was successful
      */
-    function ApproveTransfer(address moduleOwner, address newOwner, string memory moduleName, string memory moduleUrl)
+    function approveTransfer(address moduleOwner, address newOwner, string memory moduleName, string memory moduleUrl)
         external
         returns (bool);
 
@@ -65,7 +73,7 @@ interface ILilypadModuleDirectory {
      * @param moduleUrl The URL associated with the module
      * @return bool Indicates whether the transfer was successful
      */
-    function TransferModuleOwnership(
+    function transferModuleOwnership(
         address moduleOwner,
         address newOwner,
         string memory moduleName,
@@ -78,7 +86,7 @@ interface ILilypadModuleDirectory {
      * @param moduleName The name of the module for which to revoke transfer approval
      * @return bool Indicates whether the revocation was successful
      */
-    function RevokeTransferApproval(address moduleOwner, string memory moduleName) external returns (bool);
+    function revokeTransferApproval(address moduleOwner, string memory moduleName) external returns (bool);
 
     /**
      * @dev Checks if a transfer is approved for a specific module and purchaser
@@ -87,7 +95,7 @@ interface ILilypadModuleDirectory {
      * @param purchaser The address to check approval for
      * @return bool True if the transfer is approved for the purchaser, false otherwise
      */
-    function IsTransferApproved(address moduleOwner, string memory moduleName, address purchaser)
+    function isTransferApproved(address moduleOwner, string memory moduleName, address purchaser)
         external
         view
         returns (bool);
