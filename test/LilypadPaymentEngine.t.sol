@@ -51,6 +51,7 @@ contract LilypadPaymentEngineTest is Test {
     event LilypadPayment__TreasuryWalletUpdated(address indexed treasuryWallet);
     event LilypadPayment__ValueBasedRewardsWalletUpdated(address indexed valueBasedRewardsWallet);
     event LilypadPayment__ValidationPoolWalletUpdated(address indexed validationPoolWallet);
+    event LilypadPayment__TokensBurned(uint256 blockNumber, uint256 timestamp, uint256 amount);
 
     function setUp() public {
         // Deploy token with initial supply (using 1 million instead of 1 billion for initial supply)
@@ -118,9 +119,7 @@ contract LilypadPaymentEngineTest is Test {
 
         // Set initial parameters
         paymentEngine.setP(0); // 0 protocol revenue
-        paymentEngine.setP1(0); // 50%
-        paymentEngine.setP2(5000); // 50%
-        paymentEngine.setP3(5000); // 50%
+        paymentEngine.setPvalues(0, 5000, 5000);
         paymentEngine.setM(200); // 2%
         paymentEngine.setAlpha(150); // 1.5x
         paymentEngine.setV1(200); // 2x
@@ -223,10 +222,7 @@ contract LilypadPaymentEngineTest is Test {
     // Parameter Update Tests
     function test_UpdateTokenomicsParameters() public {
         vm.startPrank(address(this)); // Default admin role
-        paymentEngine.setP(0); // 0 protocol revenue
-        paymentEngine.setP1(0); // 0%
-        paymentEngine.setP2(5000); // 50%
-        paymentEngine.setP3(5000); // 50% validation pool fee
+        paymentEngine.setPvalues(0, 5000, 5000);
         paymentEngine.setM(200); // 2%
         paymentEngine.setAlpha(150); // 1.5x
         paymentEngine.setV1(200); // 2x
@@ -251,96 +247,39 @@ contract LilypadPaymentEngineTest is Test {
         paymentEngine.setM(5000);
 
         vm.expectRevert();
-        paymentEngine.setP1(5000);
+        paymentEngine.setPvalues(5000, 5000, 5000);
 
         vm.stopPrank();
     }
 
-    function test_SetP1() public {
+    function test_SetPvalues() public {
         vm.startPrank(address(this));
 
-        // Set p2 and p3 to make sum equal 10000
-        uint256 _newP1 = 10000 - paymentEngine.p2() - paymentEngine.p3();
+        uint256 _newP1 = 2000;
+        uint256 _newP2 = 4000;
+        uint256 _newP3 = 4000;
 
         // Set p1 to complete the 10000 total
-        paymentEngine.setP1(_newP1);
+        paymentEngine.setPvalues(_newP1, _newP2, _newP3);
 
         assertEq(paymentEngine.p1(), _newP1);
-        vm.stopPrank();
-    }
-
-    function test_SetP1_Reverts_WhenNotAdmin() public {
-        vm.startPrank(ALICE);
-        vm.expectRevert();
-        paymentEngine.setP1(1000);
-        vm.stopPrank();
-    }
-
-    function test_SetP1_Reverts_WhenSumNotTenThousand() public {
-        vm.startPrank(address(this));
-        // Try to set p1 to value that would make sum > 10000
-        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ParametersMustSumToTenThousand.selector);
-        paymentEngine.setP1(20000); // Would make sum > 10000
-        vm.stopPrank();
-    }
-
-    function test_SetP2() public {
-        vm.startPrank(address(this));
-
-        uint256 _newP2 = 10000 - paymentEngine.p1() - paymentEngine.p3();
-        vm.expectEmit(true, true, true, true);
-        emit LilypadPayment__TokenomicsParameterUpdated("p2", _newP2);
-
-        // Set p2 to complete the 10000 total
-        paymentEngine.setP2(_newP2);
-
         assertEq(paymentEngine.p2(), _newP2);
-        vm.stopPrank();
-    }
-
-    function test_SetP2_Reverts_WhenNotAdmin() public {
-        vm.startPrank(BOB);
-        vm.expectRevert();
-        paymentEngine.setP2(5000);
-        vm.stopPrank();
-    }
-
-    function test_SetP2_Reverts_WhenSumNotTenThousand() public {
-        vm.startPrank(address(this));
-        // Try to set p2 to value that would make sum > 10000
-        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ParametersMustSumToTenThousand.selector);
-        paymentEngine.setP2(16000); // Would make sum > 10000
-        vm.stopPrank();
-    }
-
-    function test_SetP3() public {
-        vm.startPrank(address(this));
-
-        // Set p1 and p2 to make sum equal 10000
-        uint256 _newP3 = 10000 - paymentEngine.p1() - paymentEngine.p2();
-        vm.expectEmit(true, true, true, true);
-        emit LilypadPayment__TokenomicsParameterUpdated("p3", _newP3);
-
-        // Set p3 to complete the 10000 total
-        paymentEngine.setP3(_newP3);
-
         assertEq(paymentEngine.p3(), _newP3);
         vm.stopPrank();
     }
 
-    function test_SetP3_Reverts_WhenNotAdmin() public {
+    function test_SetPvalues_Reverts_WhenNotAdmin() public {
         vm.startPrank(ALICE);
         vm.expectRevert();
-        paymentEngine.setP3(4000);
+        paymentEngine.setPvalues(1000, 1000, 1000);
         vm.stopPrank();
     }
 
-    function test_SetP3_Reverts_WhenSumNotTenThousand() public {
+    function test_SetPValues_Reverts_WhenSumNotTenThousand() public {
         vm.startPrank(address(this));
-
-        // Try to set p3 to value that would make sum > 10000
+        // Try to set p1 to value that would make sum > 10000
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ParametersMustSumToTenThousand.selector);
-        paymentEngine.setP3(16000); // Would make sum > 10000
+        paymentEngine.setPvalues(20000, 1000, 1000); // Would make sum > 10000
         vm.stopPrank();
     }
 
@@ -359,6 +298,29 @@ contract LilypadPaymentEngineTest is Test {
         vm.startPrank(BOB);
         vm.expectRevert();
         paymentEngine.setP(2000);
+        vm.stopPrank();
+    }
+
+    function test_SetP_Reverts_WhenPValueTooLarge() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__PValueTooLarge.selector);
+        paymentEngine.setP(10001);
+        vm.stopPrank();
+    }
+
+    function test_SetM() public {
+        vm.startPrank(address(this));
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TokenomicsParameterUpdated("m", 2000);
+        paymentEngine.setM(2000);
+        assertEq(paymentEngine.m(), 2000);
+        vm.stopPrank();
+    }
+
+    function test_SetM_Reverts_WhenMValueTooLarge() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__MValueTooLarge.selector);
+        paymentEngine.setM(10001);
         vm.stopPrank();
     }
 
@@ -643,6 +605,125 @@ contract LilypadPaymentEngineTest is Test {
 
         // Only the resource provider's collateral should be left
         assertEq(paymentEngine.totalEscrow(), rpCollateral);
+
+        vm.stopPrank();
+    }
+
+    function test_HandleJobCompletion_whenPValueIsNonZero() public {
+        uint256 jobCreatorSolverFee = 1 * 10 ** 18;
+        uint256 resourceProviderSolverFee = 1 * 10 ** 18;
+        uint256 moduleCreatorFee = 1 * 10 ** 18;
+        uint256 networkCongestionFee = 1 * 10 ** 18;
+        uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
+        uint256 basePayment = 5 * 10 ** 18; // Base payment without fees
+        uint256 jobCost = basePayment + totalFees;
+        uint256 rpCollateral = 10 * 10 ** 18;
+
+        vm.startPrank(address(this));
+        paymentEngine.setPvalues(2000, 4000, 4000);
+        paymentEngine.setP(1000);
+        vm.stopPrank();
+
+        // Setup escrow for job creator and resource provider
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
+        vm.stopPrank();
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealCreated,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment // Use the base payment amount
+            })
+        });
+
+        vm.startPrank(address(this));
+        lilypadStorage.saveDeal("deal1", deal);
+
+        // Lock escrow for job
+        uint256 rpRequiredEscrow =
+            (basePayment + resourceProviderSolverFee) * (paymentEngine.resourceProviderActiveEscrowScaler() / 10000);
+        paymentEngine.initiateLockupOfEscrowForJob(ALICE, BOB, "deal1", jobCost, rpRequiredEscrow);
+        // At this point, the total active escrow should be the sum of the job creator's escrow and the resource provider's escrow
+        assertEq(paymentEngine.totalActiveEscrow(), jobCost + rpRequiredEscrow);
+
+        // Switch to payment engine to approve token transfers
+        vm.stopPrank();
+        vm.startPrank(address(paymentEngine));
+
+        // Complete job
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+        bool success = paymentEngine.handleJobCompletion(result);
+
+        assertTrue(success);
+
+        // Assert final balances
+        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
+        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), 0);
+        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
+        assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
+        assertEq(
+            token.balanceOf(CHARLIE),
+            INITIAL_BALANCE
+                + (
+                    deal.paymentStructure.moduleCreatorFee
+                        - (deal.paymentStructure.moduleCreatorFee * paymentEngine.m()) / 10000
+                )
+        );
+        assertEq(
+            token.balanceOf(DAVE),
+            INITIAL_BALANCE + deal.paymentStructure.jobCreatorSolverFee
+                + deal.paymentStructure.resourceProviderSolverFee
+        );
+
+        // Calculate expected treasury amount
+        uint256 protocolFees = deal.paymentStructure.networkCongestionFee
+            + (deal.paymentStructure.moduleCreatorFee * paymentEngine.m()) / 10000;
+        uint256 expectedTreasuryAmount = (protocolFees * paymentEngine.p()) / 10000;
+        uint256 expectedBurnAmount = (expectedTreasuryAmount * paymentEngine.p1()) / 10000;
+        uint256 expectedGrantsAndAirdropsAmount = (expectedTreasuryAmount * paymentEngine.p2()) / 10000;
+
+        assertEq(
+            token.balanceOf(TREASURY),
+            INITIAL_TREASURY_BALANCE + expectedTreasuryAmount + expectedBurnAmount + expectedGrantsAndAirdropsAmount
+        );
+
+        // Calculate expected value based rewards amount
+        uint256 expectedValueBasedRewardsAmount = protocolFees - expectedTreasuryAmount;
+        assertEq(token.balanceOf(VALUE_REWARDS), INITIAL_VALUE_REWARDS_BALANCE + expectedValueBasedRewardsAmount);
+
+        // Verify that the total active escrow is reset to 0
+        assertEq(paymentEngine.totalActiveEscrow(), 0);
+
+        // Only the resource provider's collateral should be left
+        assertEq(paymentEngine.totalEscrow(), rpCollateral);
+
+        assertEq(paymentEngine.activeBurnTokens(), expectedBurnAmount);
+        assertEq(paymentEngine.totalTokensBurned(), 0);
 
         vm.stopPrank();
     }
@@ -1575,6 +1656,191 @@ contract LilypadPaymentEngineTest is Test {
         vm.startPrank(address(paymentEngine));
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__InvalidValidationResultStatus.selector);
         paymentEngine.handleValidationFailed(validationResult, deal);
+        vm.stopPrank();
+    }
+
+    function test_UpdateActiveBurnTokens() public {
+        // We need to create a completed job to generate burn tokens
+        uint256 basePayment = 5 * 10 ** 18;
+        uint256 jobCreatorSolverFee = 1 * 10 ** 18;
+        uint256 resourceProviderSolverFee = 1 * 10 ** 18;
+        uint256 moduleCreatorFee = 1 * 10 ** 18;
+        uint256 networkCongestionFee = 1 * 10 ** 18;
+        uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
+        uint256 jobCost = basePayment + totalFees;
+        uint256 rpCollateral = 20 * 10 ** 18;
+
+        vm.startPrank(address(this));
+        paymentEngine.setPvalues(2000, 4000, 4000);
+        paymentEngine.setP(1000);
+        vm.stopPrank();
+
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
+        vm.stopPrank();
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealCreated,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment // Changed from jobCost to basePayment
+            })
+        });
+
+        vm.startPrank(address(this));
+        lilypadStorage.saveDeal("deal1", deal);
+
+        // Lock escrow for job
+        paymentEngine.initiateLockupOfEscrowForJob(ALICE, BOB, "deal1", jobCost, rpCollateral);
+
+        // Complete job to generate burn tokens
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result-1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+
+        paymentEngine.handleJobCompletion(result);
+        vm.stopPrank();
+
+        uint256 currentActiveBurnTokens = paymentEngine.activeBurnTokens();
+        assertTrue(currentActiveBurnTokens > 0, "Should have active burn tokens");
+
+        // Update active burn tokens
+        vm.startPrank(address(paymentEngine));
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TokensBurned(block.number, block.timestamp, currentActiveBurnTokens);
+
+        bool success = paymentEngine.updateActiveBurnTokens(currentActiveBurnTokens);
+        assertTrue(success);
+
+        // Verify state changes
+        assertEq(paymentEngine.activeBurnTokens(), 0);
+        assertEq(paymentEngine.totalTokensBurned(), currentActiveBurnTokens);
+        vm.stopPrank();
+    }
+
+    function testFuzz_UpdateActiveBurnTokens(uint256 burnAmount) public {
+        // Bound burnAmount to a reasonable range (1 to 1000 tokens)
+        burnAmount = bound(burnAmount, 1, 1000 * 10 ** 18);
+
+        // Setup initial state with some active burn tokens
+        uint256 basePayment = 5 * 10 ** 18;
+        uint256 jobCreatorSolverFee = 1 * 10 ** 18;
+        uint256 resourceProviderSolverFee = 1 * 10 ** 18;
+        uint256 moduleCreatorFee = 1 * 10 ** 18;
+        uint256 networkCongestionFee = 1 * 10 ** 18;
+        uint256 totalFees = jobCreatorSolverFee + moduleCreatorFee + networkCongestionFee;
+        uint256 jobCost = basePayment + totalFees;
+        uint256 rpCollateral = 20 * 10 ** 18;
+
+        vm.startPrank(address(this));
+        paymentEngine.setPvalues(2000, 4000, 4000);
+        paymentEngine.setP(1000);
+        vm.stopPrank();
+
+        vm.startPrank(ALICE);
+        token.approve(address(paymentEngine), jobCost);
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), rpCollateral);
+        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
+        vm.stopPrank();
+
+        // Create and save deal
+        SharedStructs.Deal memory deal = SharedStructs.Deal({
+            dealId: "deal1",
+            jobCreator: ALICE,
+            resourceProvider: BOB,
+            moduleCreator: CHARLIE,
+            solver: DAVE,
+            jobOfferCID: "jobCID1",
+            resourceOfferCID: "resourceCID1",
+            status: SharedStructs.DealStatusEnum.DealCreated,
+            timestamp: block.timestamp,
+            paymentStructure: SharedStructs.DealPaymentStructure({
+                jobCreatorSolverFee: jobCreatorSolverFee,
+                resourceProviderSolverFee: resourceProviderSolverFee,
+                networkCongestionFee: networkCongestionFee,
+                moduleCreatorFee: moduleCreatorFee,
+                priceOfJobWithoutFees: basePayment
+            })
+        });
+
+        vm.startPrank(address(this));
+        lilypadStorage.saveDeal("deal1", deal);
+
+        // Lock escrow for job
+        paymentEngine.initiateLockupOfEscrowForJob(ALICE, BOB, "deal1", jobCost, rpCollateral);
+
+        // Complete job to generate burn tokens
+        SharedStructs.Result memory result = SharedStructs.Result({
+            resultId: "result-1",
+            dealId: "deal1",
+            resultCID: "resultCID1",
+            status: SharedStructs.ResultStatusEnum.ResultsAccepted,
+            timestamp: block.timestamp
+        });
+
+        paymentEngine.handleJobCompletion(result);
+        vm.stopPrank();
+
+        uint256 currentActiveBurnTokens = paymentEngine.activeBurnTokens();
+
+        // Skip test if burnAmount is greater than available tokens
+        if (burnAmount > currentActiveBurnTokens) {
+            return;
+        }
+
+        // Update active burn tokens
+        vm.startPrank(address(paymentEngine));
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TokensBurned(block.number, block.timestamp, burnAmount);
+
+        bool success = paymentEngine.updateActiveBurnTokens(burnAmount);
+        assertTrue(success);
+
+        // Verify state changes
+        assertEq(paymentEngine.activeBurnTokens(), currentActiveBurnTokens - burnAmount);
+        assertEq(paymentEngine.totalTokensBurned(), burnAmount);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_BurningMoreThanActive() public {
+        uint256 currentActiveBurnTokens = paymentEngine.activeBurnTokens();
+
+        vm.startPrank(address(paymentEngine));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__InsufficientActiveBurnTokens.selector);
+        paymentEngine.updateActiveBurnTokens(currentActiveBurnTokens + 1);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_NonControllerUpdatesBurnTokens() public {
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        paymentEngine.updateActiveBurnTokens(1);
         vm.stopPrank();
     }
 }

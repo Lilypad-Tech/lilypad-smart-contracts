@@ -44,6 +44,12 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     // This is the total active escrow for running jobs locked for actively running jobs
     uint256 public totalActiveEscrow;
 
+    // The active amount of tokens that are up for being burned
+    uint256 public activeBurnTokens;
+
+    // The total amount of tokens that have been burned
+    uint256 public totalTokensBurned;
+
     /**
      * These are the parameters described in the Lilypad tokenomics paper
      *     src: _add_link_here_
@@ -85,7 +91,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     // This is a mapping of escrow that is active in a deal
     mapping(address account => uint256 activeEscrow) public activeEscrow;
 
-    // This is a mapping keeping track of the deposits for each account and the timestamp of when they can be withdrawn
+    // This is a mapping keeping track of the deposits for each resource provider account and the timestamp of when they can be withdrawn
     mapping(address account => uint256 depositTimestamp) public depositTimestamps;
 
     ////////////////////////////////
@@ -120,6 +126,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     event LilypadPayment__ControllerRoleGranted(address indexed account, address indexed sender);
     event LilypadPayment__ControllerRoleRevoked(address indexed account, address indexed sender);
     event LilypadPayment__escrowPayout(address indexed to, uint256 amount);
+    event LilypadPayment__TokensBurned(uint256 blockNumber, uint256 blockTimestamp, uint256 amountBurnt);
 
     error LilypadPayment__insufficientEscrowAmount(uint256 escrowAmount, uint256 requiredAmount);
     error LilypadPayment__insufficientActiveEscrowAmount();
@@ -172,7 +179,9 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     error LilypadPayment__ZeroWithdrawalAddress();
     error LilypadPayment__ZeroResourceProviderAddress();
     error LilypadPayment__ZeroJobCreatorAddress();
-
+    error LilypadPayment__InsufficientActiveBurnTokens();
+    error LilypadPayment__PValueTooLarge();
+    error LilypadPayment__MValueTooLarge();
     ////////////////////////////////
     ///////// Modifiers ///////////
     ////////////////////////////////
@@ -273,31 +282,13 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      * @param _p1 New p1 value
      * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
      */
-    function setP1(uint256 _p1) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_p1 + p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
+    function setPvalues(uint256 _p1, uint256 _p2, uint256 _p3) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_p1 + _p2 + _p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p1 = _p1;
-        emit LilypadPayment__TokenomicsParameterUpdated("p1", _p1);
-    }
-
-    /**
-     * @notice Sets the p2 parameter (grants/ecosystem pool fee)
-     * @param _p2 New p2 value
-     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
-     */
-    function setP2(uint256 _p2) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (p1 + _p2 + p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p2 = _p2;
-        emit LilypadPayment__TokenomicsParameterUpdated("p2", _p2);
-    }
-
-    /**
-     * @notice Sets the p3 parameter (validation pool fee)
-     * @param _p3 New p3 value
-     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
-     */
-    function setP3(uint256 _p3) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (p1 + p2 + _p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
         p3 = _p3;
+        emit LilypadPayment__TokenomicsParameterUpdated("p1", _p1);
+        emit LilypadPayment__TokenomicsParameterUpdated("p2", _p2);
         emit LilypadPayment__TokenomicsParameterUpdated("p3", _p3);
     }
 
@@ -306,6 +297,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      * @param _p New p value
      */
     function setP(uint256 _p) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_p > 10000) revert LilypadPayment__PValueTooLarge();
         p = _p;
         emit LilypadPayment__TokenomicsParameterUpdated("p", _p);
     }
@@ -315,6 +307,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      * @param _m New m value
      */
     function setM(uint256 _m) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_m > 10000) revert LilypadPayment__MValueTooLarge();
         m = _m;
         emit LilypadPayment__TokenomicsParameterUpdated("m", _m);
     }
@@ -631,6 +624,33 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     }
 
     /**
+     * @dev This method will update the active burn tokens.  This function is meant to called by an external process that will initiate the burning of the tokens on the l1 token contract following the below flow:
+     *     - The external process call the activeBurnTokens() function to get the amount of tokens that are up for being burned at the time of the call (i.e. according to the epoch for burning tokens laid out in the tokenomics paper)
+     *     - The external process then burns the tokens on the l1 token contract
+     *     - The external process then calls the updateActiveBurnTokens() function to update the amount of active burn tokens passing in the amount that was burned so that the contract knows how much to subtract from the active burn tokens (as the amount can still be accumlating as the protocol is running)
+     *     - updateActiveBurnTokens will then emit an event to notify the outside world of the amount of tokens that were burned including block number, block time, and the amount burnt
+     * @notice This function is restricted to the CONTROLLER_ROLE.
+     */
+    function updateActiveBurnTokens(uint256 _amountBurnt)
+        external
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
+        returns (bool)
+    {
+        if (_amountBurnt > activeBurnTokens) {
+            revert LilypadPayment__InsufficientActiveBurnTokens();
+        }
+
+        // Subtract the amount from the active burn tokens
+        activeBurnTokens -= _amountBurnt;
+
+        // Add the amount to the total tokens burned
+        totalTokensBurned += _amountBurnt;
+
+        emit LilypadPayment__TokensBurned(block.number, block.timestamp, _amountBurnt);
+        return true;
+    }
+
+    /**
      * @dev Handles the completion of a job
      * @notice This function is restricted to the CONTROLLER_ROLE.
      */
@@ -713,8 +733,9 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
 
         // Only burn if the burn amount is greater than 0 to avoid reverting
         if (burnAmount > 0) {
-            // Burn the amount
-            token.burn(burnAmount);
+            // Add the amount to the active burn tokens
+            // Note: This is to keep track of the amount of tokens that are up for being burned, the actual burning of tokens will happen through an external process calling the l1 token contract via the treasury wallet
+            activeBurnTokens += burnAmount;
         }
 
         // Remove the active escrow for the job creator and resource provider
@@ -734,7 +755,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         payout(deal.solver, deal.paymentStructure.jobCreatorSolverFee + deal.paymentStructure.resourceProviderSolverFee);
 
         // Pay the treasury
-        payout(treasuryWallet, TreasuryPaymentTotalAmount + grantsAndAirdropsAmount);
+        payout(treasuryWallet, TreasuryPaymentTotalAmount + grantsAndAirdropsAmount + burnAmount);
 
         // Pay the value based rewards
         payout(valueBasedRewardsWallet, valueBasedRewardsAmount);
