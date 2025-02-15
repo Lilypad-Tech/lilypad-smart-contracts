@@ -121,7 +121,6 @@ contract LilypadPaymentEngineTest is Test {
         paymentEngine.setP(0); // 0 protocol revenue
         paymentEngine.setPvalues(0, 5000, 5000);
         paymentEngine.setM(200); // 2%
-        paymentEngine.setAlpha(150); // 1.5x
         paymentEngine.setV1(200); // 2x
         paymentEngine.setV2(150); // 1.5x
     }
@@ -224,7 +223,6 @@ contract LilypadPaymentEngineTest is Test {
         vm.startPrank(address(this)); // Default admin role
         paymentEngine.setPvalues(0, 5000, 5000);
         paymentEngine.setM(200); // 2%
-        paymentEngine.setAlpha(150); // 1.5x
         paymentEngine.setV1(200); // 2x
         paymentEngine.setV2(150); // 1.5x
         paymentEngine.setResourceProviderActiveEscrowScaler(10000);
@@ -233,7 +231,6 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.p3(), 5000);
         assertEq(paymentEngine.p(), 0);
         assertEq(paymentEngine.m(), 200);
-        assertEq(paymentEngine.alpha(), 150);
         assertEq(paymentEngine.v1(), 200);
         assertEq(paymentEngine.v2(), 150);
         assertEq(paymentEngine.resourceProviderActiveEscrowScaler(), 10000);

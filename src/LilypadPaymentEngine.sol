@@ -64,8 +64,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      *
      *     m: The percentage of module creator fees that go towards protocol revenue
      *
-     *     alpha: The multipler for future stimulants of token (do I need this here?)
-     *
      *     v1: The scaling factor for determining value based rewards for RPs based on total fees geenrated by the RP
      *     v2: The scaling factor for determining value based rewards for RPs based on total average collateral locked up
      *     Note: v1 > v2 to scaoe the importance of fees over collateral
@@ -76,8 +74,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     uint256 public p3;
 
     uint256 public m;
-
-    uint256 public alpha;
 
     uint256 public v1;
     uint256 public v2;
@@ -257,9 +253,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         // Module Creator Fee percentage to be paid to treasury represented as a basis point
         m = 200;
 
-        // The stimulent factor for future growth of the token
-        alpha = 0;
-
         // expoential weight for scaling fees
         v1 = 2;
 
@@ -310,15 +303,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         if (_m > 10000) revert LilypadPayment__MValueTooLarge();
         m = _m;
         emit LilypadPayment__TokenomicsParameterUpdated("m", _m);
-    }
-
-    /**
-     * @notice Sets the alpha parameter ()
-     * @param _alpha New alpha value
-     */
-    function setAlpha(uint256 _alpha) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        alpha = _alpha;
-        emit LilypadPayment__TokenomicsParameterUpdated("alpha", _alpha);
     }
 
     /**
