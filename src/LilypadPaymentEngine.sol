@@ -20,7 +20,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     ///////// State Variables //////
     ////////////////////////////////
 
-    LilypadToken private token;
+    IERC20 private l2token;
     LilypadStorage private lilypadStorage;
     LilypadUser private lilypadUser;
 
@@ -208,14 +208,14 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     ////////////////////////////////
 
     function initialize(
-        address _tokenAddress,
+        address _l2token,
         address _lilypadStorageAddress,
         address _lilypadUserAddress,
         address _treasuryWallet,
         address _valueBasedRewardsWallet,
         address _validationPoolWallet
     ) public initializer {
-        if (_tokenAddress == address(0)) revert LilypadPayment__ZeroTokenAddress();
+        if (_l2token == address(0)) revert LilypadPayment__ZeroTokenAddress();
         if (_lilypadStorageAddress == address(0)) revert LilypadPayment__ZeroStorageAddress();
         if (_lilypadUserAddress == address(0)) revert LilypadPayment__ZeroUserAddress();
         if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
@@ -226,7 +226,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
 
-        token = LilypadToken(_tokenAddress);
+        l2token = IERC20(_l2token);
         lilypadStorage = LilypadStorage(_lilypadStorageAddress);
         lilypadUser = LilypadUser(_lilypadUserAddress);
 
@@ -455,7 +455,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         // Do the accounting to bump the escrow balance of the account
         escrowBalances[_payee] += _amount;
 
-        bool success = token.transferFrom(_payee, address(this), _amount);
+        bool success = l2token.transferFrom(_payee, address(this), _amount);
         if (!success) {
             revert LilypadPayment__transferFailed();
         }
@@ -488,7 +488,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         activeEscrow[_address] -= _amount;
 
         // When an actor is slashed their active collateral, it is sent to the treasury wallet
-        bool success = token.transfer(treasuryWallet, _amount);
+        bool success = l2token.transfer(treasuryWallet, _amount);
         if (!success) {
             revert LilypadPayment__transferFailed();
         }
@@ -534,7 +534,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         // Note: We do not remove the active collateral from the actor's active escrow since that will be used for the completion of a currently active job
         escrowBalances[_withdrawer] -= _amount;
 
-        bool success = token.transfer(_withdrawer, _amount);
+        bool success = l2token.transfer(_withdrawer, _amount);
         if (!success) {
             revert LilypadPayment__transferFailed();
         }
@@ -560,7 +560,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
             return false;
         }
 
-        bool success = token.transfer(_to, _amount);
+        bool success = l2token.transfer(_to, _amount);
         if (!success) {
             revert LilypadPayment__transferFailed();
         }
