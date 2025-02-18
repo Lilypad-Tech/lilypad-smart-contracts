@@ -462,7 +462,7 @@ contract LilypadPaymentEngineTest is Test {
 
     function test_SetL2LilypadToken_Reverts_WhenZeroAddress() public {
         vm.startPrank(address(this));
-        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroLilypadTokenAddress.selector);
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroTokenAddress.selector);
         paymentEngine.setL2LilypadToken(address(0));
         vm.stopPrank();
     }
@@ -477,7 +477,7 @@ contract LilypadPaymentEngineTest is Test {
 
     function test_SetLilypadStorage_Reverts_WhenZeroAddress() public {
         vm.startPrank(address(this));
-        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroLilypadStorageAddress.selector);
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroStorageAddress.selector);
         paymentEngine.setLilypadStorage(address(0));
         vm.stopPrank();
     }
@@ -492,7 +492,7 @@ contract LilypadPaymentEngineTest is Test {
 
     function test_SetLilypadUser_Reverts_WhenZeroAddress() public {
         vm.startPrank(address(this));
-        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroLilypadUserAddress.selector);
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroUserAddress.selector);
         paymentEngine.setLilypadUser(address(0));
     }
 

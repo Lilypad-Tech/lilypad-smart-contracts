@@ -181,9 +181,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     error LilypadPayment__InsufficientActiveBurnTokens();
     error LilypadPayment__PValueTooLarge();
     error LilypadPayment__MValueTooLarge();
-    error LilypadPayment__ZeroLilypadStorageAddress();
-    error LilypadPayment__ZeroLilypadUserAddress();
-    error LilypadPayment__ZeroLilypadTokenAddress();
     ////////////////////////////////
     ///////// Modifiers ///////////
     ////////////////////////////////
@@ -380,7 +377,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      * @param _l2LilypadToken New l2LilypadToken address
      */
     function setL2LilypadToken(address _l2LilypadToken) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_l2LilypadToken == address(0)) revert LilypadPayment__ZeroLilypadTokenAddress();
+        if (_l2LilypadToken == address(0)) revert LilypadPayment__ZeroTokenAddress();
         l2token = IERC20(_l2LilypadToken);
         emit LilypadPayment__L2LilypadTokenUpdated(_l2LilypadToken, msg.sender);
     }
@@ -390,7 +387,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      * @param _lilypadStorage New lilypadStorage address
      */
     function setLilypadStorage(address _lilypadStorage) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_lilypadStorage == address(0)) revert LilypadPayment__ZeroLilypadStorageAddress();
+        if (_lilypadStorage == address(0)) revert LilypadPayment__ZeroStorageAddress();
         lilypadStorage = LilypadStorage(_lilypadStorage);
         emit LilypadPayment__LilypadStorageUpdated(_lilypadStorage, msg.sender);
     }
@@ -400,7 +397,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
      * @param _lilypadUser New lilypadUser address
      */
     function setLilypadUser(address _lilypadUser) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_lilypadUser == address(0)) revert LilypadPayment__ZeroLilypadUserAddress();
+        if (_lilypadUser == address(0)) revert LilypadPayment__ZeroUserAddress();
         lilypadUser = LilypadUser(_lilypadUser);
         emit LilypadPayment__LilypadUserUpdated(_lilypadUser, msg.sender);
     }
