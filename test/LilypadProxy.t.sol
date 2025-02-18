@@ -2,11 +2,11 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/LilypadProxy.sol";
-import "../src/LilypadToken.sol";
-import "../src/LilypadStorage.sol";
-import "../src/LilypadPaymentEngine.sol";
-import "../src/LilypadUser.sol";
+import {LilypadProxy} from "../src/LilypadProxy.sol";
+import {LilypadToken} from "../src/LilypadToken.sol";
+import {LilypadStorage} from "../src/LilypadStorage.sol";
+import {LilypadPaymentEngine} from "../src/LilypadPaymentEngine.sol";
+import {LilypadUser} from "../src/LilypadUser.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
@@ -102,7 +102,7 @@ contract LilypadProxyTest is Test {
         assertEq(address(proxy.lilypadStorage()), address(storage_));
         assertEq(address(proxy.paymentEngine()), address(paymentEngine));
         assertEq(address(proxy.lilypadUser()), address(user));
-        assertEq(address(proxy.lilypadToken()), address(token));
+        assertEq(address(proxy.l2LilypadToken()), address(token));
         assertTrue(proxy.hasRole(bytes32(0x00), address(this))); // Check DEFAULT_ADMIN_ROLE first
         assertTrue(proxy.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
         assertTrue(storage_.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
