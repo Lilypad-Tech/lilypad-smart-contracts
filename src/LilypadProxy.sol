@@ -65,18 +65,35 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         return version;
     }
 
-    function setStorageContract(address _storageAddress) external returns (bool) {
+    function setStorageContract(address _storageAddress) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
+        if (_storageAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         lilypadStorage = LilypadStorage(_storageAddress);
         return true;
     }
 
-    function setPaymentEngineContract(address _paymentEngineAddress) external returns (bool) {
+    function setPaymentEngineContract(address _paymentEngineAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        returns (bool)
+    {
+        if (_paymentEngineAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         paymentEngine = LilypadPaymentEngine(_paymentEngineAddress);
         return true;
     }
 
-    function setUserContract(address _userAddress) external returns (bool) {
+    function setUserContract(address _userAddress) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
+        if (_userAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         lilypadUser = LilypadUser(_userAddress);
+        return true;
+    }
+
+    function setL2LilypadTokenContract(address _l2LilypadTokenAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        returns (bool)
+    {
+        if (_l2LilypadTokenAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
+        l2LilypadToken = IERC20(_l2LilypadTokenAddress);
         return true;
     }
 

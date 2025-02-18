@@ -165,14 +165,17 @@ contract LilypadProxyTest is Test {
         address newStorage = address(0x123);
         address newPaymentEngine = address(0x456);
         address newUser = address(0xabc);
+        address newL2LilypadToken = address(0xdef);
 
         assertTrue(proxy.setStorageContract(newStorage));
         assertTrue(proxy.setPaymentEngineContract(newPaymentEngine));
         assertTrue(proxy.setUserContract(newUser));
+        assertTrue(proxy.setL2LilypadTokenContract(newL2LilypadToken));
 
         assertEq(address(proxy.lilypadStorage()), newStorage);
         assertEq(address(proxy.paymentEngine()), newPaymentEngine);
         assertEq(address(proxy.lilypadUser()), newUser);
+        assertEq(address(proxy.l2LilypadToken()), newL2LilypadToken);
 
         vm.stopPrank();
     }

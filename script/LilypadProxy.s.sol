@@ -60,7 +60,7 @@ contract DeployLilypadProxy is Script {
 
         // Note: This token deployment here is for testing purposes.  The actual token deployment will be done on the L1 chain and the address that will be passed into the proxy will be the address of the token on the L2 chain.
         LilypadToken token = deployToken();
-        
+
         (LilypadStorage lilypadStorage, address storageProxy) = deployStorage();
         (LilypadUser user, address userProxy) = deployUser();
         (LilypadPaymentEngine paymentEngine, address engineProxy) = deployEngine(
