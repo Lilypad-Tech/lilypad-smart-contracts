@@ -123,6 +123,9 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     event LilypadPayment__ControllerRoleRevoked(address indexed account, address indexed sender);
     event LilypadPayment__escrowPayout(address indexed to, uint256 amount);
     event LilypadPayment__TokensBurned(uint256 blockNumber, uint256 blockTimestamp, uint256 amountBurnt);
+    event LilypadPayment__L2LilypadTokenUpdated(address indexed l2LilypadToken, address indexed caller);
+    event LilypadPayment__LilypadStorageUpdated(address indexed lilypadStorage, address indexed caller);
+    event LilypadPayment__LilypadUserUpdated(address indexed lilypadUser, address indexed caller);
 
     error LilypadPayment__insufficientEscrowAmount(uint256 escrowAmount, uint256 requiredAmount);
     error LilypadPayment__insufficientActiveEscrowAmount();
@@ -178,6 +181,9 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     error LilypadPayment__InsufficientActiveBurnTokens();
     error LilypadPayment__PValueTooLarge();
     error LilypadPayment__MValueTooLarge();
+    error LilypadPayment__ZeroLilypadStorageAddress();
+    error LilypadPayment__ZeroLilypadUserAddress();
+    error LilypadPayment__ZeroLilypadTokenAddress();
     ////////////////////////////////
     ///////// Modifiers ///////////
     ////////////////////////////////
@@ -370,12 +376,54 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     }
 
     /**
+     * @notice Sets the l2LilypadToken address
+     * @param _l2LilypadToken New l2LilypadToken address
+     */
+    function setL2LilypadToken(address _l2LilypadToken) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_l2LilypadToken == address(0)) revert LilypadPayment__ZeroLilypadTokenAddress();
+        l2token = IERC20(_l2LilypadToken);
+        emit LilypadPayment__L2LilypadTokenUpdated(_l2LilypadToken, msg.sender);
+    }
+
+    /**
+     * @notice Sets the lilypadStorage address
+     * @param _lilypadStorage New lilypadStorage address
+     */
+    function setLilypadStorage(address _lilypadStorage) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_lilypadStorage == address(0)) revert LilypadPayment__ZeroLilypadStorageAddress();
+        lilypadStorage = LilypadStorage(_lilypadStorage);
+        emit LilypadPayment__LilypadStorageUpdated(_lilypadStorage, msg.sender);
+    }
+
+    /**
+     * @notice Sets the lilypadUser address
+     * @param _lilypadUser New lilypadUser address
+     */
+    function setLilypadUser(address _lilypadUser) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_lilypadUser == address(0)) revert LilypadPayment__ZeroLilypadUserAddress();
+        lilypadUser = LilypadUser(_lilypadUser);
+        emit LilypadPayment__LilypadUserUpdated(_lilypadUser, msg.sender);
+    }
+
+    /**
      * @dev Returns the current version of the contract
      * @notice
      * - Returns the semantic version string of the contract
      */
     function getVersion() external view returns (string memory) {
         return version;
+    }
+
+    function getL2LilypadToken() external view returns (address) {
+        return address(l2token);
+    }
+
+    function getLilypadStorage() external view returns (address) {
+        return address(lilypadStorage);
+    }
+
+    function getLilypadUser() external view returns (address) {
+        return address(lilypadUser);
     }
 
     function checkEscrowBalanceForAmount(address _address, uint256 _amount) public view returns (bool) {

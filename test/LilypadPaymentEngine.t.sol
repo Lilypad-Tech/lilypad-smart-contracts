@@ -52,6 +52,9 @@ contract LilypadPaymentEngineTest is Test {
     event LilypadPayment__ValueBasedRewardsWalletUpdated(address indexed valueBasedRewardsWallet);
     event LilypadPayment__ValidationPoolWalletUpdated(address indexed validationPoolWallet);
     event LilypadPayment__TokensBurned(uint256 blockNumber, uint256 timestamp, uint256 amount);
+    event LilypadPayment__L2LilypadTokenUpdated(address indexed l2LilypadToken, address indexed caller);
+    event LilypadPayment__LilypadStorageUpdated(address indexed lilypadStorage, address indexed caller);
+    event LilypadPayment__LilypadUserUpdated(address indexed lilypadUser, address indexed caller);
 
     function setUp() public {
         // Deploy token with initial supply (using 1 million instead of 1 billion for initial supply)
@@ -447,6 +450,50 @@ contract LilypadPaymentEngineTest is Test {
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroValidationPoolWallet.selector);
         paymentEngine.setValidationPoolWallet(address(0));
         vm.stopPrank();
+    }
+
+    function test_SetL2LilypadToken() public {
+        vm.startPrank(address(this));
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__L2LilypadTokenUpdated(address(5), address(this));
+        paymentEngine.setL2LilypadToken(address(5));
+        vm.stopPrank();
+    }
+
+    function test_SetL2LilypadToken_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroLilypadTokenAddress.selector);
+        paymentEngine.setL2LilypadToken(address(0));
+        vm.stopPrank();
+    }
+
+    function test_SetLilypadStorage() public {
+        vm.startPrank(address(this));
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__LilypadStorageUpdated(address(5), address(this));
+        paymentEngine.setLilypadStorage(address(5));
+        vm.stopPrank();
+    }
+
+    function test_SetLilypadStorage_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroLilypadStorageAddress.selector);
+        paymentEngine.setLilypadStorage(address(0));
+        vm.stopPrank();
+    }
+
+    function test_SetLilypadUser() public {
+        vm.startPrank(address(this));
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__LilypadUserUpdated(address(5), address(this));
+        paymentEngine.setLilypadUser(address(5));
+        vm.stopPrank();
+    }
+
+    function test_SetLilypadUser_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroLilypadUserAddress.selector);
+        paymentEngine.setLilypadUser(address(0));
     }
 
     // Escrow Locking Tests
