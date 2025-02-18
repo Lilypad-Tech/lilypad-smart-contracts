@@ -6,26 +6,25 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {SharedStructs} from "./SharedStructs.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {LilypadToken} from "./LilypadToken.sol";
 
 contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
-    LilypadToken public token;
+    IERC20 public l2LilypadToken;
 
     // Vesting schedule id counter which will be incremented each time a new vesting schedule is created
     uint256 public vestingScheduleCount;
 
-    // Total amount of tokens vested in all schedules
+    // Total amount of l2Tokens vested in all schedules
     uint256 private vestingSchedulesTotalAmount;
 
     // Vesting schedule struct
     struct VestingSchedule {
-        // The address of the beneficiary to whom the tokens are vested
+        // The address of the beneficiary to whom the l2Tokens are vested
         address beneficiary;
-        // The total amount of tokens to be vested
+        // The total amount of l2Tokens to be vested
         uint256 totalAmount;
         // The start time of the vesting
         uint64 startTime;
-        // The amount of tokens already released
+        // The amount of l2Tokens already released
         uint256 released;
         // The duration of the cliff period
         uint64 cliffDuration;
@@ -44,7 +43,7 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
     event LilypadVesting__VestingScheduleCreated(
         address indexed beneficiary, uint256 indexed scheduleId, uint256 amount, uint256 startTime
     );
-    event LilypadVesting__TokensReleased(address indexed beneficiary, uint256 indexed scheduleId, uint256 amount);
+    event LilypadVesting__l2TokensReleased(address indexed beneficiary, uint256 indexed scheduleId, uint256 amount);
     event LilypadVesting__VestingRoleGranted(address indexed account, address indexed caller);
     event LilypadVesting__VestingRoleRevoked(address indexed account, address indexed caller);
 
@@ -64,13 +63,13 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
     error LilypadVesting__RoleNotFound();
     error LilypadVesting__CannotRevokeOwnRole();
 
-    constructor(address _tokenAddress) {
-        if (_tokenAddress == address(0)) {
+    constructor(address _l2TokenAddress) {
+        if (_l2TokenAddress == address(0)) {
             revert LilypadVesting__ZeroAddressNotAllowed();
         }
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.VESTING_ROLE, msg.sender);
-        token = LilypadToken(_tokenAddress);
+        l2LilypadToken = IERC20(_l2TokenAddress);
     }
 
     /**
@@ -155,7 +154,7 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
         // Add the vesting schedule id to the beneficiary's vesting schedule ids
         beneficiarySchedules[beneficiary].push(vestingIndex);
 
-        bool success = token.transferFrom(msg.sender, address(this), amount);
+        bool success = l2LilypadToken.transferFrom(msg.sender, address(this), amount);
         if (!success) revert LilypadVesting__TransferFailed();
 
         vestingSchedulesTotalAmount += amount;
@@ -165,10 +164,10 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Calculates the amount of tokens that can be released for a given vesting schedule.
+     * @dev Calculates the amount of l2Tokens that can be released for a given vesting schedule.
      * @param beneficiary The address of the beneficiary.
      * @param scheduleId The ID of the vesting schedule.
-     * @return The amount of tokens that can be released.
+     * @return The amount of l2Tokens that can be released.
      */
     function calculateReleasableTokens(address beneficiary, uint256 scheduleId) external view returns (uint256) {
         return _calculateReleasableTokens(beneficiary, scheduleId);
@@ -206,8 +205,8 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Releases the tokens that have been vested up to the current time for a given vesting schedule.
-     * @return Returns true if the token release operation is successful.
+     * @dev Releases the l2Tokens that have been vested up to the current time for a given vesting schedule.
+     * @return Returns true if the l2Token release operation is successful.
      */
     function releaseTokens(uint256 scheduleId) external nonReentrant returns (bool) {
         if (scheduleId > vestingScheduleCount) revert LilypadVesting__InvalidScheduleId();
@@ -221,31 +220,31 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
 
         schedule.released += releasableAmount;
 
-        bool success = token.transfer(schedule.beneficiary, releasableAmount);
+        bool success = l2LilypadToken.transfer(schedule.beneficiary, releasableAmount);
         if (!success) revert LilypadVesting__TransferFailed();
 
         vestingSchedulesTotalAmount -= releasableAmount;
-        emit LilypadVesting__TokensReleased(schedule.beneficiary, scheduleId, releasableAmount);
+        emit LilypadVesting__l2TokensReleased(schedule.beneficiary, scheduleId, releasableAmount);
         return true;
     }
 
     /**
-     * @dev Withdraws the specified amount of tokens from the vesting contract.
+     * @dev Withdraws the specified amount of l2Tokens from the vesting contract.
      * @return Returns true if the withdrawal operation is successful.
      */
     function withdraw(uint256 amount) external onlyRole(SharedStructs.VESTING_ROLE) returns (bool) {
         if (amount > getWithdrawableAmount()) revert LilypadVesting__InsufficientBalanceToWithdraw();
-        bool success = token.transfer(msg.sender, amount);
+        bool success = l2LilypadToken.transfer(msg.sender, amount);
         if (!success) revert LilypadVesting__TransferFailed();
         return true;
     }
 
     /**
-     * @dev Returns the amount of tokens that can be withdrawn from the vesting contract.
-     * @return The amount of tokens that can be withdrawn.
+     * @dev Returns the amount of l2Tokens that can be withdrawn from the vesting contract.
+     * @return The amount of l2Tokens that can be withdrawn.
      */
     function getWithdrawableAmount() public view returns (uint256) {
-        return token.balanceOf(address(this)) - vestingSchedulesTotalAmount;
+        return l2LilypadToken.balanceOf(address(this)) - vestingSchedulesTotalAmount;
     }
 
     /**
@@ -289,10 +288,10 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Returns the address of the ERC20 token managed by the vesting contract.
-     * @return The address of the ERC20 token.
+     * @dev Returns the address of the ERC20 l2Token managed by the vesting contract.
+     * @return The address of the ERC20 l2Token.
      */
-    function getToken() external view returns (address) {
-        return address(token);
+    function getl2Token() external view returns (address) {
+        return address(l2LilypadToken);
     }
 }
