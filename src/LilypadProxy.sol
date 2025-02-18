@@ -14,8 +14,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     // State Variables
     string public version;
 
-    address public tokenAddress;
-
     LilypadStorage public lilypadStorage;
     LilypadPaymentEngine public paymentEngine;
     LilypadUser public lilypadUser;
@@ -291,10 +289,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
 
     function getUserAddress() external view returns (address) {
         return address(lilypadUser);
-    }
-
-    function getTokenAddress() external view returns (address) {
-        return tokenAddress;
     }
 
     function getMinimumResourceProviderCollateralAmount() external view returns (uint256) {

@@ -2,15 +2,16 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
-import "../src/LilypadPaymentEngine.sol";
-import "../src/LilypadToken.sol";
-import "../src/LilypadStorage.sol";
-import "../src/LilypadUser.sol";
+import {LilypadPaymentEngine} from "../src/LilypadPaymentEngine.sol";
+import {LilypadToken} from "../src/LilypadToken.sol";
+import {LilypadStorage} from "../src/LilypadStorage.sol";
+import {LilypadUser} from "../src/LilypadUser.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployLilypadPaymentEngine is Script {
     function deployToken() internal returns (LilypadToken) {
+        // This is a test supply for test deployment purposes
         uint256 initialSupply = 10_000_000 * 10 ** 18;
         return new LilypadToken(initialSupply);
     }
@@ -46,6 +47,7 @@ contract DeployLilypadPaymentEngine is Script {
     }
 
     function run() external {
+        // These are test wallets from anvil for testing purposes
         address treasuryWallet = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
         address valueRewardsWallet = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
         address validationPoolWallet = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;

@@ -13,6 +13,7 @@ import {console} from "forge-std/console.sol";
 
 contract DeployLilypadProxy is Script {
     function deployToken() internal returns (LilypadToken) {
+        // This is a test supply for test deployment purposes
         uint256 initialSupply = 167_500_000 * 10 ** 18;
         return new LilypadToken(initialSupply);
     }
@@ -56,7 +57,10 @@ contract DeployLilypadProxy is Script {
         vm.startBroadcast();
 
         // Deploy contracts
+
+        // Note: This token deployment here is for testing purposes.  The actual token deployment will be done on the L1 chain and the address that will be passed into the proxy will be the address of the token on the L2 chain.
         LilypadToken token = deployToken();
+        
         (LilypadStorage lilypadStorage, address storageProxy) = deployStorage();
         (LilypadUser user, address userProxy) = deployUser();
         (LilypadPaymentEngine paymentEngine, address engineProxy) = deployEngine(

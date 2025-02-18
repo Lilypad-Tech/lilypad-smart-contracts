@@ -81,7 +81,7 @@ interface ILilypadPaymentEngine {
         returns (bool);
 
     /**
-     * @dev Refunds a specified amount from the escrow to a given address.
+     * @dev Refunds a specified amount from the escrow to a given address.  This function is limited to the Resource Provider and Validator roles.
      * @param _withdrawer The address that will receive the refund.
      * @param _amount The amount to refund to the given address.
      * @return Returns true if the refund operation is successful.
@@ -108,10 +108,10 @@ interface ILilypadPaymentEngine {
     ) external returns (bool);
 
     /**
-     * @dev This method will update the active burn tokens.  This function is meant to called by an external process that will initiate the burning of the tokens on the l1 token contract following the below flow:
+     * @dev This method will update the active burn tokens.  This function is meant to called by an external process who will be responsible for initiate the burning of the tokens on the l1 token contract following the below flow:
      *     - The external process call the activeBurnTokens() function to get the amount of tokens that are up for being burned at the time of the call (i.e. according to the epoch for burning tokens laid out in the tokenomics paper)
      *     - The external process then burns the tokens on the l1 token contract
-     *     - The external process then calls the updateActiveBurnTokens() function to update the amount of active burn tokens passing in the amount that was burned so that the contract knows how much to subtract from the active burn tokens (as the amount can still be accumlating as the protocol is running)
+     *     - The external process then calls the updateActiveBurnTokens() function to update the amount of active burn tokens passing in the amount that was burned so that the contract knows how much to subtract from the activeBurnTokens variable (as the amount can still be accumlating as the protocol is running)
      *     - updateActiveBurnTokens will then emit an event to notify the outside world of the amount of tokens that were burned including block number, block time, and the amount burnt
      * @param _amountBurnt The amount of token that was burned
      * @return Returns true if the operation is successful.
