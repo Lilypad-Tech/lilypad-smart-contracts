@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import {LilypadValidation} from "../src/LilypadValidation.sol";
+import {LilypadUser} from "../src/LilypadUser.sol";
+import {LilypadStorage} from "../src/LilypadStorage.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployLilypadValidation is Script {
@@ -11,9 +13,11 @@ contract DeployLilypadValidation is Script {
 
         // 1. Deploy the implementation contract
         LilypadValidation implementation = new LilypadValidation();
+        LilypadUser lilypadUser = new LilypadUser();
+        LilypadStorage lilypadStorage = new LilypadStorage();
 
         // 2. Encode the initialization data
-        bytes memory initData = abi.encodeWithSelector(LilypadValidation.initialize.selector);
+        bytes memory initData = abi.encodeWithSelector(LilypadValidation.initialize.selector, address(lilypadStorage), address(lilypadUser));
 
         // 3. Deploy the proxy contract pointing to the implementation
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
