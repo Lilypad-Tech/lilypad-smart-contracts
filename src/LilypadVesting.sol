@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-import "./interfaces/ILilypadVesting.sol";
+import {ILilypadVesting} from "./interfaces/ILilypadVesting.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {SharedStructs} from "./SharedStructs.sol";
