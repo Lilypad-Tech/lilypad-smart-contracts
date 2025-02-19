@@ -39,14 +39,7 @@ interface ILilypadPaymentEngine {
         SharedStructs.ValidationResult memory _validationResult,
         SharedStructs.Deal memory _originalJobDeal
     ) external returns (bool);
-
-    /**
-     * @dev Returns whether the escrow is active for a specific address.
-     * @param _address The address whose escrow status is being queried.
-     * @return True if the escrow is active, false otherwise.
-     */
-    function checkActiveEscrow(address _address) external view returns (bool);
-
+    
     /**
      * @dev Returns whether the escrow can be withdrawn by a specific address.
      * @param _address The address whose escrow withdrawal status is being queried.

@@ -6,7 +6,6 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {LilypadToken} from "./LilypadToken.sol";
 import {LilypadStorage} from "./LilypadStorage.sol";
 import {LilypadUser} from "./LilypadUser.sol";
 import {LilypadTokenomics} from "./LilypadTokenomics.sol";
@@ -17,6 +16,7 @@ import {SharedStructs} from "./SharedStructs.sol";
  * @dev Implementation of the LilypadPaymentEngine contract
  */
 contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessControlUpgradeable, ReentrancyGuard {
+
     ////////////////////////////////
     ///////// State Variables //////
     ////////////////////////////////
@@ -48,9 +48,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     // The active amount of tokens that are up for being burned
     uint256 public activeBurnTokens;
 
-    // The total amount of tokens that have been burned
-    uint256 public totalTokensBurned;
-
     // This is a mapping of escrow deposits
     mapping(address account => uint256 amount) public escrowBalances;
 
@@ -72,8 +69,10 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     event LilypadPayment__ActiveEscrowLockedForJob(
         address indexed jobCreator, address indexed resourceProvider, string indexed dealId, uint256 cost
     );
-    event LilypadPayment__ActiveCollateralLockupPercentageUpdated(uint256 percentage);
     event LilypadPayment__JobCompleted(address indexed jobCreator, address indexed resourceProvider, string dealId);
+    event LilypadPayment__TreasuryWalletUpdated(address indexed treasuryWallet);
+    event LilypadPayment__ValueBasedRewardsWalletUpdated(address indexed valueBasedRewardsWallet);
+    event LilypadPayment__ValidationPoolWalletUpdated(address indexed validationPoolWallet);
     event LilypadPayment__TotalFeesGeneratedByJob(
         address indexed resourceProvider, address indexed jobCreator, string dealId, uint256 amount
     );
@@ -96,11 +95,8 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     error LilypadPayment__escrowSlashAmountTooLarge();
     error LilypadPayment__insufficientEscrowBalanceForWithdrawal();
     error LilypadPayment__transferFailed();
-    error LilypadPayment__JobCreatorNotFound();
-    error LilypadPayment__ResourceProviderNotFound();
     error LilypadPayment__escrowNotWithdrawable();
     error LilypadPayment__escrowNotWithdrawableForActor(address actor);
-    error LilypadPayment__DealNotFound();
     error LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts(
         uint256 pValue, uint256 p1Value, uint256 p2Value, uint256 p3Value
     );
@@ -200,23 +196,40 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         validationPoolWallet = _validationPoolWallet;
 
         version = "1.0.0";
-
-        totalActiveEscrow = 0;
-        totalEscrow = 0;
-        activeBurnTokens = 0;
-        totalTokensBurned = 0;
     }
 
     ////////////////////////////////
     ///////// Functions ////////////
     ////////////////////////////////
 
-    function checkEscrowBalanceForAmount(address _address, uint256 _amount) public view returns (bool) {
-        return escrowBalances[_address] >= _amount;
+    /**
+     * @notice Sets the treasury wallet address
+     * @param _treasuryWallet New treasury wallet address
+     */
+    function setTreasuryWallet(address _treasuryWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
+        treasuryWallet = _treasuryWallet;
+        emit LilypadPayment__TreasuryWalletUpdated(_treasuryWallet);
     }
 
-    function checkActiveEscrow(address _address) public view returns (bool) {
-        return activeEscrow[_address] > 0;
+    /**
+     * @notice Sets the value based rewards wallet address
+     * @param _valueBasedRewardsWallet New value based rewards wallet address
+     */
+    function setValueBasedRewardsWallet(address _valueBasedRewardsWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
+        valueBasedRewardsWallet = _valueBasedRewardsWallet;
+        emit LilypadPayment__ValueBasedRewardsWalletUpdated(_valueBasedRewardsWallet);
+    }
+
+    /**
+     * @notice Sets the validation pool wallet address
+     * @param _validationPoolWallet New validation pool wallet address
+     */
+    function setValidationPoolWallet(address _validationPoolWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
+        validationPoolWallet = _validationPoolWallet;
+        emit LilypadPayment__ValidationPoolWalletUpdated(_validationPoolWallet);
     }
 
     function canWithdrawEscrow(address _address) public view returns (bool) {
@@ -451,9 +464,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
 
         // Subtract the amount from the active burn tokens
         activeBurnTokens -= _amountBurnt;
-
-        // Add the amount to the total tokens burned
-        totalTokensBurned += _amountBurnt;
 
         emit LilypadPayment__TokensBurned(block.number, block.timestamp, _amountBurnt);
         return true;

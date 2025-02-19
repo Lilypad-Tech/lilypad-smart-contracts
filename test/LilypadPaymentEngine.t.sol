@@ -223,6 +223,81 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.totalEscrow(), amount);
     }
 
+    function test_SetTreasuryWallet() public {
+        vm.startPrank(address(this));
+        address newTreasuryWallet = address(5);
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__TreasuryWalletUpdated(newTreasuryWallet);
+
+        paymentEngine.setTreasuryWallet(newTreasuryWallet);
+        assertEq(paymentEngine.treasuryWallet(), newTreasuryWallet);
+        vm.stopPrank();
+    }
+
+    function test_SetTreasuryWallet_Reverts_WhenNotAdmin() public {
+        vm.startPrank(BOB);
+        vm.expectRevert();
+        paymentEngine.setTreasuryWallet(address(5));
+        vm.stopPrank();
+    }
+
+    function test_SetTreasuryWallet_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroTreasuryWallet.selector);
+        paymentEngine.setTreasuryWallet(address(0));
+        vm.stopPrank();
+    }
+
+    function test_SetValueBasedRewardsWallet() public {
+        vm.startPrank(address(this));
+        address newValueBasedRewardsWallet = address(5);
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__ValueBasedRewardsWalletUpdated(newValueBasedRewardsWallet);
+
+        paymentEngine.setValueBasedRewardsWallet(newValueBasedRewardsWallet);
+        assertEq(paymentEngine.valueBasedRewardsWallet(), newValueBasedRewardsWallet);
+        vm.stopPrank();
+    }
+
+    function test_SetValueBasedRewardsWallet_Reverts_WhenNotAdmin() public {
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        paymentEngine.setValueBasedRewardsWallet(address(5));
+        vm.stopPrank();
+    }
+
+    function test_SetValueBasedRewardsWallet_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroValueBasedRewardsWallet.selector);
+        paymentEngine.setValueBasedRewardsWallet(address(0));
+        vm.stopPrank();
+    }
+
+    function test_SetValidationPoolWallet() public {
+        vm.startPrank(address(this));
+        address newValidationPoolWallet = address(5);
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__ValidationPoolWalletUpdated(newValidationPoolWallet);
+
+        paymentEngine.setValidationPoolWallet(newValidationPoolWallet);
+        assertEq(paymentEngine.validationPoolWallet(), newValidationPoolWallet);
+        vm.stopPrank();
+    }
+
+    function test_SetValidationPoolWallet_Reverts_WhenNotAdmin() public {
+        vm.startPrank(ALICE);
+        vm.expectRevert();
+        paymentEngine.setValidationPoolWallet(address(5));
+        vm.stopPrank();
+    }
+
+    function test_SetValidationPoolWallet_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__ZeroValidationPoolWallet.selector);
+        paymentEngine.setValidationPoolWallet(address(0));
+        vm.stopPrank();
+    }
+
     // Escrow Locking Tests
     function test_LockEscrowForJob() public {
         uint256 jobCost = 100 * 10 ** 18;
@@ -494,7 +569,6 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.totalEscrow(), rpCollateral);
 
         assertEq(paymentEngine.activeBurnTokens(), expectedBurnAmount);
-        assertEq(paymentEngine.totalTokensBurned(), 0);
 
         vm.stopPrank();
     }
@@ -1507,7 +1581,6 @@ contract LilypadPaymentEngineTest is Test {
 
         // Verify state changes
         assertEq(paymentEngine.activeBurnTokens(), 0);
-        assertEq(paymentEngine.totalTokensBurned(), currentActiveBurnTokens);
         vm.stopPrank();
     }
 
@@ -1595,7 +1668,6 @@ contract LilypadPaymentEngineTest is Test {
 
         // Verify state changes
         assertEq(paymentEngine.activeBurnTokens(), currentActiveBurnTokens - burnAmount);
-        assertEq(paymentEngine.totalTokensBurned(), burnAmount);
         vm.stopPrank();
     }
 
