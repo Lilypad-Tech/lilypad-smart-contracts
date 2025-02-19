@@ -226,8 +226,6 @@ contract LilypadPaymentEngineTest is Test {
     function test_SetTreasuryWallet() public {
         vm.startPrank(address(this));
         address newTreasuryWallet = address(5);
-        vm.expectEmit(true, true, true, true);
-        emit LilypadPayment__TreasuryWalletUpdated(newTreasuryWallet);
 
         paymentEngine.setTreasuryWallet(newTreasuryWallet);
         assertEq(paymentEngine.treasuryWallet(), newTreasuryWallet);
@@ -251,8 +249,6 @@ contract LilypadPaymentEngineTest is Test {
     function test_SetValueBasedRewardsWallet() public {
         vm.startPrank(address(this));
         address newValueBasedRewardsWallet = address(5);
-        vm.expectEmit(true, true, true, true);
-        emit LilypadPayment__ValueBasedRewardsWalletUpdated(newValueBasedRewardsWallet);
 
         paymentEngine.setValueBasedRewardsWallet(newValueBasedRewardsWallet);
         assertEq(paymentEngine.valueBasedRewardsWallet(), newValueBasedRewardsWallet);
@@ -276,8 +272,6 @@ contract LilypadPaymentEngineTest is Test {
     function test_SetValidationPoolWallet() public {
         vm.startPrank(address(this));
         address newValidationPoolWallet = address(5);
-        vm.expectEmit(true, true, true, true);
-        emit LilypadPayment__ValidationPoolWalletUpdated(newValidationPoolWallet);
 
         paymentEngine.setValidationPoolWallet(newValidationPoolWallet);
         assertEq(paymentEngine.validationPoolWallet(), newValidationPoolWallet);

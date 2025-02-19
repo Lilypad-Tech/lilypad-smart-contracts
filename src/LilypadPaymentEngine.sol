@@ -16,7 +16,6 @@ import {SharedStructs} from "./SharedStructs.sol";
  * @dev Implementation of the LilypadPaymentEngine contract
  */
 contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessControlUpgradeable, ReentrancyGuard {
-
     ////////////////////////////////
     ///////// State Variables //////
     ////////////////////////////////
@@ -70,9 +69,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         address indexed jobCreator, address indexed resourceProvider, string indexed dealId, uint256 cost
     );
     event LilypadPayment__JobCompleted(address indexed jobCreator, address indexed resourceProvider, string dealId);
-    event LilypadPayment__TreasuryWalletUpdated(address indexed treasuryWallet);
-    event LilypadPayment__ValueBasedRewardsWalletUpdated(address indexed valueBasedRewardsWallet);
-    event LilypadPayment__ValidationPoolWalletUpdated(address indexed validationPoolWallet);
     event LilypadPayment__TotalFeesGeneratedByJob(
         address indexed resourceProvider, address indexed jobCreator, string dealId, uint256 amount
     );
@@ -209,7 +205,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setTreasuryWallet(address _treasuryWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
         treasuryWallet = _treasuryWallet;
-        emit LilypadPayment__TreasuryWalletUpdated(_treasuryWallet);
     }
 
     /**
@@ -219,7 +214,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setValueBasedRewardsWallet(address _valueBasedRewardsWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
         valueBasedRewardsWallet = _valueBasedRewardsWallet;
-        emit LilypadPayment__ValueBasedRewardsWalletUpdated(_valueBasedRewardsWallet);
     }
 
     /**
@@ -229,44 +223,30 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     function setValidationPoolWallet(address _validationPoolWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
         validationPoolWallet = _validationPoolWallet;
-        emit LilypadPayment__ValidationPoolWalletUpdated(_validationPoolWallet);
+    }
+
+    function setLilypadTokenomics(address _lilypadTokenomicsAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_lilypadTokenomicsAddress == address(0)) revert LilypadPayment__ZeroTokenomicsAddress();
+        lilypadTokenomics = LilypadTokenomics(_lilypadTokenomicsAddress);
+    }
+
+    function setLilypadUser(address _lilypadUserAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_lilypadUserAddress == address(0)) revert LilypadPayment__ZeroUserAddress();
+        lilypadUser = LilypadUser(_lilypadUserAddress);
+    }
+
+    function setLilypadStorage(address _lilypadStorageAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_lilypadStorageAddress == address(0)) revert LilypadPayment__ZeroStorageAddress();
+        lilypadStorage = LilypadStorage(_lilypadStorageAddress);
+    }
+
+    function setL2Token(address _l2tokenAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_l2tokenAddress == address(0)) revert LilypadPayment__ZeroTokenAddress();
+        l2token = IERC20(_l2tokenAddress);
     }
 
     function canWithdrawEscrow(address _address) public view returns (bool) {
         return block.timestamp >= depositTimestamps[_address];
-    }
-
-    /**
-     * @dev Grants the controller role to a specified account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` already has the controller role
-     * - Emits a `ControllerRoleGranted` event upon successful role assignment
-     */
-    function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) revert LilypadPayment__ZeroAddressNotAllowed();
-        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert LilypadPayment__RoleAlreadyAssigned();
-        _grantRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadPayment__ControllerRoleGranted(account, msg.sender);
-    }
-
-    /**
-     * @dev Revokes the controller role from an account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` does not have the controller role
-     * - Reverts if trying to revoke own role
-     * - Emits a `ControllerRoleRevoked` event upon successful role revocation
-     */
-    function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) revert LilypadPayment__ZeroAddressNotAllowed();
-        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert LilypadPayment__RoleNotFound();
-        if (account == msg.sender) revert LilypadPayment__CannotRevokeOwnRole();
-
-        _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadPayment__ControllerRoleRevoked(account, msg.sender);
     }
 
     /**

@@ -39,11 +39,12 @@ interface ILilypadPaymentEngine {
         SharedStructs.ValidationResult memory _validationResult,
         SharedStructs.Deal memory _originalJobDeal
     ) external returns (bool);
-    
+
     /**
      * @dev Returns whether the escrow can be withdrawn by a specific address.
      * @param _address The address whose escrow withdrawal status is being queried.
      * @return True if the escrow can be withdrawn, false otherwise.
+     * @notice withdrawls can only be done by the resource provider or the validator
      */
     function canWithdrawEscrow(address _address) external view returns (bool);
 
