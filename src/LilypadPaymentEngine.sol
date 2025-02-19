@@ -74,9 +74,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     );
     event LilypadPayment__ActiveCollateralLockupPercentageUpdated(uint256 percentage);
     event LilypadPayment__JobCompleted(address indexed jobCreator, address indexed resourceProvider, string dealId);
-    event LilypadPayment__TreasuryWalletUpdated(address indexed treasuryWallet);
-    event LilypadPayment__ValueBasedRewardsWalletUpdated(address indexed valueBasedRewardsWallet);
-    event LilypadPayment__ValidationPoolWalletUpdated(address indexed validationPoolWallet);
     event LilypadPayment__TotalFeesGeneratedByJob(
         address indexed resourceProvider, address indexed jobCreator, string dealId, uint256 amount
     );
@@ -143,6 +140,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     error LilypadPayment__ZeroJobCreatorAddress();
     error LilypadPayment__InsufficientActiveBurnTokens();
     error LilypadPayment__ZeroTokenomicsAddress();
+
     ////////////////////////////////
     ///////// Modifiers ///////////
     ////////////////////////////////
@@ -212,36 +210,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     ////////////////////////////////
     ///////// Functions ////////////
     ////////////////////////////////
-
-    /**
-     * @notice Sets the treasury wallet address
-     * @param _treasuryWallet New treasury wallet address
-     */
-    function setTreasuryWallet(address _treasuryWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
-        treasuryWallet = _treasuryWallet;
-        emit LilypadPayment__TreasuryWalletUpdated(_treasuryWallet);
-    }
-
-    /**
-     * @notice Sets the value based rewards wallet address
-     * @param _valueBasedRewardsWallet New value based rewards wallet address
-     */
-    function setValueBasedRewardsWallet(address _valueBasedRewardsWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
-        valueBasedRewardsWallet = _valueBasedRewardsWallet;
-        emit LilypadPayment__ValueBasedRewardsWalletUpdated(_valueBasedRewardsWallet);
-    }
-
-    /**
-     * @notice Sets the validation pool wallet address
-     * @param _validationPoolWallet New validation pool wallet address
-     */
-    function setValidationPoolWallet(address _validationPoolWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
-        validationPoolWallet = _validationPoolWallet;
-        emit LilypadPayment__ValidationPoolWalletUpdated(_validationPoolWallet);
-    }
 
     function checkEscrowBalanceForAmount(address _address, uint256 _amount) public view returns (bool) {
         return escrowBalances[_address] >= _amount;
