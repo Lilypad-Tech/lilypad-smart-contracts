@@ -9,6 +9,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LilypadToken} from "./LilypadToken.sol";
 import {LilypadStorage} from "./LilypadStorage.sol";
 import {LilypadUser} from "./LilypadUser.sol";
+import {LilypadTokenomics} from "./LilypadTokenomics.sol";
 import {SharedStructs} from "./SharedStructs.sol";
 
 /**
@@ -23,7 +24,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     IERC20 private l2token;
     LilypadStorage private lilypadStorage;
     LilypadUser private lilypadUser;
-
+    LilypadTokenomics private lilypadTokenomics;
     // The version of the contract
     string public version;
 
@@ -50,37 +51,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     // The total amount of tokens that have been burned
     uint256 public totalTokensBurned;
 
-    /**
-     * These are the parameters described in the Lilypad tokenomics paper
-     *     src: _add_link_here_
-     *
-     *     p: The percentage of total fees that go towads the protocol
-     *     (1-p): The percentage of total fees that go towards the value based rewards
-     *
-     *     p1: Percentage of P allocated to burn token
-     *     p2: Percentage of P allocated to go to grants and airdrops
-     *     p3: Percentage of P allocated to the validation pool
-     *     Note:  p1 + p2 + p3 must equal 10000 (100%)
-     *
-     *     m: The percentage of module creator fees that go towards protocol revenue
-     *
-     *     v1: The scaling factor for determining value based rewards for RPs based on total fees geenrated by the RP
-     *     v2: The scaling factor for determining value based rewards for RPs based on total average collateral locked up
-     *     Note: v1 > v2 to scaoe the importance of fees over collateral
-     */
-    uint256 public p;
-    uint256 public p1;
-    uint256 public p2;
-    uint256 public p3;
-
-    uint256 public m;
-
-    uint256 public v1;
-    uint256 public v2;
-
-    // This is the scaler for the resource provider's active escrow
-    uint256 public resourceProviderActiveEscrowScaler;
-
     // This is a mapping of escrow deposits
     mapping(address account => uint256 amount) public escrowBalances;
 
@@ -102,7 +72,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     event LilypadPayment__ActiveEscrowLockedForJob(
         address indexed jobCreator, address indexed resourceProvider, string indexed dealId, uint256 cost
     );
-    event LilypadPayment__TokenomicsParameterUpdated(string indexed parameter, uint256 value);
     event LilypadPayment__ActiveCollateralLockupPercentageUpdated(uint256 percentage);
     event LilypadPayment__JobCompleted(address indexed jobCreator, address indexed resourceProvider, string dealId);
     event LilypadPayment__TreasuryWalletUpdated(address indexed treasuryWallet);
@@ -164,9 +133,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     error LilypadPayment__ZeroValidationPoolWallet();
     error LilypadPayment__ZeroStorageAddress();
     error LilypadPayment__ZeroUserAddress();
-    error LilypadPayment__ParametersMustSumToTenThousand();
-    error LilypadPayment__V1MustBeGreaterThanV2();
-    error LilypadPayment__V2MustBeLessThanV1();
     error LilypadPayment__InvalidResultStatus();
     error LilypadPayment__InvalidValidationResultStatus();
     error LilypadPayment__RoleNotFound();
@@ -179,8 +145,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
     error LilypadPayment__ZeroResourceProviderAddress();
     error LilypadPayment__ZeroJobCreatorAddress();
     error LilypadPayment__InsufficientActiveBurnTokens();
-    error LilypadPayment__PValueTooLarge();
-    error LilypadPayment__MValueTooLarge();
+    error LilypadPayment__ZeroTokenomicsAddress();
     ////////////////////////////////
     ///////// Modifiers ///////////
     ////////////////////////////////
@@ -214,6 +179,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         address _l2token,
         address _lilypadStorageAddress,
         address _lilypadUserAddress,
+        address _lilypadTokenomicsAddress,
         address _treasuryWallet,
         address _valueBasedRewardsWallet,
         address _validationPoolWallet
@@ -221,6 +187,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         if (_l2token == address(0)) revert LilypadPayment__ZeroTokenAddress();
         if (_lilypadStorageAddress == address(0)) revert LilypadPayment__ZeroStorageAddress();
         if (_lilypadUserAddress == address(0)) revert LilypadPayment__ZeroUserAddress();
+        if (_lilypadTokenomicsAddress == address(0)) revert LilypadPayment__ZeroTokenomicsAddress();
         if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
         if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
         if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
@@ -232,115 +199,22 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         l2token = IERC20(_l2token);
         lilypadStorage = LilypadStorage(_lilypadStorageAddress);
         lilypadUser = LilypadUser(_lilypadUserAddress);
-
+        lilypadTokenomics = LilypadTokenomics(_lilypadTokenomicsAddress);
         treasuryWallet = _treasuryWallet;
         valueBasedRewardsWallet = _valueBasedRewardsWallet;
         validationPoolWallet = _validationPoolWallet;
 
         version = "1.0.0";
 
-        // Protocol Revenue, P, represented as a basis point
-        p = 0;
-
-        // P is further broken down into 3 parts represented as a basis points (each of which should sum to 10000 representing 100% of P)
-
-        // Burn amount represented as a basis point
-        p1 = 0;
-
-        // Grants and airdrops represented as a basis point
-        p2 = 5000;
-
-        // Validation pool represented as a basis point
-        p3 = 5000;
-
-        // Module Creator Fee percentage to be paid to treasury represented as a basis point
-        m = 200;
-
-        // expoential weight for scaling fees
-        v1 = 2;
-
-        // exponential weight for scaling collateral
-        v2 = 1;
-
-        // Set to 11000 (representing 110% in basis points, or a 10% increase)
-        resourceProviderActiveEscrowScaler = 11000;
-
         totalActiveEscrow = 0;
         totalEscrow = 0;
+        activeBurnTokens = 0;
+        totalTokensBurned = 0;
     }
 
     ////////////////////////////////
     ///////// Functions ////////////
     ////////////////////////////////
-
-    /**
-     * @notice Sets the p1 parameter (burn amount)
-     * @param _p1 New p1 value
-     * @dev The sum of p1, p2, and p3 must equal 10000 basis points (100%)
-     */
-    function setPvalues(uint256 _p1, uint256 _p2, uint256 _p3) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_p1 + _p2 + _p3 != 10000) revert LilypadPayment__ParametersMustSumToTenThousand();
-        p1 = _p1;
-        p2 = _p2;
-        p3 = _p3;
-        emit LilypadPayment__TokenomicsParameterUpdated("p1", _p1);
-        emit LilypadPayment__TokenomicsParameterUpdated("p2", _p2);
-        emit LilypadPayment__TokenomicsParameterUpdated("p3", _p3);
-    }
-
-    /**
-     * @notice Sets the p parameter (the amount of fees to be paid to the treasury)
-     * @param _p New p value
-     */
-    function setP(uint256 _p) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_p > 10000) revert LilypadPayment__PValueTooLarge();
-        p = _p;
-        emit LilypadPayment__TokenomicsParameterUpdated("p", _p);
-    }
-
-    /**
-     * @notice Sets the m parameter (The module creator fee)
-     * @param _m New m value
-     */
-    function setM(uint256 _m) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_m > 10000) revert LilypadPayment__MValueTooLarge();
-        m = _m;
-        emit LilypadPayment__TokenomicsParameterUpdated("m", _m);
-    }
-
-    /**
-     * @notice Sets the v1 parameter ()
-     * @param _v1 New v1 value
-     */
-    function setV1(uint256 _v1) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_v1 <= v2) revert LilypadPayment__V1MustBeGreaterThanV2();
-        v1 = _v1;
-        emit LilypadPayment__TokenomicsParameterUpdated("v1", _v1);
-    }
-
-    /**
-     * @notice Sets the v2 parameter ()
-     * @param _v2 New v2 value
-     */
-    function setV2(uint256 _v2) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_v2 >= v1) revert LilypadPayment__V2MustBeLessThanV1();
-        v2 = _v2;
-        emit LilypadPayment__TokenomicsParameterUpdated("v2", _v2);
-    }
-
-    /**
-     * @notice Sets the resource provider active escrow scaler
-     * @param _resourceProviderActiveEscrowScaler New resource provider active escrow scaler
-     */
-    function setResourceProviderActiveEscrowScaler(uint256 _resourceProviderActiveEscrowScaler)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        resourceProviderActiveEscrowScaler = _resourceProviderActiveEscrowScaler;
-        emit LilypadPayment__TokenomicsParameterUpdated(
-            "resourceProviderActiveEscrowScaler", _resourceProviderActiveEscrowScaler
-        );
-    }
 
     /**
      * @notice Sets the treasury wallet address
@@ -715,7 +589,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         // Calculate the required active collateral for the resource provider
         uint256 resoureProviderRequiredActiveEscrow = (
             deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
-        ) * (resourceProviderActiveEscrowScaler / 10000);
+        ) * (lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000);
 
         // Get the active escrow for both parties
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
@@ -736,11 +610,11 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         }
 
         // Calculate protocol fees
-        uint256 totalProtocolFees =
-            deal.paymentStructure.networkCongestionFee + (deal.paymentStructure.moduleCreatorFee * m) / 10000;
+        uint256 totalProtocolFees = deal.paymentStructure.networkCongestionFee
+            + (deal.paymentStructure.moduleCreatorFee * lilypadTokenomics.m()) / 10000;
 
         // P: Protocol Revenue
-        uint256 TreasuryPaymentTotalAmount = (totalProtocolFees * p) / 10000;
+        uint256 TreasuryPaymentTotalAmount = (totalProtocolFees * lilypadTokenomics.p()) / 10000;
 
         // Value Based Rewards = total fees - treasury amount
         // Simplifiying the equation, we get : valueBasedRewardsAmount = totalProtocolFees - (totalProtocolFees * p)/10000 = totalProtocolFees(1-p)/10000
@@ -748,14 +622,14 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
 
         // Calculate module creator payment (total fee minus the protocol's portion)
         // Simplifiying the equation, we get : moduleCreatorPaymentAmount = moduleCreatorFee(1-m)/10000
-        uint256 moduleCreatorPaymentAmount =
-            deal.paymentStructure.moduleCreatorFee - (deal.paymentStructure.moduleCreatorFee * m) / 10000;
+        uint256 moduleCreatorPaymentAmount = deal.paymentStructure.moduleCreatorFee
+            - (deal.paymentStructure.moduleCreatorFee * lilypadTokenomics.m()) / 10000;
 
         // p1
-        uint256 burnAmount = (TreasuryPaymentTotalAmount * (p1)) / 10000;
+        uint256 burnAmount = (TreasuryPaymentTotalAmount * (lilypadTokenomics.p1())) / 10000;
 
         // p2
-        uint256 grantsAndAirdropsAmount = (TreasuryPaymentTotalAmount * (p2)) / 10000;
+        uint256 grantsAndAirdropsAmount = (TreasuryPaymentTotalAmount * (lilypadTokenomics.p2())) / 10000;
 
         // p3 - calculate as remainder to avoid rounding errors
         uint256 validationPoolAmount = TreasuryPaymentTotalAmount - burnAmount - grantsAndAirdropsAmount;
@@ -827,7 +701,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         // Calculate the required active collateral for the resource provider to be slashed
         uint256 resoureProviderRequiredActiveEscrow = (
             deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
-        ) * (resourceProviderActiveEscrowScaler / 10000);
+        ) * (lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000);
 
         // Get the active escrow for both parties
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
@@ -892,7 +766,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         // Calculate the required active collateral for the validator
         uint256 validatorRequiredActiveEscrow = (
             deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
-        ) * (resourceProviderActiveEscrowScaler / 10000);
+        ) * (lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000);
 
         _processValidationPayment(
             _validationResult.validator, deal.jobCreator, totalCostOfValidation, validatorRequiredActiveEscrow
@@ -930,7 +804,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         // Calculate the required active collateral for the validator
         uint256 validatorRequiredActiveEscrow = (
             deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
-        ) * (resourceProviderActiveEscrowScaler / 10000);
+        ) * (lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000);
 
         // Calculate the total cost of the original job from _originalJobDeal
         uint256 totalCostOfOriginalJob = _originalJobDeal.paymentStructure.priceOfJobWithoutFees

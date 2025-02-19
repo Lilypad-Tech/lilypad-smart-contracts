@@ -7,6 +7,7 @@ import {LilypadToken} from "../src/LilypadToken.sol";
 import {LilypadStorage} from "../src/LilypadStorage.sol";
 import {LilypadPaymentEngine} from "../src/LilypadPaymentEngine.sol";
 import {LilypadUser} from "../src/LilypadUser.sol";
+import {LilypadTokenomics} from "../src/LilypadTokenomics.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
@@ -17,7 +18,7 @@ contract LilypadProxyTest is Test {
     LilypadStorage public storage_;
     LilypadPaymentEngine public paymentEngine;
     LilypadUser public user;
-
+    LilypadTokenomics public tokenomics;
     address public constant ADMIN = address(0x1);
     address public constant JOB_CREATOR = address(0x2);
     address public constant RESOURCE_PROVIDER = address(0x4);
@@ -39,6 +40,7 @@ contract LilypadProxyTest is Test {
         // Deploy implementations
         LilypadStorage storageImpl = new LilypadStorage();
         LilypadUser userImpl = new LilypadUser();
+        LilypadTokenomics tokenomicsImpl = new LilypadTokenomics();
         LilypadPaymentEngine paymentEngineImpl = new LilypadPaymentEngine();
         LilypadProxy proxyImpl = new LilypadProxy();
 
@@ -54,6 +56,10 @@ contract LilypadProxyTest is Test {
             new ERC1967Proxy(address(userImpl), abi.encodeWithSelector(LilypadUser.initialize.selector));
         user = LilypadUser(address(userProxy));
 
+        ERC1967Proxy tokenomicsProxy =
+            new ERC1967Proxy(address(tokenomicsImpl), abi.encodeWithSelector(LilypadTokenomics.initialize.selector));
+        tokenomics = LilypadTokenomics(address(tokenomicsProxy));
+
         ERC1967Proxy paymentEngineProxy = new ERC1967Proxy(
             address(paymentEngineImpl),
             abi.encodeWithSelector(
@@ -61,6 +67,7 @@ contract LilypadProxyTest is Test {
                 address(token),
                 address(storage_),
                 address(user),
+                address(tokenomics),
                 TREASURY,
                 VALUE_REWARDS,
                 VALIDATION_POOL

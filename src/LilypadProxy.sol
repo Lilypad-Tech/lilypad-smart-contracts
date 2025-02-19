@@ -218,7 +218,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
      * - Returns the escrow balance for the `_address`
      */
     function getEscrowBalance(address _address) external view returns (uint256) {
-        return paymentEngine.escrowBalanceOf(_address);
+        return paymentEngine.escrowBalances(_address);
     }
 
     /**
