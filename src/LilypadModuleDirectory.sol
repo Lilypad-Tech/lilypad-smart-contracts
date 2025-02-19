@@ -11,7 +11,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     // Version
     string public version;
 
-    LilypadUser public lilypadUser;
+    LilypadUser private lilypadUser;
 
     // Custom Errors
     error LilypadModuleDirectory__NotController();
