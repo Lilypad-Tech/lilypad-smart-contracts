@@ -8,7 +8,7 @@ import {SharedStructs} from "./SharedStructs.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
-    IERC20 public l2LilypadToken;
+    IERC20 private l2LilypadToken;
 
     // Vesting schedule id counter which will be incremented each time a new vesting schedule is created
     uint256 public vestingScheduleCount;
@@ -291,7 +291,7 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
      * @dev Returns the address of the ERC20 l2Token managed by the vesting contract.
      * @return The address of the ERC20 l2Token.
      */
-    function getl2Token() external view returns (address) {
+    function getL2TokenAddress() external view returns (address) {
         return address(l2LilypadToken);
     }
 }
