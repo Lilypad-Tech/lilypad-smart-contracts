@@ -14,10 +14,10 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     // State Variables
     string public version;
 
-    LilypadStorage public lilypadStorage;
-    LilypadPaymentEngine public paymentEngine;
-    LilypadUser public lilypadUser;
-    IERC20 public l2LilypadToken;
+    LilypadStorage private lilypadStorage;
+    LilypadPaymentEngine private paymentEngine;
+    LilypadUser private lilypadUser;
+    IERC20 private l2LilypadToken;
 
     // Events
     event LilypadProxy__ControllerRoleGranted(address indexed account, address indexed caller);

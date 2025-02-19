@@ -106,10 +106,10 @@ contract LilypadProxyTest is Test {
 
     function test_InitialState() public {
         assertEq(proxy.version(), "1.0.0");
-        assertEq(address(proxy.lilypadStorage()), address(storage_));
-        assertEq(address(proxy.paymentEngine()), address(paymentEngine));
-        assertEq(address(proxy.lilypadUser()), address(user));
-        assertEq(address(proxy.l2LilypadToken()), address(token));
+        assertEq(proxy.getStorageAddress(), address(storage_));
+        assertEq(proxy.getPaymentEngineAddress(), address(paymentEngine));
+        assertEq(proxy.getUserAddress(), address(user));
+        assertEq(proxy.getl2LilypadTokenAddress(), address(token));
         assertTrue(proxy.hasRole(bytes32(0x00), address(this))); // Check DEFAULT_ADMIN_ROLE first
         assertTrue(proxy.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
         assertTrue(storage_.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
@@ -179,10 +179,10 @@ contract LilypadProxyTest is Test {
         assertTrue(proxy.setUserContract(newUser));
         assertTrue(proxy.setL2LilypadTokenContract(newL2LilypadToken));
 
-        assertEq(address(proxy.lilypadStorage()), newStorage);
-        assertEq(address(proxy.paymentEngine()), newPaymentEngine);
-        assertEq(address(proxy.lilypadUser()), newUser);
-        assertEq(address(proxy.l2LilypadToken()), newL2LilypadToken);
+        assertEq(proxy.getStorageAddress(), newStorage);
+        assertEq(proxy.getPaymentEngineAddress(), newPaymentEngine);
+        assertEq(proxy.getUserAddress(), newUser);
+        assertEq(proxy.getl2LilypadTokenAddress(), newL2LilypadToken);
 
         vm.stopPrank();
     }
