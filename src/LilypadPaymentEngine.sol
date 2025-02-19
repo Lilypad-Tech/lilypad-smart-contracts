@@ -251,14 +251,6 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         return activeEscrow[_address] > 0;
     }
 
-    function escrowBalanceOf(address _address) public view returns (uint256) {
-        return escrowBalances[_address];
-    }
-
-    function activeEscrowBalanceOf(address _address) public view returns (uint256) {
-        return activeEscrow[_address];
-    }
-
     function canWithdrawEscrow(address _address) public view returns (bool) {
         return block.timestamp >= depositTimestamps[_address];
     }

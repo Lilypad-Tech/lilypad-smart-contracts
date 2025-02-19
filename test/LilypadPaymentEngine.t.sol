@@ -150,7 +150,7 @@ contract LilypadPaymentEngineTest is Test {
         bool success = paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, amount);
 
         assertTrue(success);
-        assertEq(paymentEngine.escrowBalanceOf(ALICE), amount);
+        assertEq(paymentEngine.escrowBalances(ALICE), amount);
         assertEq(paymentEngine.totalEscrow(), amount);
         vm.stopPrank();
     }
@@ -166,7 +166,7 @@ contract LilypadPaymentEngineTest is Test {
         bool success = paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, amount);
 
         assertTrue(success);
-        assertEq(paymentEngine.escrowBalanceOf(ALICE), amount);
+        assertEq(paymentEngine.escrowBalances(ALICE), amount);
         assertEq(paymentEngine.totalEscrow(), amount);
         vm.stopPrank();
     }
@@ -190,7 +190,7 @@ contract LilypadPaymentEngineTest is Test {
         paymentEngine.withdrawEscrow(BOB, withdrawAmount);
         vm.stopPrank();
 
-        assertEq(paymentEngine.escrowBalanceOf(BOB), depositAmount - withdrawAmount);
+        assertEq(paymentEngine.escrowBalances(BOB), depositAmount - withdrawAmount);
         assertEq(paymentEngine.totalEscrow(), depositAmount - withdrawAmount);
     }
 
@@ -318,10 +318,10 @@ contract LilypadPaymentEngineTest is Test {
         bool success = paymentEngine.initiateLockupOfEscrowForJob(ALICE, BOB, "deal1", jobCost, rpCollateral);
 
         assertTrue(success);
-        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), jobCost);
-        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), rpCollateral);
-        assertEq(paymentEngine.escrowBalanceOf(ALICE), 0);
-        assertEq(paymentEngine.escrowBalanceOf(BOB), 0);
+        assertEq(paymentEngine.activeEscrow(ALICE), jobCost);
+        assertEq(paymentEngine.activeEscrow(BOB), rpCollateral);
+        assertEq(paymentEngine.escrowBalances(ALICE), 0);
+        assertEq(paymentEngine.escrowBalances(BOB), 0);
         vm.stopPrank();
     }
 
@@ -417,9 +417,9 @@ contract LilypadPaymentEngineTest is Test {
         assertTrue(success);
 
         // Assert final balances
-        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
-        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), 0);
-        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
+        assertEq(paymentEngine.activeEscrow(ALICE), 0);
+        assertEq(paymentEngine.activeEscrow(BOB), 0);
+        assertEq(paymentEngine.escrowBalances(BOB), rpCollateral);
         assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
         assertEq(
             token.balanceOf(CHARLIE),
@@ -528,9 +528,9 @@ contract LilypadPaymentEngineTest is Test {
         assertTrue(success);
 
         // Assert final balances
-        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
-        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), 0);
-        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
+        assertEq(paymentEngine.activeEscrow(ALICE), 0);
+        assertEq(paymentEngine.activeEscrow(BOB), 0);
+        assertEq(paymentEngine.escrowBalances(BOB), rpCollateral);
         assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
         assertEq(
             token.balanceOf(CHARLIE),
@@ -634,9 +634,9 @@ contract LilypadPaymentEngineTest is Test {
         bool success = paymentEngine.handleJobCompletion(result);
 
         assertTrue(success);
-        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
-        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), 0);
-        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
+        assertEq(paymentEngine.activeEscrow(ALICE), 0);
+        assertEq(paymentEngine.activeEscrow(BOB), 0);
+        assertEq(paymentEngine.escrowBalances(BOB), rpCollateral);
         assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
         assertEq(token.balanceOf(CHARLIE), INITIAL_BALANCE); // Should remain unchanged
         assertEq(token.balanceOf(DAVE), INITIAL_BALANCE + jobCreatorSolverFee + resourceProviderSolverFee);
@@ -714,9 +714,9 @@ contract LilypadPaymentEngineTest is Test {
         bool success = paymentEngine.handleJobCompletion(result);
 
         assertTrue(success);
-        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
-        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), 0);
-        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
+        assertEq(paymentEngine.activeEscrow(ALICE), 0);
+        assertEq(paymentEngine.activeEscrow(BOB), 0);
+        assertEq(paymentEngine.escrowBalances(BOB), rpCollateral);
         assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
         assertEq(
             token.balanceOf(CHARLIE),
@@ -798,9 +798,9 @@ contract LilypadPaymentEngineTest is Test {
 
         assertTrue(success);
         // Verify minimal payments were processed correctly
-        assertEq(paymentEngine.activeEscrowBalanceOf(ALICE), 0);
-        assertEq(paymentEngine.activeEscrowBalanceOf(BOB), 0);
-        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral);
+        assertEq(paymentEngine.activeEscrow(ALICE), 0);
+        assertEq(paymentEngine.activeEscrow(BOB), 0);
+        assertEq(paymentEngine.escrowBalances(BOB), rpCollateral);
         assertEq(token.balanceOf(BOB), INITIAL_BALANCE - rpCollateral + basePayment);
         assertEq(
             token.balanceOf(CHARLIE),
@@ -1137,7 +1137,7 @@ contract LilypadPaymentEngineTest is Test {
         assertTrue(success);
 
         // Verify escrow was slashed for the resource provider
-        assertEq(paymentEngine.escrowBalanceOf(BOB), rpCollateral - rpRequiredEscrow);
+        assertEq(paymentEngine.escrowBalances(BOB), rpCollateral - rpRequiredEscrow);
         assertEq(paymentEngine.totalEscrow(), initialTotalEscrow - rpRequiredEscrow - jobCost);
         assertEq(paymentEngine.totalActiveEscrow(), initialActiveEscrow - rpRequiredEscrow - jobCost);
 
@@ -1332,7 +1332,7 @@ contract LilypadPaymentEngineTest is Test {
         assertEq(paymentEngine.totalEscrow(), initialTotalEscrow - jobCost);
 
         // Verify validator's active escrow was returned to their balance
-        assertEq(paymentEngine.escrowBalanceOf(EVE), rpCollateral);
+        assertEq(paymentEngine.escrowBalances(EVE), rpCollateral);
 
         vm.stopPrank();
     }
@@ -1452,7 +1452,7 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(address(paymentEngine));
 
-        uint256 initialRPBalance = paymentEngine.escrowBalanceOf(BOB);
+        uint256 initialRPBalance = paymentEngine.escrowBalances(BOB);
         uint256 totalPenalty = jobCost * 2; // Both validation and original job costs
 
         vm.expectEmit(true, true, true, true);
@@ -1462,8 +1462,8 @@ contract LilypadPaymentEngineTest is Test {
         assertTrue(success);
 
         // Verify escrow states
-        assertEq(paymentEngine.escrowBalanceOf(BOB), initialRPBalance - totalPenalty);
-        assertEq(paymentEngine.escrowBalanceOf(EVE), rpCollateral);
+        assertEq(paymentEngine.escrowBalances(BOB), initialRPBalance - totalPenalty);
+        assertEq(paymentEngine.escrowBalances(EVE), rpCollateral);
         assertEq(paymentEngine.totalActiveEscrow(), 0);
         assertEq(token.balanceOf(VALIDATION_POOL), INITIAL_VALIDATION_POOL_BALANCE + totalPenalty);
 

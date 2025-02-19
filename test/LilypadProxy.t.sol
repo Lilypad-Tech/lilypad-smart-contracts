@@ -200,7 +200,7 @@ contract LilypadProxyTest is Test {
         bool success = proxy.acceptJobPayment(amount);
         assertTrue(success);
         assertEq(token.balanceOf(JOB_CREATOR), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(JOB_CREATOR), amount);
+        assertEq(paymentEngine.escrowBalances(JOB_CREATOR), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -223,7 +223,7 @@ contract LilypadProxyTest is Test {
         assertTrue(success);
         assertEq(user.hasRole(NEW_USER, SharedStructs.UserType.JobCreator), true);
         assertEq(token.balanceOf(NEW_USER), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(NEW_USER), amount);
+        assertEq(paymentEngine.escrowBalances(NEW_USER), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -279,7 +279,7 @@ contract LilypadProxyTest is Test {
 
         // Check balances
         assertEq(token.balanceOf(JOB_CREATOR), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(JOB_CREATOR), amount);
+        assertEq(paymentEngine.escrowBalances(JOB_CREATOR), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -357,7 +357,7 @@ contract LilypadProxyTest is Test {
             token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
         );
         assertEq(
-            paymentEngine.escrowBalanceOf(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
+            paymentEngine.escrowBalances(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
         );
 
         vm.stopPrank();
@@ -451,7 +451,7 @@ contract LilypadProxyTest is Test {
             token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
         );
         assertEq(
-            paymentEngine.escrowBalanceOf(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
+            paymentEngine.escrowBalances(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
         );
 
         vm.stopPrank();
@@ -470,7 +470,7 @@ contract LilypadProxyTest is Test {
         bool success = proxy.acceptResourceProviderCollateral(amount);
         assertTrue(success);
         assertEq(token.balanceOf(RESOURCE_PROVIDER), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), amount);
+        assertEq(paymentEngine.escrowBalances(RESOURCE_PROVIDER), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -493,7 +493,7 @@ contract LilypadProxyTest is Test {
         assertTrue(success);
         assertEq(user.hasRole(NEW_USER, SharedStructs.UserType.ResourceProvider), true);
         assertEq(token.balanceOf(NEW_USER), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(NEW_USER), amount);
+        assertEq(paymentEngine.escrowBalances(NEW_USER), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -573,7 +573,7 @@ contract LilypadProxyTest is Test {
 
         // Check final balances
         assertEq(token.balanceOf(RESOURCE_PROVIDER), initialBalance - amount, "Wrong final resource provider balance");
-        assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), amount, "Wrong escrow balance");
+        assertEq(paymentEngine.escrowBalances(RESOURCE_PROVIDER), amount, "Wrong escrow balance");
         assertEq(
             token.balanceOf(address(paymentEngine)),
             initialPaymentEngineBalance + amount,
@@ -670,7 +670,7 @@ contract LilypadProxyTest is Test {
             token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
         );
         assertEq(
-            paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER),
+            paymentEngine.escrowBalances(RESOURCE_PROVIDER),
             initialSupply,
             "Escrow balance should be exactly initial supply"
         );
@@ -766,7 +766,7 @@ contract LilypadProxyTest is Test {
             token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
         );
         assertEq(
-            paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER),
+            paymentEngine.escrowBalances(RESOURCE_PROVIDER),
             initialSupply,
             "Escrow balance should be exactly initial supply"
         );
@@ -826,10 +826,10 @@ contract LilypadProxyTest is Test {
             deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee;
 
         // Verify escrow balances
-        assertEq(paymentEngine.escrowBalanceOf(JOB_CREATOR), jobCreatorAmount - jobCreatorCost);
-        assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), rpAmount - resourceProviderCost);
-        assertEq(paymentEngine.activeEscrowBalanceOf(JOB_CREATOR), jobCreatorCost);
-        assertEq(paymentEngine.activeEscrowBalanceOf(RESOURCE_PROVIDER), resourceProviderCost);
+        assertEq(paymentEngine.escrowBalances(JOB_CREATOR), jobCreatorAmount - jobCreatorCost);
+        assertEq(paymentEngine.escrowBalances(RESOURCE_PROVIDER), rpAmount - resourceProviderCost);
+        assertEq(paymentEngine.activeEscrow(JOB_CREATOR), jobCreatorCost);
+        assertEq(paymentEngine.activeEscrow(RESOURCE_PROVIDER), resourceProviderCost);
         assertEq(paymentEngine.totalActiveEscrow(), jobCreatorCost + resourceProviderCost);
         vm.stopPrank();
     }

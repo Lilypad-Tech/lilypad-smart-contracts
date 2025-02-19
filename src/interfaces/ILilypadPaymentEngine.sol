@@ -41,25 +41,11 @@ interface ILilypadPaymentEngine {
     ) external returns (bool);
 
     /**
-     * @dev Returns the escrow balance of a specific address.
-     * @param _address The address whose escrow balance is being queried.
-     * @return The current escrow balance of the given address.
-     */
-    function escrowBalanceOf(address _address) external view returns (uint256);
-
-    /**
      * @dev Returns whether the escrow is active for a specific address.
      * @param _address The address whose escrow status is being queried.
      * @return True if the escrow is active, false otherwise.
      */
     function checkActiveEscrow(address _address) external view returns (bool);
-
-    /**
-     * @dev Returns the active escrow balance of a specific address.
-     * @param _address The address whose active escrow balance is being queried.
-     * @return The current active escrow balance of the given address.
-     */
-    function activeEscrowBalanceOf(address _address) external view returns (uint256);
 
     /**
      * @dev Returns whether the escrow can be withdrawn by a specific address.
