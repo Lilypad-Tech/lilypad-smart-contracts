@@ -17,7 +17,8 @@ contract DeployLilypadValidation is Script {
         LilypadStorage lilypadStorage = new LilypadStorage();
 
         // 2. Encode the initialization data
-        bytes memory initData = abi.encodeWithSelector(LilypadValidation.initialize.selector, address(lilypadStorage), address(lilypadUser));
+        bytes memory initData =
+            abi.encodeWithSelector(LilypadValidation.initialize.selector, address(lilypadStorage), address(lilypadUser));
 
         // 3. Deploy the proxy contract pointing to the implementation
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);

@@ -49,7 +49,14 @@ contract DeployLilypadPaymentEngine is Script {
     ) internal returns (LilypadPaymentEngine, address) {
         LilypadPaymentEngine engineImpl = new LilypadPaymentEngine();
         bytes memory initData = abi.encodeWithSelector(
-            LilypadPaymentEngine.initialize.selector, token, storage_, user_, tokenomics, treasury, rewards, validationPool
+            LilypadPaymentEngine.initialize.selector,
+            token,
+            storage_,
+            user_,
+            tokenomics,
+            treasury,
+            rewards,
+            validationPool
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(engineImpl), initData);
         return (LilypadPaymentEngine(address(proxy)), address(proxy));
