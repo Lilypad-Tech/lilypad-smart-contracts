@@ -225,26 +225,47 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         validationPoolWallet = _validationPoolWallet;
     }
 
+    /**
+     * @notice Sets the lilypad tokenomics address
+     * @param _lilypadTokenomicsAddress New lilypad tokenomics address
+     */
     function setLilypadTokenomics(address _lilypadTokenomicsAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_lilypadTokenomicsAddress == address(0)) revert LilypadPayment__ZeroTokenomicsAddress();
         lilypadTokenomics = LilypadTokenomics(_lilypadTokenomicsAddress);
     }
 
+    /**
+     * @notice Sets the lilypad user address
+     * @param _lilypadUserAddress New lilypad user address
+     */
     function setLilypadUser(address _lilypadUserAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_lilypadUserAddress == address(0)) revert LilypadPayment__ZeroUserAddress();
         lilypadUser = LilypadUser(_lilypadUserAddress);
     }
 
+    /**
+     * @notice Sets the lilypad storage address
+     * @param _lilypadStorageAddress New lilypad storage address
+     */
     function setLilypadStorage(address _lilypadStorageAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_lilypadStorageAddress == address(0)) revert LilypadPayment__ZeroStorageAddress();
         lilypadStorage = LilypadStorage(_lilypadStorageAddress);
     }
 
+    /**
+     * @notice Sets the l2 token address
+     * @param _l2tokenAddress New l2 token address
+     */
     function setL2Token(address _l2tokenAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_l2tokenAddress == address(0)) revert LilypadPayment__ZeroTokenAddress();
         l2token = IERC20(_l2tokenAddress);
     }
 
+    /**
+     * @notice Checks if an address can withdraw their escrow
+     * @param _address The address to check
+     * @return True if the address can withdraw their escrow, false otherwise
+     */
     function canWithdrawEscrow(address _address) public view returns (bool) {
         return block.timestamp >= depositTimestamps[_address];
     }
