@@ -257,7 +257,7 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
      * @dev Retrieves the controller role bytes32 value
      * @return Returns the controller role bytes32 value
      */
-    function getControllerRole() external view returns (bytes32) {
+    function getControllerRole() external pure returns (bytes32) {
         return SharedStructs.CONTROLLER_ROLE;
     }
 
@@ -265,7 +265,7 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
      * @dev Retrieves the minter role bytes32 value
      * @return Returns the minter role bytes32 value
      */
-    function getMinterRole() external view returns (bytes32) {
+    function getMinterRole() external pure returns (bytes32) {
         return SharedStructs.MINTER_ROLE;
     }
 
@@ -273,7 +273,7 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
      * @dev Retrieves the pauser role bytes32 value
      * @return Returns the pauser role bytes32 value
      */
-    function getPauserRole() external view returns (bytes32) {
+    function getPauserRole() external pure returns (bytes32) {
         return SharedStructs.PAUSER_ROLE;
     }
 
@@ -281,7 +281,7 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
      * @dev Retrieves the vesting role bytes32 value
      * @return Returns the vesting role bytes32 value
      */
-    function getVestingRole() external view returns (bytes32) {
+    function getVestingRole() external pure returns (bytes32) {
         return SharedStructs.VESTING_ROLE;
     }
 }
