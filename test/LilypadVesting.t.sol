@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/LilypadVesting.sol";
-import "../src/LilypadToken.sol";
+import {LilypadVesting} from "../src/LilypadVesting.sol";
+import {LilypadToken} from "../src/LilypadToken.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 
 contract LilypadVestingTest is Test {

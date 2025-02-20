@@ -2,9 +2,9 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/LilypadValidation.sol";
-import "../src/LilypadStorage.sol";
-import "../src/LilypadUser.sol";
+import {LilypadValidation} from "../src/LilypadValidation.sol";
+import {LilypadStorage} from "../src/LilypadStorage.sol";
+import {LilypadUser} from "../src/LilypadUser.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
