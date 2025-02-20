@@ -24,9 +24,6 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     error LilypadModuleDirectory__TransferNotApproved();
     error LilypadModuleDirectory__EmptyModuleUrl();
     error LilypadModuleDirectory__ZeroAddressNotAllowed();
-    error LilypadModuleDirectory__RoleAlreadyAssigned();
-    error LilypadModuleDirectory__RoleNotFound();
-    error LilypadModuleDirectory__CannotRevokeOwnRole();
     error LilypadModuleDirectory__InvalidAddressForLilypadUser();
     error LilypadModuleDirectory__ModuleCreatorAlreadyExists(address moduleCreator);
 
@@ -48,10 +45,6 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     event LilypadModuleDirectory__ModuleTransferRevoked(
         address indexed owner, address indexed revokedFrom, string moduleName
     );
-
-    event LilypadModuleDirectory__ControllerRoleGranted(address indexed account, address indexed sender);
-
-    event LilypadModuleDirectory__ControllerRoleRevoked(address indexed account, address indexed sender);
 
     event LilypadModuleDirectory__ModuleCreatorRegistered(address indexed moduleCreator);
 
@@ -334,49 +327,6 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         returns (bool)
     {
         return _transferApprovals[moduleOwner][moduleName] == purchaser;
-    }
-
-    /**
-     * @dev Grants the controller role to an account
-     * @notice
-     * - The caller of this function must have the DEFAULT_ADMIN_ROLE
-     */
-    function grantControllerRole(address account) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) {
-            revert LilypadModuleDirectory__ZeroAddressNotAllowed();
-        }
-        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
-            revert LilypadModuleDirectory__RoleAlreadyAssigned();
-        }
-        _grantRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadModuleDirectory__ControllerRoleGranted(account, msg.sender);
-    }
-
-    /**
-     * @dev Revokes the controller role from an account
-     * @notice
-     * - The caller of this function must have the DEFAULT_ADMIN_ROLE
-     */
-    function revokeControllerRole(address account) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) {
-            revert LilypadModuleDirectory__ZeroAddressNotAllowed();
-        }
-        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
-            revert LilypadModuleDirectory__RoleNotFound();
-        }
-        if (account == msg.sender) revert LilypadModuleDirectory__CannotRevokeOwnRole();
-
-        _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadModuleDirectory__ControllerRoleRevoked(account, msg.sender);
-    }
-
-    /**
-     * @dev Checks if an account has the controller role
-     * @notice
-     * - The caller of this function must be the controller role
-     */
-    function hasControllerRole(address account) external view override returns (bool) {
-        return hasRole(SharedStructs.CONTROLLER_ROLE, account);
     }
 
     function getLilypadUser() external view returns (address) {
