@@ -44,8 +44,6 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
         address indexed beneficiary, uint256 indexed scheduleId, uint256 amount, uint256 startTime
     );
     event LilypadVesting__l2TokensReleased(address indexed beneficiary, uint256 indexed scheduleId, uint256 amount);
-    event LilypadVesting__VestingRoleGranted(address indexed account, address indexed caller);
-    event LilypadVesting__VestingRoleRevoked(address indexed account, address indexed caller);
 
     error LilypadVesting__ZeroAddressNotAllowed();
     error LilypadVesting__InvalidVestingSchedule();
@@ -59,9 +57,6 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
     error LilypadVesting__InvalidDuration();
     error LilypadVesting__InvalidScheduleId();
     error LilypadVesting__InsufficientBalanceToWithdraw();
-    error LilypadVesting__RoleAlreadyAssigned();
-    error LilypadVesting__RoleNotFound();
-    error LilypadVesting__CannotRevokeOwnRole();
 
     constructor(address _l2TokenAddress) {
         if (_l2TokenAddress == address(0)) {
