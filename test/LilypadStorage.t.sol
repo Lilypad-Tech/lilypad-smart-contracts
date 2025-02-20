@@ -342,41 +342,21 @@ contract LilypadStorageTest is Test {
         address newController = address(0x4);
 
         vm.expectEmit(true, true, true, true);
-        emit LilypadStorage__ControllerRoleGranted(newController, address(this));
+        emit IAccessControl.RoleGranted(SharedStructs.CONTROLLER_ROLE, newController, address(this));
 
-        lilypadStorage.grantControllerRole(newController);
-        assertTrue(lilypadStorage.hasControllerRole(newController));
+        lilypadStorage.grantRole(SharedStructs.CONTROLLER_ROLE, newController);
+        assertTrue(lilypadStorage.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
     }
 
     function test_RevokeControllerRole() public {
         address newController = address(0x4);
-        lilypadStorage.grantControllerRole(newController);
+        lilypadStorage.grantRole(SharedStructs.CONTROLLER_ROLE, newController);
 
         vm.expectEmit(true, true, true, true);
-        emit LilypadStorage__ControllerRoleRevoked(newController, address(this));
+        emit IAccessControl.RoleRevoked(SharedStructs.CONTROLLER_ROLE, newController, address(this));
 
-        lilypadStorage.revokeControllerRole(newController);
-        assertFalse(lilypadStorage.hasControllerRole(newController));
-    }
-
-    function test_RevertWhen_GrantingControllerRoleToZeroAddress() public {
-        vm.expectRevert(LilypadStorage.LilypadStorage__ZeroAddressNotAllowed.selector);
-        lilypadStorage.grantControllerRole(address(0));
-    }
-
-    function test_RevertWhen_RevokingControllerRoleFromZeroAddress() public {
-        vm.expectRevert(LilypadStorage.LilypadStorage__ZeroAddressNotAllowed.selector);
-        lilypadStorage.revokeControllerRole(address(0));
-    }
-
-    function test_RevertWhen_RevokingNonExistentControllerRole() public {
-        vm.expectRevert(LilypadStorage.LilypadStorage__RoleNotFound.selector);
-        lilypadStorage.revokeControllerRole(address(0x4));
-    }
-
-    function test_RevertWhen_RevokingOwnControllerRole() public {
-        vm.expectRevert(LilypadStorage.LilypadStorage__CannotRevokeOwnRole.selector);
-        lilypadStorage.revokeControllerRole(address(this));
+        lilypadStorage.revokeRole(SharedStructs.CONTROLLER_ROLE, newController);
+        assertFalse(lilypadStorage.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
     }
 
     // Status Check Tests

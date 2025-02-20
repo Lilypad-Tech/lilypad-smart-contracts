@@ -16,9 +16,6 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
 
     // Custom Errors
     error LilypadStorage__ZeroAddressNotAllowed();
-    error LilypadStorage__RoleAlreadyAssigned();
-    error LilypadStorage__RoleNotFound();
-    error LilypadStorage__CannotRevokeOwnRole();
 
     error LilypadStorage__DealNotFound(string dealId);
     error LilypadStorage__ValidationResultNotFound(string validationResultId);
@@ -49,8 +46,6 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
     );
     event LilypadStorage__ResultSaved(string indexed resultId, string dealId);
     event LilypadStorage__ValidationResultSaved(string indexed validationResultId, string resultId, address validator);
-    event LilypadStorage__ControllerRoleGranted(address indexed account, address indexed sender);
-    event LilypadStorage__ControllerRoleRevoked(address indexed account, address indexed sender);
 
     // Mappings to store deal, validationResult, and result data
     mapping(string => SharedStructs.Deal) private deals;
@@ -84,57 +79,6 @@ contract LilypadStorage is Initializable, ILilypadStorage, AccessControlUpgradea
      */
     function getVersion() external view returns (string memory) {
         return version;
-    }
-
-    /**
-     * @dev Grants the controller role to a specified account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` already has the controller role
-     * - Emits a `LilypadStorage__ControllerRoleGranted` event upon successful role assignment
-     */
-    function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) {
-            revert LilypadStorage__ZeroAddressNotAllowed();
-        }
-        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
-            revert LilypadStorage__RoleAlreadyAssigned();
-        }
-        _grantRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadStorage__ControllerRoleGranted(account, msg.sender);
-    }
-
-    /**
-     * @dev Revokes the controller role from an account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` does not have the controller role
-     * - Reverts if trying to revoke own role
-     * - Emits a `LilypadStorage__ControllerRoleRevoked` event upon successful role revocation
-     */
-    function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) {
-            revert LilypadStorage__ZeroAddressNotAllowed();
-        }
-        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
-            revert LilypadStorage__RoleNotFound();
-        }
-        if (account == msg.sender) revert LilypadStorage__CannotRevokeOwnRole();
-
-        _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadStorage__ControllerRoleRevoked(account, msg.sender);
-    }
-
-    /**
-     * @dev Checks if an account has the controller role
-     * @notice
-     * - View function that checks if an account has the CONTROLLER_ROLE
-     * - Returns false if the account does not have the role
-     */
-    function hasControllerRole(address account) external view returns (bool) {
-        return hasRole(SharedStructs.CONTROLLER_ROLE, account);
     }
 
     /**
