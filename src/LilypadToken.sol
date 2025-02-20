@@ -21,6 +21,14 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
     // Max supply of 1 billion tokens
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18;
 
+    //The multipler for future stimulants of token
+    uint256 public alpha;
+
+    ////////////////////////////////
+    ///////// Events ///////////////
+    ////////////////////////////////
+    event LilypadToken__AlphaUpdated(uint256 _alpha);
+
     ////////////////////////////////
     ///////// Errors ///////////////
     ////////////////////////////////
@@ -53,7 +61,19 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
         _grantRole(SharedStructs.MINTER_ROLE, msg.sender);
         _grantRole(SharedStructs.PAUSER_ROLE, msg.sender);
 
+        // The stimulent factor for future growth of the token
+        alpha = 0;
+
         _mint(msg.sender, initialSupply);
+    }
+
+    /**
+     * @notice Sets the alpha parameter ()
+     * @param _alpha New alpha value
+     */
+    function setAlpha(uint256 _alpha) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        alpha = _alpha;
+        emit LilypadToken__AlphaUpdated(_alpha);
     }
 
     function addMinter(address minter) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {

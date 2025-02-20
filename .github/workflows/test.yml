@@ -10,6 +10,9 @@ env:
 jobs:
   check:
     strategy:
+      matrix:
+        os: [ubuntu-latest]
+        solc: ['0.8.24']
       fail-fast: true
 
     name: Foundry project
@@ -23,6 +26,11 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
+
+      - name: Install OpenZeppelin contracts
+        run: |
+          forge install OpenZeppelin/openzeppelin-contracts-upgradeable --no-commit
+          forge install OpenZeppelin/openzeppelin-contracts --no-commit
 
       - name: Run Forge build
         run: |

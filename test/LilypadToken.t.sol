@@ -37,6 +37,13 @@ contract LilypadTokenTest is Test {
         assertTrue(token.hasRole(token.DEFAULT_ADMIN_ROLE(), admin));
         assertTrue(token.hasRole(SharedStructs.MINTER_ROLE, admin));
         assertTrue(token.hasRole(SharedStructs.PAUSER_ROLE, admin));
+        assertEq(token.alpha(), 0);
+    }
+
+    function test_SetAlpha() public {
+        vm.prank(admin);
+        token.setAlpha(150);
+        assertEq(token.alpha(), 150);
     }
 
     function testFuzz_ConstructorRevertsIfInitialSupplyTooHigh(uint256 invalidSupply) public {

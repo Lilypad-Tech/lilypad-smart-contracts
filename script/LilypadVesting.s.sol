@@ -16,7 +16,8 @@ contract DeployLilypadVesting is Script {
         vm.startBroadcast();
 
         // Deploy contracts
-        // NOTE: This is a temporary token for testing purposes, when we have a real token, we should use that instead
+
+        // Note: This token deployment here is for testing purposes.  The actual token deployment will be done on the L1 chain and the address that will be passed into the vesting contract will be the address of the token on the L2 chain.
         LilypadToken token = deployToken();
         LilypadVesting vestingContract = new LilypadVesting(address(token));
 
