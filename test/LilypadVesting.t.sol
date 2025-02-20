@@ -36,7 +36,7 @@ contract LilypadVestingTest is Test {
         vestingContract = new LilypadVesting(address(token));
 
         // Grant vesting role to VESTING_MANAGER
-        vestingContract.grantVestingRole(VESTING_MANAGER);
+        vestingContract.grantRole(SharedStructs.VESTING_ROLE, VESTING_MANAGER);
 
         // Mint tokens to ADMIN
         token.mint(ADMIN, INITIAL_SUPPLY);
@@ -344,7 +344,7 @@ contract LilypadVestingTest is Test {
     function test_RevertWhen_NonAdminGrantsRole() public {
         vm.startPrank(BENEFICIARY);
         vm.expectRevert();
-        vestingContract.grantVestingRole(BENEFICIARY);
+        vestingContract.grantRole(SharedStructs.VESTING_ROLE, BENEFICIARY);
         vm.stopPrank();
     }
 
