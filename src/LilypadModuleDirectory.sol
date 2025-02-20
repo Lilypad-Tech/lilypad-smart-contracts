@@ -11,7 +11,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     // Version
     string public version;
 
-    LilypadUser public lilypadUser;
+    LilypadUser private lilypadUser;
 
     // Custom Errors
     error LilypadModuleDirectory__NotController();
@@ -54,6 +54,8 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
     event LilypadModuleDirectory__ControllerRoleRevoked(address indexed account, address indexed sender);
 
     event LilypadModuleDirectory__ModuleCreatorRegistered(address indexed moduleCreator);
+
+    event LilypadModuleDirectory__LilypadUserUpdated(address indexed lilypadUser, address indexed caller);
 
     // Mapping from owner address to array of modules
     mapping(address => SharedStructs.Module[]) private _ownedModules;
@@ -375,6 +377,24 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
      */
     function hasControllerRole(address account) external view override returns (bool) {
         return hasRole(SharedStructs.CONTROLLER_ROLE, account);
+    }
+
+    function getLilypadUser() external view returns (address) {
+        return address(lilypadUser);
+    }
+
+    /**
+     * @dev Sets the lilypadUser address
+     * @notice
+     * - The caller of this function must have the DEFAULT_ADMIN_ROLE
+     */
+    function setLilypadUser(address _lilypadUser) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
+        if (_lilypadUser == address(0)) {
+            revert LilypadModuleDirectory__ZeroAddressNotAllowed();
+        }
+        lilypadUser = LilypadUser(_lilypadUser);
+        emit LilypadModuleDirectory__LilypadUserUpdated(_lilypadUser, msg.sender);
+        return true;
     }
 
     /**

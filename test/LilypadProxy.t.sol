@@ -2,11 +2,12 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/LilypadProxy.sol";
-import "../src/LilypadToken.sol";
-import "../src/LilypadStorage.sol";
-import "../src/LilypadPaymentEngine.sol";
-import "../src/LilypadUser.sol";
+import {LilypadProxy} from "../src/LilypadProxy.sol";
+import {LilypadToken} from "../src/LilypadToken.sol";
+import {LilypadStorage} from "../src/LilypadStorage.sol";
+import {LilypadPaymentEngine} from "../src/LilypadPaymentEngine.sol";
+import {LilypadUser} from "../src/LilypadUser.sol";
+import {LilypadTokenomics} from "../src/LilypadTokenomics.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
@@ -17,7 +18,7 @@ contract LilypadProxyTest is Test {
     LilypadStorage public storage_;
     LilypadPaymentEngine public paymentEngine;
     LilypadUser public user;
-
+    LilypadTokenomics public tokenomics;
     address public constant ADMIN = address(0x1);
     address public constant JOB_CREATOR = address(0x2);
     address public constant RESOURCE_PROVIDER = address(0x4);
@@ -39,6 +40,7 @@ contract LilypadProxyTest is Test {
         // Deploy implementations
         LilypadStorage storageImpl = new LilypadStorage();
         LilypadUser userImpl = new LilypadUser();
+        LilypadTokenomics tokenomicsImpl = new LilypadTokenomics();
         LilypadPaymentEngine paymentEngineImpl = new LilypadPaymentEngine();
         LilypadProxy proxyImpl = new LilypadProxy();
 
@@ -54,6 +56,10 @@ contract LilypadProxyTest is Test {
             new ERC1967Proxy(address(userImpl), abi.encodeWithSelector(LilypadUser.initialize.selector));
         user = LilypadUser(address(userProxy));
 
+        ERC1967Proxy tokenomicsProxy =
+            new ERC1967Proxy(address(tokenomicsImpl), abi.encodeWithSelector(LilypadTokenomics.initialize.selector));
+        tokenomics = LilypadTokenomics(address(tokenomicsProxy));
+
         ERC1967Proxy paymentEngineProxy = new ERC1967Proxy(
             address(paymentEngineImpl),
             abi.encodeWithSelector(
@@ -61,6 +67,7 @@ contract LilypadProxyTest is Test {
                 address(token),
                 address(storage_),
                 address(user),
+                address(tokenomics),
                 TREASURY,
                 VALUE_REWARDS,
                 VALIDATION_POOL
@@ -99,10 +106,10 @@ contract LilypadProxyTest is Test {
 
     function test_InitialState() public {
         assertEq(proxy.version(), "1.0.0");
-        assertEq(address(proxy.lilypadStorage()), address(storage_));
-        assertEq(address(proxy.paymentEngine()), address(paymentEngine));
-        assertEq(address(proxy.lilypadUser()), address(user));
-        assertEq(address(proxy.lilypadToken()), address(token));
+        assertEq(proxy.getStorageAddress(), address(storage_));
+        assertEq(proxy.getPaymentEngineAddress(), address(paymentEngine));
+        assertEq(proxy.getUserAddress(), address(user));
+        assertEq(proxy.getl2LilypadTokenAddress(), address(token));
         assertTrue(proxy.hasRole(bytes32(0x00), address(this))); // Check DEFAULT_ADMIN_ROLE first
         assertTrue(proxy.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
         assertTrue(storage_.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
@@ -165,14 +172,17 @@ contract LilypadProxyTest is Test {
         address newStorage = address(0x123);
         address newPaymentEngine = address(0x456);
         address newUser = address(0xabc);
+        address newL2LilypadToken = address(0xdef);
 
         assertTrue(proxy.setStorageContract(newStorage));
         assertTrue(proxy.setPaymentEngineContract(newPaymentEngine));
         assertTrue(proxy.setUserContract(newUser));
+        assertTrue(proxy.setL2LilypadTokenContract(newL2LilypadToken));
 
-        assertEq(address(proxy.lilypadStorage()), newStorage);
-        assertEq(address(proxy.paymentEngine()), newPaymentEngine);
-        assertEq(address(proxy.lilypadUser()), newUser);
+        assertEq(proxy.getStorageAddress(), newStorage);
+        assertEq(proxy.getPaymentEngineAddress(), newPaymentEngine);
+        assertEq(proxy.getUserAddress(), newUser);
+        assertEq(proxy.getl2LilypadTokenAddress(), newL2LilypadToken);
 
         vm.stopPrank();
     }
@@ -190,7 +200,7 @@ contract LilypadProxyTest is Test {
         bool success = proxy.acceptJobPayment(amount);
         assertTrue(success);
         assertEq(token.balanceOf(JOB_CREATOR), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(JOB_CREATOR), amount);
+        assertEq(paymentEngine.escrowBalances(JOB_CREATOR), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -213,7 +223,7 @@ contract LilypadProxyTest is Test {
         assertTrue(success);
         assertEq(user.hasRole(NEW_USER, SharedStructs.UserType.JobCreator), true);
         assertEq(token.balanceOf(NEW_USER), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(NEW_USER), amount);
+        assertEq(paymentEngine.escrowBalances(NEW_USER), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -269,7 +279,7 @@ contract LilypadProxyTest is Test {
 
         // Check balances
         assertEq(token.balanceOf(JOB_CREATOR), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(JOB_CREATOR), amount);
+        assertEq(paymentEngine.escrowBalances(JOB_CREATOR), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -347,7 +357,7 @@ contract LilypadProxyTest is Test {
             token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
         );
         assertEq(
-            paymentEngine.escrowBalanceOf(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
+            paymentEngine.escrowBalances(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
         );
 
         vm.stopPrank();
@@ -441,7 +451,7 @@ contract LilypadProxyTest is Test {
             token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
         );
         assertEq(
-            paymentEngine.escrowBalanceOf(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
+            paymentEngine.escrowBalances(JOB_CREATOR), initialSupply, "Escrow balance should be exactly initial supply"
         );
 
         vm.stopPrank();
@@ -460,7 +470,7 @@ contract LilypadProxyTest is Test {
         bool success = proxy.acceptResourceProviderCollateral(amount);
         assertTrue(success);
         assertEq(token.balanceOf(RESOURCE_PROVIDER), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), amount);
+        assertEq(paymentEngine.escrowBalances(RESOURCE_PROVIDER), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -483,7 +493,7 @@ contract LilypadProxyTest is Test {
         assertTrue(success);
         assertEq(user.hasRole(NEW_USER, SharedStructs.UserType.ResourceProvider), true);
         assertEq(token.balanceOf(NEW_USER), INITIAL_USER_BALANCE - amount);
-        assertEq(paymentEngine.escrowBalanceOf(NEW_USER), amount);
+        assertEq(paymentEngine.escrowBalances(NEW_USER), amount);
         assertEq(token.balanceOf(address(paymentEngine)), amount);
         vm.stopPrank();
     }
@@ -563,7 +573,7 @@ contract LilypadProxyTest is Test {
 
         // Check final balances
         assertEq(token.balanceOf(RESOURCE_PROVIDER), initialBalance - amount, "Wrong final resource provider balance");
-        assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), amount, "Wrong escrow balance");
+        assertEq(paymentEngine.escrowBalances(RESOURCE_PROVIDER), amount, "Wrong escrow balance");
         assertEq(
             token.balanceOf(address(paymentEngine)),
             initialPaymentEngineBalance + amount,
@@ -660,7 +670,7 @@ contract LilypadProxyTest is Test {
             token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
         );
         assertEq(
-            paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER),
+            paymentEngine.escrowBalances(RESOURCE_PROVIDER),
             initialSupply,
             "Escrow balance should be exactly initial supply"
         );
@@ -756,7 +766,7 @@ contract LilypadProxyTest is Test {
             token.balanceOf(address(paymentEngine)), initialSupply, "Payment engine should have exactly initial supply"
         );
         assertEq(
-            paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER),
+            paymentEngine.escrowBalances(RESOURCE_PROVIDER),
             initialSupply,
             "Escrow balance should be exactly initial supply"
         );
@@ -816,10 +826,10 @@ contract LilypadProxyTest is Test {
             deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee;
 
         // Verify escrow balances
-        assertEq(paymentEngine.escrowBalanceOf(JOB_CREATOR), jobCreatorAmount - jobCreatorCost);
-        assertEq(paymentEngine.escrowBalanceOf(RESOURCE_PROVIDER), rpAmount - resourceProviderCost);
-        assertEq(paymentEngine.activeEscrowBalanceOf(JOB_CREATOR), jobCreatorCost);
-        assertEq(paymentEngine.activeEscrowBalanceOf(RESOURCE_PROVIDER), resourceProviderCost);
+        assertEq(paymentEngine.escrowBalances(JOB_CREATOR), jobCreatorAmount - jobCreatorCost);
+        assertEq(paymentEngine.escrowBalances(RESOURCE_PROVIDER), rpAmount - resourceProviderCost);
+        assertEq(paymentEngine.activeEscrow(JOB_CREATOR), jobCreatorCost);
+        assertEq(paymentEngine.activeEscrow(RESOURCE_PROVIDER), resourceProviderCost);
         assertEq(paymentEngine.totalActiveEscrow(), jobCreatorCost + resourceProviderCost);
         vm.stopPrank();
     }

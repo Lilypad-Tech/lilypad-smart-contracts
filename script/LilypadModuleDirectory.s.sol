@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 import {LilypadModuleDirectory} from "../src/LilypadModuleDirectory.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {LilypadUser} from "../src/LilypadUser.sol";
 
 contract DeployLilypadModuleDirectory is Script {
     function run() external returns (address) {
@@ -11,9 +12,10 @@ contract DeployLilypadModuleDirectory is Script {
 
         // 1. Deploy the implementation contract
         LilypadModuleDirectory implementation = new LilypadModuleDirectory();
+        LilypadUser lilypadUser = new LilypadUser();
 
         // 2. Encode the initialization data
-        bytes memory initData = abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector);
+        bytes memory initData = abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector, address(lilypadUser));
 
         // 3. Deploy the proxy contract pointing to the implementation
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);

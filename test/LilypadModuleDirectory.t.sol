@@ -32,6 +32,7 @@ contract LilypadModuleDirectoryTest is Test {
     event LilypadModuleDirectory__ControllerRoleGranted(address indexed controller, address indexed grantedBy);
     event LilypadModuleDirectory__ControllerRoleRevoked(address indexed controller, address indexed revokedBy);
     event LilypadModuleDirectory__ModuleCreatorRegistered(address indexed creator);
+    event LilypadModuleDirectory__LilypadUserUpdated(address indexed lilypadUser, address indexed caller);
 
     function setUp() public {
         // Deploy lilypadUser
@@ -135,6 +136,21 @@ contract LilypadModuleDirectoryTest is Test {
         vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__NotController.selector);
         moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
+    }
+
+    function test_SetLilypadUser() public {
+        vm.startPrank(address(this));
+        vm.expectEmit(true, true, true, true);
+        emit LilypadModuleDirectory__LilypadUserUpdated(address(lilypadUser), address(this));
+        moduleDirectory.setLilypadUser(address(lilypadUser));
+        vm.stopPrank();
+    }
+
+    function test_SetLilypadUser_Reverts_WhenZeroAddress() public {
+        vm.startPrank(address(this));
+        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__ZeroAddressNotAllowed.selector);
+        moduleDirectory.setLilypadUser(address(0));
+        vm.stopPrank();
     }
 
     function test_RegisterAndGetModule() public {

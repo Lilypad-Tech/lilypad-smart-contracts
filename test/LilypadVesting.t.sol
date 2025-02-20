@@ -49,7 +49,7 @@ contract LilypadVestingTest is Test {
 
     // Basic functionality tests
     function test_InitialState() public {
-        assertEq(address(vestingContract.token()), address(token));
+        assertEq(address(vestingContract.getL2TokenAddress()), address(token));
         assertEq(vestingContract.vestingScheduleCount(), 0);
         assertTrue(vestingContract.hasRole(SharedStructs.VESTING_ROLE, ADMIN));
         assertTrue(vestingContract.hasRole(SharedStructs.VESTING_ROLE, VESTING_MANAGER));
