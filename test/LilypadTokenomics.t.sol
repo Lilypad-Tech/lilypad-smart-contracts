@@ -26,6 +26,7 @@ contract LilypadTokenomicsTest is Test {
         lilypadTokenomics.setM(200); // 2%
         lilypadTokenomics.setVValues(2, 1); // 2x, 1.5x
         lilypadTokenomics.setResourceProviderActiveEscrowScaler(10000);
+        assertTrue(lilypadTokenomics.hasRole(lilypadTokenomics.DEFAULT_ADMIN_ROLE(), address(this)));
         assertEq(lilypadTokenomics.p1(), 0);
         assertEq(lilypadTokenomics.p2(), 5000);
         assertEq(lilypadTokenomics.p3(), 5000);
