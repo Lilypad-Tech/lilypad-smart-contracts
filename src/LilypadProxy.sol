@@ -20,8 +20,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     IERC20 private l2LilypadToken;
 
     // Events
-    event LilypadProxy__ControllerRoleGranted(address indexed account, address indexed caller);
-    event LilypadProxy__ControllerRoleRevoked(address indexed account, address indexed caller);
     event LilypadProxy__JobCreatorEscrowPayment(address indexed jobCreator, uint256 amount);
     event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
     event LilypadProxy__JobCreatorInserted(address indexed jobCreator);
@@ -29,9 +27,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
 
     error LilypadProxy__ZeroAddressNotAllowed();
     error LilypadProxy__ZeroAmountNotAllowed();
-    error LilypadProxy__RoleAlreadyAssigned();
-    error LilypadProxy__RoleNotFound();
-    error LilypadProxy__CannotRevokeOwnRole();
     error LilypadProxy__acceptJobPayment__NotJobCreator();
     error LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider();
     error LilypadProxy__NotEnoughAllowance();
@@ -95,47 +90,6 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         if (_l2LilypadTokenAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         l2LilypadToken = IERC20(_l2LilypadTokenAddress);
         return true;
-    }
-
-    /**
-     * @dev Grants the controller role to a specified account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` already has the controller role
-     * - Emits a `ControllerRoleGranted` event upon successful role assignment
-     */
-    function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) {
-            revert LilypadProxy__ZeroAddressNotAllowed();
-        }
-        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
-            revert LilypadProxy__RoleAlreadyAssigned();
-        }
-        _grantRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadProxy__ControllerRoleGranted(account, msg.sender);
-    }
-
-    /**
-     * @dev Revokes the controller role from an account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` does not have the controller role
-     * - Reverts if trying to revoke own role
-     * - Emits a `ControllerRoleRevoked` event upon successful role revocation
-     */
-    function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) {
-            revert LilypadProxy__ZeroAddressNotAllowed();
-        }
-        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) {
-            revert LilypadProxy__RoleNotFound();
-        }
-        if (account == msg.sender) revert LilypadProxy__CannotRevokeOwnRole();
-
-        _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadProxy__ControllerRoleRevoked(account, msg.sender);
     }
 
     /**

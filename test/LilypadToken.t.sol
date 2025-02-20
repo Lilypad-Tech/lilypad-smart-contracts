@@ -55,20 +55,14 @@ contract LilypadTokenTest is Test {
     // Role Management Tests
     function test_AddMinter() public {
         vm.prank(admin);
-        assertTrue(token.addMinter(minter));
+        token.grantRole(SharedStructs.MINTER_ROLE, minter);
         assertTrue(token.hasRole(SharedStructs.MINTER_ROLE, minter));
     }
 
     function test_RevertAddMinterIfNotAdmin() public {
         vm.prank(user);
         vm.expectRevert();
-        token.addMinter(minter);
-    }
-
-    function test_RevertAddMinterIfZeroAddress() public {
-        vm.prank(admin);
-        vm.expectRevert(LilypadToken.LilypadToken__InvalidAddress.selector);
-        token.addMinter(address(0));
+        token.grantRole(SharedStructs.MINTER_ROLE, minter);
     }
 
     // Minting Tests
@@ -97,7 +91,7 @@ contract LilypadTokenTest is Test {
         // Setup minter role
         uint256 mintAmount = 10_000;
         vm.startPrank(admin);
-        token.addMinter(minter);
+        token.grantRole(SharedStructs.MINTER_ROLE, minter);
         token.transfer(minter, mintAmount);
         vm.stopPrank();
         assertTrue(token.hasRole(SharedStructs.MINTER_ROLE, minter));
@@ -111,7 +105,7 @@ contract LilypadTokenTest is Test {
 
     function test_RevertBurnIfInsufficientBalance() public {
         vm.startPrank(admin);
-        token.addMinter(minter);
+        token.grantRole(SharedStructs.MINTER_ROLE, minter);
         vm.stopPrank();
 
         vm.prank(minter);

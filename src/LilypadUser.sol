@@ -252,4 +252,44 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
     function getValidators() external view returns (address[] memory) {
         return validatorAddresses;
     }
+
+    /**
+     * @dev Retrieves the controller role bytes32 value
+     * @return Returns the controller role bytes32 value
+     * @notice
+     * - This function is used to get the Controller role bytes32 value meant to be used for access control
+     */
+    function getControllerAccessControlRole() external pure returns (bytes32) {
+        return SharedStructs.CONTROLLER_ROLE;
+    }
+
+    /**
+     * @dev Retrieves the minter role bytes32 value
+     * @return Returns the minter role bytes32 value
+     * @notice
+     * - This function is used to get the Minter role bytes32 value meant to be used for access control
+     */
+    function getMinterAccessControlRole() external pure returns (bytes32) {
+        return SharedStructs.MINTER_ROLE;
+    }
+
+    /**
+     * @dev Retrieves the pauser role bytes32 value
+     * @return Returns the pauser role bytes32 value
+     * @notice
+     * - This function is used to get the Pauser role bytes32 value meant to be used for access control
+     */
+    function getPauserAccessControlRole() external pure returns (bytes32) {
+        return SharedStructs.PAUSER_ROLE;
+    }
+
+    /**
+     * @dev Retrieves the vesting role bytes32 value
+     * @return Returns the vesting role bytes32 value
+     * @notice
+     * - This function is used to get the vesting role bytes32 value meant to be used for access control
+     */
+    function getVestingAccessControlRole() external pure returns (bytes32) {
+        return SharedStructs.VESTING_ROLE;
+    }
 }

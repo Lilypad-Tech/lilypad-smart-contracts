@@ -41,8 +41,6 @@ contract LilypadTokenomics is Initializable, AccessControlUpgradeable {
     uint256 public resourceProviderActiveEscrowScaler;
 
     event LilypadTokenomics__TokenomicsParameterUpdated(string indexed parameter, uint256 value);
-    event LilypadTokenomics__ControllerRoleGranted(address indexed newController, address indexed controller);
-    event LilypadTokenomics__ControllerRoleRevoked(address indexed revokedController, address indexed controller);
 
     error LilypadTokenomics__PValueTooLarge();
     error LilypadTokenomics__MValueTooLarge();
@@ -50,9 +48,6 @@ contract LilypadTokenomics is Initializable, AccessControlUpgradeable {
     error LilypadTokenomics__V1MustBeGreaterThanV2();
     error LilypadTokenomics__V2MustBeLessThanV1();
     error LilypadTokenomics__ZeroAddressNotAllowed();
-    error LilypadTokenomics__RoleAlreadyAssigned();
-    error LilypadTokenomics__RoleNotFound();
-    error LilypadTokenomics__CannotRevokeOwnRole();
 
     function initialize() external initializer {
         __AccessControl_init();
@@ -84,39 +79,6 @@ contract LilypadTokenomics is Initializable, AccessControlUpgradeable {
 
         // Set to 11000 (representing 110% in basis points, or a 10% increase)
         resourceProviderActiveEscrowScaler = 11000;
-    }
-
-    /**
-     * @dev Grants the controller role to a specified account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` already has the controller role
-     * - Emits a `ControllerRoleGranted` event upon successful role assignment
-     */
-    function grantControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) revert LilypadTokenomics__ZeroAddressNotAllowed();
-        if (hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert LilypadTokenomics__RoleAlreadyAssigned();
-        _grantRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadTokenomics__ControllerRoleGranted(account, msg.sender);
-    }
-
-    /**
-     * @dev Revokes the controller role from an account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` does not have the controller role
-     * - Reverts if trying to revoke own role
-     * - Emits a `ControllerRoleRevoked` event upon successful role revocation
-     */
-    function revokeControllerRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) revert LilypadTokenomics__ZeroAddressNotAllowed();
-        if (!hasRole(SharedStructs.CONTROLLER_ROLE, account)) revert LilypadTokenomics__RoleNotFound();
-        if (account == msg.sender) revert LilypadTokenomics__CannotRevokeOwnRole();
-
-        _revokeRole(SharedStructs.CONTROLLER_ROLE, account);
-        emit LilypadTokenomics__ControllerRoleRevoked(account, msg.sender);
     }
 
     /**

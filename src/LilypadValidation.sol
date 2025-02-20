@@ -8,7 +8,7 @@ import {ILilypadStorage} from "./interfaces/ILilypadStorage.sol";
 import {ILilypadUser} from "./interfaces/ILilypadUser.sol";
 import {SharedStructs} from "./SharedStructs.sol";
 
-// TODO: send the validationPoolAmount to this contract from LilypadPaymentEngine
+// @NOTE: DO NOT REVIEW THIS CONTRACT DURING AUDITING AS IT IS INCOMPLETE AND OUT OF SCOPE FOR THE CURRENT PHASE OF THE PROJECT
 
 /**
  * @title LilypadValidation

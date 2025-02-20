@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/LilypadModuleDirectory.sol";
+import {LilypadModuleDirectory} from "../src/LilypadModuleDirectory.sol";
 import {LilypadUser} from "../src/LilypadUser.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
@@ -74,17 +74,17 @@ contract LilypadModuleDirectoryTest is Test {
 
     function test_HasControllerRole() public {
         // Test initial controller roles
-        assertTrue(moduleDirectory.hasControllerRole(address(this)));
-        assertTrue(moduleDirectory.hasControllerRole(CONTROLLER));
-        assertFalse(moduleDirectory.hasControllerRole(ALICE));
+        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, address(this)));
+        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER));
+        assertFalse(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, ALICE));
 
         // Test after granting role
-        moduleDirectory.grantControllerRole(ALICE);
-        assertTrue(moduleDirectory.hasControllerRole(ALICE));
+        moduleDirectory.grantRole(SharedStructs.CONTROLLER_ROLE, ALICE);
+        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, ALICE));
 
         // Test after revoking role
-        moduleDirectory.revokeControllerRole(ALICE);
-        assertFalse(moduleDirectory.hasControllerRole(ALICE));
+        moduleDirectory.revokeRole(SharedStructs.CONTROLLER_ROLE, ALICE);
+        assertFalse(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, ALICE));
     }
 
     // Revoke Role
@@ -93,18 +93,16 @@ contract LilypadModuleDirectoryTest is Test {
 
         // Test zero address revert
         vm.startPrank(address(this));
-        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__ZeroAddressNotAllowed.selector);
-        moduleDirectory.grantControllerRole(address(0));
 
         // Test granting role
         vm.expectEmit(true, true, true, true);
-        emit LilypadModuleDirectory__ControllerRoleGranted(newController, address(this));
-        moduleDirectory.grantControllerRole(newController);
-        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
+        emit IAccessControl.RoleGranted(SharedStructs.CONTROLLER_ROLE, newController, address(this));
+        moduleDirectory.grantRole(SharedStructs.CONTROLLER_ROLE, newController);
+        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));  
 
         // Test already assigned role
-        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__RoleAlreadyAssigned.selector);
-        moduleDirectory.grantControllerRole(newController);
+        moduleDirectory.grantRole(SharedStructs.CONTROLLER_ROLE, newController);
+        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
 
         // Test new controller can register
         vm.startPrank(newController);
@@ -113,17 +111,13 @@ contract LilypadModuleDirectoryTest is Test {
         // Test revoking role
         vm.startPrank(address(this));
         vm.expectEmit(true, true, true, true);
-        emit LilypadModuleDirectory__ControllerRoleRevoked(newController, address(this));
-        moduleDirectory.revokeControllerRole(newController);
+        emit IAccessControl.RoleRevoked(SharedStructs.CONTROLLER_ROLE, newController, address(this));
+        moduleDirectory.revokeRole(SharedStructs.CONTROLLER_ROLE, newController);
         assertFalse(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
 
         // Test revoking non-existent role
-        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__RoleNotFound.selector);
-        moduleDirectory.revokeControllerRole(newController);
-
-        // Test cannot revoke own role
-        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__CannotRevokeOwnRole.selector);
-        moduleDirectory.revokeControllerRole(address(this));
+        moduleDirectory.revokeRole(SharedStructs.CONTROLLER_ROLE, newController);
+        assertFalse(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
 
         // Test revoked controller cannot register
         vm.startPrank(newController);

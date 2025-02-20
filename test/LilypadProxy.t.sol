@@ -11,6 +11,7 @@ import {LilypadTokenomics} from "../src/LilypadTokenomics.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract LilypadProxyTest is Test {
     LilypadProxy public proxy;
@@ -131,9 +132,9 @@ contract LilypadProxyTest is Test {
 
         vm.startPrank(address(this));
         vm.expectEmit(true, true, true, true);
-        emit LilypadProxy__ControllerRoleGranted(newController, address(this));
+        emit IAccessControl.RoleGranted(SharedStructs.CONTROLLER_ROLE, newController, address(this));
 
-        proxy.grantControllerRole(newController);
+        proxy.grantRole(SharedStructs.CONTROLLER_ROLE, newController);
         assertTrue(proxy.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
         vm.stopPrank();
     }
@@ -141,7 +142,7 @@ contract LilypadProxyTest is Test {
     function test_RevertWhen_NonAdminGrantsControllerRole() public {
         vm.startPrank(JOB_CREATOR);
         vm.expectRevert();
-        proxy.grantControllerRole(address(0x123));
+        proxy.grantRole(SharedStructs.CONTROLLER_ROLE, address(0x123));
         vm.stopPrank();
     }
 
@@ -149,20 +150,13 @@ contract LilypadProxyTest is Test {
         address controller = address(0x123);
 
         vm.startPrank(address(this));
-        proxy.grantControllerRole(controller);
+        proxy.grantRole(SharedStructs.CONTROLLER_ROLE, controller);
 
         vm.expectEmit(true, true, true, true);
-        emit LilypadProxy__ControllerRoleRevoked(controller, address(this));
+        emit IAccessControl.RoleRevoked(SharedStructs.CONTROLLER_ROLE, controller, address(this));
 
-        proxy.revokeControllerRole(controller);
+        proxy.revokeRole(SharedStructs.CONTROLLER_ROLE, controller);
         assertFalse(proxy.hasRole(SharedStructs.CONTROLLER_ROLE, controller));
-        vm.stopPrank();
-    }
-
-    function test_RevertWhen_RevokingOwnRole() public {
-        vm.startPrank(address(this));
-        vm.expectRevert(LilypadProxy.LilypadProxy__CannotRevokeOwnRole.selector);
-        proxy.revokeControllerRole(address(this));
         vm.stopPrank();
     }
 

@@ -44,8 +44,6 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
         address indexed beneficiary, uint256 indexed scheduleId, uint256 amount, uint256 startTime
     );
     event LilypadVesting__l2TokensReleased(address indexed beneficiary, uint256 indexed scheduleId, uint256 amount);
-    event LilypadVesting__VestingRoleGranted(address indexed account, address indexed caller);
-    event LilypadVesting__VestingRoleRevoked(address indexed account, address indexed caller);
 
     error LilypadVesting__ZeroAddressNotAllowed();
     error LilypadVesting__InvalidVestingSchedule();
@@ -59,9 +57,6 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
     error LilypadVesting__InvalidDuration();
     error LilypadVesting__InvalidScheduleId();
     error LilypadVesting__InsufficientBalanceToWithdraw();
-    error LilypadVesting__RoleAlreadyAssigned();
-    error LilypadVesting__RoleNotFound();
-    error LilypadVesting__CannotRevokeOwnRole();
 
     constructor(address _l2TokenAddress) {
         if (_l2TokenAddress == address(0)) {
@@ -70,39 +65,6 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.VESTING_ROLE, msg.sender);
         l2LilypadToken = IERC20(_l2TokenAddress);
-    }
-
-    /**
-     * @dev Grants the controller role to a specified account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` already has the controller role
-     * - Emits a `VestingRoleGranted` event upon successful role assignment
-     */
-    function grantVestingRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) revert LilypadVesting__ZeroAddressNotAllowed();
-        if (hasRole(SharedStructs.VESTING_ROLE, account)) revert LilypadVesting__RoleAlreadyAssigned();
-        _grantRole(SharedStructs.VESTING_ROLE, account);
-        emit LilypadVesting__VestingRoleGranted(account, msg.sender);
-    }
-
-    /**
-     * @dev Revokes the vesting role from an account
-     * @notice
-     * - Only accounts with the `DEFAULT_ADMIN_ROLE` can call this function
-     * - Reverts if the `account` is the zero address
-     * - Reverts if the `account` does not have the vesting role
-     * - Reverts if trying to revoke own role
-     * - Emits a `VestingRoleRevoked` event upon successful role revocation
-     */
-    function revokeVestingRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (account == address(0)) revert LilypadVesting__ZeroAddressNotAllowed();
-        if (!hasRole(SharedStructs.VESTING_ROLE, account)) revert LilypadVesting__RoleNotFound();
-        if (account == msg.sender) revert LilypadVesting__CannotRevokeOwnRole();
-
-        _revokeRole(SharedStructs.VESTING_ROLE, account);
-        emit LilypadVesting__VestingRoleRevoked(account, msg.sender);
     }
 
     /**

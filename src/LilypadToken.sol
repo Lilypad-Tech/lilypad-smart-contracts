@@ -36,8 +36,6 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
     error LilypadToken__MaxSupplyReached();
     error LilypadToken__AmountMustBeGreaterThanZero();
     error LilypadToken__InvalidAddress();
-    error LilypadToken__AlreadyMinter();
-    error LilypadToken__NotMinter();
 
     ////////////////////////////////
     // Modifiers
@@ -74,30 +72,6 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
     function setAlpha(uint256 _alpha) external onlyRole(DEFAULT_ADMIN_ROLE) {
         alpha = _alpha;
         emit LilypadToken__AlphaUpdated(_alpha);
-    }
-
-    function addMinter(address minter) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
-        if (minter == address(0)) {
-            revert LilypadToken__InvalidAddress();
-        }
-        if (hasRole(SharedStructs.MINTER_ROLE, minter)) {
-            revert LilypadToken__AlreadyMinter();
-        }
-
-        _grantRole(SharedStructs.MINTER_ROLE, minter);
-        return true;
-    }
-
-    function removeMinter(address minter) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
-        if (minter == address(0)) {
-            revert LilypadToken__InvalidAddress();
-        }
-        if (!hasRole(SharedStructs.MINTER_ROLE, minter)) {
-            revert LilypadToken__NotMinter();
-        }
-
-        _revokeRole(SharedStructs.MINTER_ROLE, minter);
-        return true;
     }
 
     function mint(address to, uint256 amount)
