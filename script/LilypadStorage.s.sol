@@ -9,7 +9,7 @@ contract DeployLilypadStorage is Script {
     function run() external returns (address) {
         //Note: This is the address[0] from anvil only meant for testing
         //TODO: Change this to the address of the initial owner
-        address initialOwner = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+        address initialOwner = vm.envAddress("INITIAL_OWNER_ADDRESS_FOR_PROXY_ADMIN");
 
         vm.startBroadcast();
 
