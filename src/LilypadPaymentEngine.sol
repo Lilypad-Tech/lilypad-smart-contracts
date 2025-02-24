@@ -15,7 +15,12 @@ import {SharedStructs} from "./SharedStructs.sol";
  * @title LilypadPaymentEngine
  * @dev Implementation of the LilypadPaymentEngine contract
  */
-contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable {
+contract LilypadPaymentEngine is
+    ILilypadPaymentEngine,
+    Initializable,
+    AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     ////////////////////////////////
     ///////// State Variables //////
     ////////////////////////////////

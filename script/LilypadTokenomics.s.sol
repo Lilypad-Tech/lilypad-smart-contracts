@@ -17,11 +17,7 @@ contract DeployLilypadTokenomics is Script {
         bytes memory initData = abi.encodeWithSelector(LilypadTokenomics.initialize.selector);
 
         // 2. Deploy the proxy contract pointing to the implementation
-        address proxy = Upgrades.deployTransparentProxy(
-            "LilypadTokenomics.sol",
-            initialOwner,
-            initData
-        );
+        address proxy = Upgrades.deployTransparentProxy("LilypadTokenomics.sol", initialOwner, initData);
 
         vm.stopBroadcast();
 

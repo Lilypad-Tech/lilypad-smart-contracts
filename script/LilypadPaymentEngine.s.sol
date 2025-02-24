@@ -35,19 +35,16 @@ contract DeployLilypadPaymentEngine is Script {
             validationPool
         );
 
-        address paymentEngineProxy = Upgrades.deployTransparentProxy(
-            "LilypadPaymentEngine.sol",
-            initialOwner,
-            initData
-        );
+        address paymentEngineProxy = Upgrades.deployTransparentProxy("LilypadPaymentEngine.sol", initialOwner, initData);
 
         return paymentEngineProxy;
     }
     /**
-        Note: Once the payment engine is deployed, the roles need to be set manually:
-            - The lilypad user contract needs to grant the payment engine the CONTROLLER_ROLE
-            - The lilypad storage contract needs to grant the payment engine the CONTROLLER_ROLE
+     * Note: Once the payment engine is deployed, the roles need to be set manually:
+     *         - The lilypad user contract needs to grant the payment engine the CONTROLLER_ROLE
+     *         - The lilypad storage contract needs to grant the payment engine the CONTROLLER_ROLE
      */
+
     function run() external returns (address) {
         address lilypadTokenAddress = vm.envAddress("L2_TOKEN_PROXY_ADDRESS");
         address lilypadStorageAddress = vm.envAddress("STORAGE_PROXY_ADDRESS");

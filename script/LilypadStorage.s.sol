@@ -17,11 +17,7 @@ contract DeployLilypadStorage is Script {
         bytes memory initData = abi.encodeWithSelector(LilypadStorage.initialize.selector);
 
         // 2. Deploy the proxy contract pointing to the implementation
-        address proxy = Upgrades.deployTransparentProxy(
-            "LilypadStorage.sol",
-            initialOwner,
-            initData
-        );
+        address proxy = Upgrades.deployTransparentProxy("LilypadStorage.sol", initialOwner, initData);
 
         vm.stopBroadcast();
 

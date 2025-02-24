@@ -98,7 +98,7 @@ contract LilypadModuleDirectoryTest is Test {
         vm.expectEmit(true, true, true, true);
         emit IAccessControl.RoleGranted(SharedStructs.CONTROLLER_ROLE, newController, address(this));
         moduleDirectory.grantRole(SharedStructs.CONTROLLER_ROLE, newController);
-        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));  
+        assertTrue(moduleDirectory.hasRole(SharedStructs.CONTROLLER_ROLE, newController));
 
         // Test already assigned role
         moduleDirectory.grantRole(SharedStructs.CONTROLLER_ROLE, newController);

@@ -17,11 +17,7 @@ contract DeployLilypadUser is Script {
         bytes memory initData = abi.encodeWithSelector(LilypadUser.initialize.selector);
 
         // 2. Deploy the proxy contract pointing to the implementation.  Take note of the proxy address that is returned as this will be the address users will interact with
-        address proxy = Upgrades.deployTransparentProxy(
-            "LilypadUser.sol",
-            initialOwner,
-            initData
-        );
+        address proxy = Upgrades.deployTransparentProxy("LilypadUser.sol", initialOwner, initData);
 
         vm.stopBroadcast();
 

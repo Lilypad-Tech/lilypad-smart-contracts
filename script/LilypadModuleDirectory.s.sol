@@ -19,14 +19,11 @@ contract DeployLilypadModuleDirectory is Script {
         vm.startBroadcast();
 
         // 1. Encode the initialization data
-        bytes memory initData = abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector, lilypadUserProxyAddress);
+        bytes memory initData =
+            abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector, lilypadUserProxyAddress);
 
         // 2. Deploy the proxy contract pointing to the implementation
-        address proxy = Upgrades.deployTransparentProxy(
-            "LilypadModuleDirectory.sol",
-            initialOwner,
-            initData
-        );
+        address proxy = Upgrades.deployTransparentProxy("LilypadModuleDirectory.sol", initialOwner, initData);
 
         vm.stopBroadcast();
 
