@@ -20,7 +20,7 @@ contract DeployLilypadProxy is Script {
 
         address lilypadTokenAddress = vm.envAddress("L2_TOKEN_PROXY_ADDRESS");
         address lilypadStorageAddress = vm.envAddress("STORAGE_PROXY_ADDRESS");
-        address lilypadUserAddress = vm.envAddress("LILYPAD_USER_PROXY_ADDRESS");
+        address lilypadUserAddress = vm.envAddress("USER_PROXY_ADDRESS");
         address lilypadPaymentEngineAddress = vm.envAddress("PAYMENT_ENGINE_PROXY_ADDRESS");
 
         vm.startBroadcast();

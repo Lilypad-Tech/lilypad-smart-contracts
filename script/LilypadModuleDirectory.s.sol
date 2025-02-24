@@ -14,7 +14,7 @@ contract DeployLilypadModuleDirectory is Script {
         address initialOwner = vm.envAddress("INITIAL_OWNER_ADDRESS_FOR_PROXY_ADMIN");
 
         //TODO: Add the actual address of the deployed lilypad user proxy contract here
-        address lilypadUserProxyAddress = vm.envAddress("LILYPAD_USER_PROXY_ADDRESS");
+        address lilypadUserProxyAddress = vm.envAddress("USER_PROXY_ADDRESS");
 
         vm.startBroadcast();
 
