@@ -13,6 +13,8 @@ contract DeployLilypadToken is Script {
 
         vm.stopBroadcast();
 
+        console.log("LilypadToken deployed at:", address(implementation));
+
         return address(implementation);
     }
 }
