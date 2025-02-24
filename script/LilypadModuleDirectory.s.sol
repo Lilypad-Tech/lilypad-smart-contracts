@@ -8,6 +8,11 @@ import {LilypadUser} from "../src/LilypadUser.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract DeployLilypadModuleDirectory is Script {
+
+    /**
+     * Note: Once the Module Directory proxy is deployed, the roles need to be set manually:
+     *     - The lilypad user contract needs to grant the Module Directory proxy the CONTROLLER_ROLE
+     */
     function run() external returns (address) {
         //Note: This is the address[0] from anvil only meant for testing
         //TODO: Change this to the address of the initial owner
