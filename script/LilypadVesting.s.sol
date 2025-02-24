@@ -14,7 +14,7 @@ contract DeployLilypadVesting is Script {
          *       - The address of the L2 token will be passed into the constructor of this contract
          *       - If testsing locally via anvil, you can deploy the LilypadToken first and then save that address into the L2_TOKEN_ADDRESS environment variable
          */
-        address lilypadL2TokenAddress = vm.envAddress("L2_TOKEN_ADDRESS");
+        address lilypadL2TokenAddress = vm.envAddress("L2_TOKEN_PROXY_ADDRESS");
         LilypadVesting vestingContract = new LilypadVesting(lilypadL2TokenAddress);
 
         vm.stopBroadcast();
