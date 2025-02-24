@@ -8,36 +8,9 @@ import {LilypadStorage} from "../src/LilypadStorage.sol";
 import {LilypadUser} from "../src/LilypadUser.sol";
 import {LilypadTokenomics} from "../src/LilypadTokenomics.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract DeployLilypadPaymentEngine is Script {
-    function deployToken() internal returns (LilypadToken) {
-        // This is a test supply for test deployment purposes
-        uint256 initialSupply = 10_000_000 * 10 ** 18;
-        return new LilypadToken(initialSupply);
-    }
-
-    function deployStorage() internal returns (LilypadStorage, address) {
-        LilypadStorage storageImpl = new LilypadStorage();
-        bytes memory initData = abi.encodeWithSelector(LilypadStorage.initialize.selector);
-        ERC1967Proxy proxy = new ERC1967Proxy(address(storageImpl), initData);
-        return (LilypadStorage(address(proxy)), address(proxy));
-    }
-
-    function deployUser() internal returns (LilypadUser, address) {
-        LilypadUser userImpl = new LilypadUser();
-        bytes memory initData = abi.encodeWithSelector(LilypadUser.initialize.selector);
-        ERC1967Proxy proxy = new ERC1967Proxy(address(userImpl), initData);
-        return (LilypadUser(address(proxy)), address(proxy));
-    }
-
-    function deployTokenomics() internal returns (LilypadTokenomics, address) {
-        LilypadTokenomics tokenomicsImpl = new LilypadTokenomics();
-        bytes memory initData = abi.encodeWithSelector(LilypadTokenomics.initialize.selector);
-        ERC1967Proxy proxy = new ERC1967Proxy(address(tokenomicsImpl), initData);
-        return (LilypadTokenomics(address(proxy)), address(proxy));
-    }
-
     function deployEngine(
         address token,
         address storage_,
@@ -46,8 +19,11 @@ contract DeployLilypadPaymentEngine is Script {
         address treasury,
         address rewards,
         address validationPool
-    ) internal returns (LilypadPaymentEngine, address) {
-        LilypadPaymentEngine engineImpl = new LilypadPaymentEngine();
+    ) internal returns (address) {
+        // Note: This is the address[0] from anvil only meant for testing
+        // TODO: Change this to the address of the initial owner
+        address initialOwner = vm.envAddress("INITIAL_OWNER_ADDRESS_FOR_PROXY_ADMIN");
+
         bytes memory initData = abi.encodeWithSelector(
             LilypadPaymentEngine.initialize.selector,
             token,
@@ -58,41 +34,46 @@ contract DeployLilypadPaymentEngine is Script {
             rewards,
             validationPool
         );
-        ERC1967Proxy proxy = new ERC1967Proxy(address(engineImpl), initData);
-        return (LilypadPaymentEngine(address(proxy)), address(proxy));
-    }
 
-    function run() external {
-        vm.startBroadcast();
-
-        // Deploy contracts
-        LilypadToken token = deployToken();
-        (LilypadStorage lilypadStorage, address storageProxy) = deployStorage();
-        (LilypadUser user, address userProxy) = deployUser();
-        (LilypadTokenomics tokenomics, address tokenomicsProxy) = deployTokenomics();
-        (LilypadPaymentEngine paymentEngine, address engineProxy) = deployEngine(
-            address(token),
-            address(lilypadStorage),
-            address(user),
-            address(tokenomics),
-            // These are test wallets from anvil for testing purposes
-            0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // treasury
-            0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // valueRewards
-            0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 // validationPool
+        address paymentEngineProxy = Upgrades.deployTransparentProxy(
+            "LilypadPaymentEngine.sol",
+            initialOwner,
+            initData
         );
 
-        // Setup roles
-        user.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
-        lilypadStorage.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
-        paymentEngine.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
+        return paymentEngineProxy;
+    }
+    /**
+        Note: Once the payment engine is deployed, the roles need to be set manually:
+            - The lilypad user contract needs to grant the payment engine the CONTROLLER_ROLE
+            - The lilypad storage contract needs to grant the payment engine the CONTROLLER_ROLE
+     */
+    function run() external returns (address) {
+        address lilypadTokenAddress = vm.envAddress("L2_TOKEN_PROXY_ADDRESS");
+        address lilypadStorageAddress = vm.envAddress("STORAGE_PROXY_ADDRESS");
+        address lilypadUserAddress = vm.envAddress("LILYPAD_USER_PROXY_ADDRESS");
+        address lilypadTokenomicsAddress = vm.envAddress("TOKENOMICS_PROXY_ADDRESS");
+        address treasuryAddress = vm.envAddress("TREASURY_WALLET_ADDRESS");
+        address valueRewardsAddress = vm.envAddress("REWARDS_WALLET_ADDRESS");
+        address validationPoolAddress = vm.envAddress("VALIDATION_POOL_WALLET_ADDRESS");
 
-        console.log("Deployment Addresses:");
-        console.log("Token:", address(token));
-        console.log("Storage:", storageProxy);
-        console.log("User:", userProxy);
-        console.log("Tokenomics:", tokenomicsProxy);
-        console.log("Payment Engine:", engineProxy);
+        vm.startBroadcast();
+
+        // Deploy contract
+        address paymentEngineProxy = deployEngine(
+            lilypadTokenAddress,
+            lilypadStorageAddress,
+            lilypadUserAddress,
+            lilypadTokenomicsAddress,
+            treasuryAddress,
+            valueRewardsAddress,
+            validationPoolAddress
+        );
 
         vm.stopBroadcast();
+
+        console.log("Payment Engine:", paymentEngineProxy);
+
+        return paymentEngineProxy;
     }
 }
