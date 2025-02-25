@@ -8,7 +8,7 @@ You can learn more about Lilypad by visiting our [docs page](https://docs.lilypa
 
 ### Job Creators
 
-Job creators are users who create jobs that are executed on the Lilypad network.
+Job creators are users who run jobs that are executed on the Lilypad network.
 
 ### Resource Providers
 
