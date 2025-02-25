@@ -127,7 +127,7 @@ forge script script/LilypadToken.s.sol:DeployLilypadToken -rpc-url https://1rpc.
 Make note of the address of proxy contract deployed and add it to the .env file as L1_TOKEN_ADDRESS for reference
 
 ### Bridging the token to Arbitrum
-Note: This only needed when deploying to testnet and can be skipped if you are deploying locally through anvil.  To get around this step for local testting, you can simply deploy the token locally and then use the token address as the L2_TOKEN_PROXY_ADDRESS in your .env file.
+Note: This only needed when deploying to testnet and can be skipped if you are deploying locally through anvil.  To get around this step for local deploment, you can simply just use the address of the L1_TOKEN_ADDRESS as the L2_TOKEN_PROXY_ADDRESS in your .env file and move on to step 5.
 
 To bridge the token to Arbitrum, you will need to use the Arbitrum Bridge.  You will need to have some Sepolia ETH in your wallet to pay for the bridge fee.
 
