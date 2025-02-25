@@ -56,7 +56,7 @@ The Lilypad protocol is a set of smart contracts that are used to power the Lily
 - **LilypadTokenomics** : A contract that stores the tokenomics values used in the protocol
 - **LilypadContractRegistry** : A contract that stores all the addresses of the contracts in the protocol
 
-With the exception of the Tokena and Vesting Contracts, all other contracts are upgradable via the use of the OpenZeppelin Upgrades Plugin.
+With the exception of the Token and Vesting Contracts, all other contracts are upgradable using the OpenZeppelin Upgrades Plugin.
 
 ## Foundry Documentation
 
