@@ -35,7 +35,7 @@ A deal is a match between a Job Creator who wants to run a module on the network
 
 ### Result
 
-A result is the output of a job that has been run on the network. Sensitive details about the result are not stored on-chain
+A result is metadata about a job that has run on the network. Sensitive details about the result and actual job outputs are not stored on-chain.
 
 ### Validation Results
 
