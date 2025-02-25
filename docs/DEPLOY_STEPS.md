@@ -9,6 +9,7 @@ To deploy the Lilypad protocol contracts, we need to follow a specific deploymen
 - LilypadPaymentEngine
 - LilypadProxy
 - LilypadVesting
+- LilypadContractRegistry
 
 The deployment scripts use the OpenZepplin Upgrade library as a large amount of the core contracts are upgradable (folliowing the TransparentProxy pattern), you learn more using that library with foundry [here](https://docs.openzeppelin.com/upgrades-plugins/foundry-upgrades).
 
@@ -255,7 +256,41 @@ forge script script/LilypadVesting.s.sol:DeployLilypadVesting -rpc-url https://a
 
 Make note of the address of the contract deployed and add it to the .env file as VESTING_ADDRESS
 
-## 9. Granting roles to the various contracts
+## 9. Deploy the Lilypad Contract Registry
+
+The Lilypad Contract Registry is the ninth contract to be deployed. It is used as a registry of all the contracts in the Lilypad protocol. Choose the command that corresponds to the network you are deploying to.
+
+Dependencies:
+- The Lilypad User Proxy Contract
+- The Lilypad Storage Proxy Contract
+- The Lilypad Tokenomics Proxy Contract
+- The Lilypad Payment Engine Proxy Contract
+- The Lilypad L2 Token Proxy Contract
+- The L1 Lilypad Token Contract 
+- The Lilypad Vesting Contract
+- The Lilypad Module Directory Proxy Contract
+
+Anvil:
+
+```shell
+forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
+```
+
+Arbitrum Sepolia:
+
+```shell
+forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
+```
+
+Arbitrum Sepolia with verification:
+
+```shell
+forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+```
+
+Make note of the contract address once deployed for record keeping purposes
+
+## 10. Granting roles to the various contracts
 
 The following steps are to grant the necessary roles to the various contracts.  This is to ensure that the contracts are properly configured and working together.  You will need to interact with the contracts using the `INITIAL_OWNER_ADDRESS_FOR_PROXY_ADMIN` wallet as this one will be granted the DEFAULT_ADMIN_ROLE after every deployment.
 
