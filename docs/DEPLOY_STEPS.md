@@ -11,10 +11,10 @@ To deploy the Lilypad protocol contracts, we need to follow a specific deploymen
 - LilypadVesting
 - LilypadContractRegistry
 
-The deployment scripts use the OpenZepplin Upgrade library as a large amount of the core contracts are upgradable (folliowing the TransparentProxy pattern), you learn more using that library with foundry [here](https://docs.openzeppelin.com/upgrades-plugins/foundry-upgrades).
+The deployment scripts use the OpenZepplin Upgrade library as a large amount of the core contracts are upgradable (folliowing the TransparentProxy pattern), you learn more about how to use that library with foundry [here](https://docs.openzeppelin.com/upgrades-plugins/foundry-upgrades).
 
-A note on proxy contracts:
-A proxy contract is a contract that acts as the main usage point for the contract when it's deployed.  It points to the actual implementation contract in its storage slot and then delegates calls to it.  This allows for the implementation contract to be upgraded without having to deploy a new proxy contract.
+A note on transparent proxy contracts:
+A transparent proxy contract is a contract that acts as the main usage point for the contract when it's deployed.  It points to the actual implementation contract in its storage slot and then delegates calls to it.  This allows for the implementation contract to be upgraded without having to deploy a new proxy contract.
 
 There are many gotcha's with proxt contracts such as storage slot collisions, contract inheritance issues, function collision and the like.  Below are some great resources from OpenZeppelin that cover these topics:
 - [Proxy Upgrade Patterns](https://docs.openzeppelin.com/upgrades-plugins/proxies)
@@ -41,7 +41,7 @@ Additionally, the `INITIAL_OWNER_ADDRESS_FOR_PROXY_ADMIN` variable is also set t
 
 The Lilypad User contract is the first contract to be deployed. It is used to manage user accounts and their associated data.  Choose the command that corresponds to the network you are deploying to.
 
-Anvil:
+Anvil (Anvil private key used below):
 ```shell
 forge script script/LilypadUser.s.sol:DeployLilypadUser --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
 ```
@@ -60,9 +60,9 @@ Make note of the address of proxy contract deployed and add it to the .env file 
 
 ## 2. Deploy the Lilypad Storage Contract
 
-The Lilypad Storage contract is the second contract to be deployed. It is used to manage the storage of deals, results and validations forthe Lilypad protocol. Choose the command that corresponds to the network you are deploying to.
+The Lilypad Storage contract is the second contract to be deployed. It is used to manage the storage of deals, results and validations for the Lilypad protocol. Choose the command that corresponds to the network you are deploying to.
 
-Anvil:
+Anvil (Anvil private key used below):
 ```shell
 forge script script/LilypadStorage.s.sol:DeployLilypadStorage --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
 ```
@@ -83,7 +83,7 @@ Make note of the address of proxy contract deployed and add it to the .env file 
 
 The Lilypad Tokenomics contract is the third contract to be deployed. It is used to manage the tokenomics of the Lilypad protocol. Choose the command that corresponds to the network you are deploying to.
 
-Anvil:
+Anvil (Anvil private key used below):
 
 ```shell
 forge script script/LilypadTokenomics.s.sol:DeployLilypadTokenomics --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
@@ -107,7 +107,7 @@ Make note of the address of proxy contract deployed and add it to the .env file 
 
 The Lilypad Token contract is the fourth contract to be deployed. It is used to manage the token of the Lilypad protocol.  The token is to be deployed on a L1 network and then bridged to the L2 network. Choose the command that corresponds to the network you are deploying to.
 
-Anvil:
+Anvil (Anvil private key used below):
 
 ```shell
 forge script script/LilypadToken.s.sol:DeployLilypadToken --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
@@ -149,7 +149,7 @@ The Module Directory contract is the fifth contract to be deployed. It is used t
 Dependencies:
 - The Lilpad User Proxy Contract
 
-Anvil:
+Anvil (Anvil private key used below):
 
 ```shell
 forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
@@ -179,7 +179,7 @@ Dependencies:
 - The Lilypad Storage Proxy Contract
 - The Lilypad L2 Token Proxy Contract
 
-Anvil:
+Anvil (Anvil private key used below):
 
 ```shell
 forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
@@ -209,7 +209,7 @@ Dependencies:
 - The Lilypad Payment Engine Proxy Contract
 - The Lilypad L2 Token Proxy Contract
 
-Anvil:
+Anvil (Anvil private key used below):
 
 ```shell
 forge script script/LilypadProxy.s.sol:DeployLilypadProxy --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
@@ -231,12 +231,12 @@ Make note of the address of proxy contract deployed and add it to the .env file 
 
 ## 8. Deploy the Lilypad Vesting Contract
 
-The Lilypad Vesting contract is the eighth contract to be deployed. It is used to manage the vesting of the Lilypad protocol.  This contract will be deployed to the l2 network using the l2 token proxy address. Choose the command that corresponds to the network you are deploying to.
+The Lilypad Vesting contract is the eighth contract to be deployed. It is used to manage the vesting of the Lilypad protocol.  This contract will be deployed to the l2 network having the l2 token as a dependency. Choose the command that corresponds to the network you are deploying to.
 
 Dependencies:
 - The Lilypad L2 Token Proxy Contract
 
-Anvil:
+Anvil (Anvil private key used below):
 
 ```shell
 forge script script/LilypadVesting.s.sol:DeployLilypadVesting --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
@@ -270,7 +270,7 @@ Dependencies:
 - The Lilypad Vesting Contract
 - The Lilypad Module Directory Proxy Contract
 
-Anvil:
+Anvil (Anvil private key used below):
 
 ```shell
 forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
