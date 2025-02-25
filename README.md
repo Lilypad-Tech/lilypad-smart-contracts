@@ -16,7 +16,7 @@ Resource providers are users who provide their hardware resources that allow job
 
 ### Module Creators
 
-Module Creators are the "app builders" of the Lilypad ecosystem wbo create compute jobs that can be run on the network.
+Module Creators are the "app builders" of the Lilypad ecosystem who create modules that run as jobs on the network.
 
 ### Module
 Modules are the compute jobs that are run on the Lilypad network of Resource Provider nodes.  [Here is an example of a module](https://github.com/narbs91/lilypad-ollama-deepseek-r1-1-5b) allowing users to run the deepseek 1.5b model for inference
