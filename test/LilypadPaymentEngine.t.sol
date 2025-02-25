@@ -97,12 +97,9 @@ contract LilypadPaymentEngineTest is Test {
         paymentEngine = LilypadPaymentEngine(address(engineProxy));
 
         // Setup roles
-        token.grantRole(SharedStructs.MINTER_ROLE, address(this));
-        user.grantRole(SharedStructs.CONTROLLER_ROLE, address(this));
         user.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
         lilypadStorage.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
         paymentEngine.grantRole(SharedStructs.CONTROLLER_ROLE, address(paymentEngine));
-        paymentEngine.grantRole(bytes32(0x00), address(this));
 
         // Setup test accounts
         token.mint(ALICE, INITIAL_BALANCE);

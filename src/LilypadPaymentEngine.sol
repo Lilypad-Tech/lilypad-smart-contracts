@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {ILilypadPaymentEngine} from "./interfaces/ILilypadPaymentEngine.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LilypadStorage} from "./LilypadStorage.sol";
 import {LilypadUser} from "./LilypadUser.sol";
@@ -15,7 +15,12 @@ import {SharedStructs} from "./SharedStructs.sol";
  * @title LilypadPaymentEngine
  * @dev Implementation of the LilypadPaymentEngine contract
  */
-contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessControlUpgradeable, ReentrancyGuard {
+contract LilypadPaymentEngine is
+    ILilypadPaymentEngine,
+    Initializable,
+    AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     ////////////////////////////////
     ///////// State Variables //////
     ////////////////////////////////
@@ -180,6 +185,7 @@ contract LilypadPaymentEngine is ILilypadPaymentEngine, Initializable, AccessCon
         if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
 
         __AccessControl_init();
+        __ReentrancyGuard_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
 
