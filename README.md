@@ -39,7 +39,7 @@ A result is metadata about a job that has run on the network. Sensitive details 
 
 ### Validation Results
 
-A validation result is the output of a process to check the correctness of a result.
+A validation result is the output of a process to check the correctness of a job run.
 
 ## Lilypad Protocol
 
