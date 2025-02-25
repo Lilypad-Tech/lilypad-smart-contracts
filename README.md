@@ -1,24 +1,99 @@
-## Foundry
+# Lilypad Network
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+The Lilypad Network is a distributed compute network powering AI inference with a three sided marketplace for users, hardware providers and app builders.
 
-Foundry consists of:
+You can learn more about Lilypad by visiting our docs page [here](https://docs.lilypad.tech).
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## Actors in the Lilypad ecosystem and nomenclature
 
-## Documentation
+### Job Creators
 
-https://book.getfoundry.sh/
+Job creators are users who create jobs that are executed on the Lilypad network.
+
+### Resource Providers
+
+Resource providers are users who provide their hardware resources that allow jobs to run on the network.
+
+### Module Creators
+
+Module Creators are the "app builders" of the Lilypad ecosystem wbo create compute jobs that can be run on the network.
+
+### Module
+Modules are the compute jobs that are run on the Lilypad network of Resource Provider nodes.  [Here is an example of a module](https://github.com/narbs91/lilypad-ollama-deepseek-r1-1-5b) allowing users to run the deepseek 1.5b model for inference
+
+### Validators
+
+Validators are users in the network who validate the work done by Resource Providers to ensure that the work is correct and meets the requirements of the job creator.
+
+### Solver
+
+The Solver is the match maker in the network that matches Job Creator who want to run jobs with Resource Providers who are capable and willing to run them. The result of a match is a deal and the Solver earns a fee for the creation of each deal.
+
+### Deal
+
+A deal is a request from a Job Creator to run a module on the network that has been matched to a Resource Provider.  Sensitive details about the deal are not stored on-chain
+
+### Result
+
+A result is the output of a job that has been run on the network. Sensitive details about the result are not stored on-chain
+
+### Validation Results
+
+A validation result is the output of a process to check the correctness of a result.
+
+## Lilypad Protocol
+
+The Lilypad protocol is a set of smart contracts that are used to power the Lilypad network. At a high level, the protocol represents a DeFi protocol allowing people to deposit LILY tokens to be able to request and run compute jobs, moving funds around for various actors when a job is complete, and supporting storage of data.  Here are the contracts that make up the protocol:
+
+- **LilypadUser** : A contract that allows for the creation and management of users on the network
+- **LilypadStorage** : A contract that allows for the storage of deals, results and validation results on the network
+- **LilypadToken** : A contract that represents the LILY token on the network
+- **LilypadModuleDirectory** : A contract that allows for the creation and management of modules on the network
+- **LilypadPaymentEngine** : The contract that represents the core payment rails of the protocol allowing for escrow deposits and payouts
+- **LilypadValidation** : A contract that allows for the validation of modules on the network (This is currently incomplete and slated for a future release)
+- **LilypadVesting** : A contract that allows for the vesting of tokens on the network for various stakeholders
+- **LilypadProxy** : The main access point for users of the protocol
+- **LilypadTokenomics** : A contract that stores the tokenomics values used in the protocol
+- **LilypadContractRegistry** : A contract that stores all the addresses of the contracts in the protocol
+
+With the exception of the Tokena and Vesting Contracts, all other contracts are upgradable via the use of the OpenZeppelin Upgrades Plugin.
+
+## Foundry Documentation
+
+This project uses [Foundry](https://getfoundry.sh/) to compile, test and deploy the contracts.
+
+For more information on Foundry, please refer to the [Foundry Book](https://book.getfoundry.sh/).
 
 ## Usage
 
-### Build
+### Install Foundry
 
 ```shell
+$ curl -L https://foundry.paradigm.xyz | bash
+```
+
+### Install Dependencies
+
+```shell
+$ forge install
+```
+
+### Clean
+
+```shell
+$ forge clean
+```
+
+### Build
+
+Regular build
+```shell
 $ forge build
+```
+
+Build with contract sizes
+```shell
+$ forge build --sizes
 ```
 
 ### Test
@@ -45,52 +120,9 @@ $ forge snapshot
 $ anvil
 ```
 
-### Deploy
+### Deploying the Contracts
 
-```shell
-forge script script/LilypadUser.s.sol:DeployLilypadUser --rpc-url <your_rpc_url> --private-key <your_private_key>
-
-forge script script/LilypadStorage.s.sol:DeployLilypadStorage --rpc-url <your_rpc_url> --private-key <your_private_key>
-
-forge script script/LilypadToken.s.sol:DeployLilypadToken --rpc-url <your_rpc_url> --private-key <your_private_key>
-
-forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory --rpc-url <your_rpc_url> --private-key <your_private_key>
-
-forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine --rpc-url <your_rpc_url> --private-key <your_private_key>
-
-forge script script/LilypadValidation.s.sol:DeployLilypadValidation --rpc-url <your_rpc_url> --private-key <your_private_key>
-
-forge script script/LilypadVesting.s.sol:DeployLilypadVesting --rpc-url <your_rpc_url> --private-key <your_private_key>
-
-forge script script/LilypadProxy.s.sol:DeployLilypadProxy --rpc-url <your_rpc_url> --private-key <your_private_key>
-
-forge script script/LilypadTokenomics.s.sol:DeployLilypadTokenomics --rpc-url <your_rpc_url> --private-key <your_private_key>
-
-forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-Deploy on Anvil testnet node:
-```shell
-forge script script/LilypadUser.s.sol:DeployLilypadUser --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-
-forge script script/LilypadToken.s.sol:DeployLilypadToken --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-
-forge script script/LilypadStorage.s.sol:DeployLilypadStorage --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-
-forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-
-forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-
-forge script script/LilypadValidation.s.sol:DeployLilypadValidation --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-
-forge script script/LilypadVesting.s.sol:DeployLilypadVesting --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-
-forge script script/LilypadProxy.s.sol:DeployLilypadProxy --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-
-forge script script/LilypadTokenomics.s.sol:DeployLilypadTokenomics --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-
-forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
-```
+Please refer to the [Deploy](./docs/DEPLOY_STEPS.md) file for more information on how to deploy the contracts locally and to a testnet.
 
 ### Cast
 
