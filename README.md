@@ -31,7 +31,7 @@ The Solver is the match maker in the network that matches Job Creators who want 
 
 ### Deal
 
-A deal is a request from a Job Creator to run a module on the network that has been matched to a Resource Provider.  Sensitive details about the deal are not stored on-chain
+A deal is a match between a Job Creator who wants to run a module on the network and a Resource Provider who will run the job.  Sensitive details about the deal are not stored on-chain
 
 ### Result
 
