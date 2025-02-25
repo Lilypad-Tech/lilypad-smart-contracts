@@ -2,7 +2,7 @@
 
 The Lilypad Network is a distributed compute network powering AI inference with a three-sided marketplace for users, hardware providers and app builders.
 
-You can learn more about Lilypad by visiting our docs page [here](https://docs.lilypad.tech).
+You can learn more about Lilypad by visiting our [docs page](https://docs.lilypad.tech).
 
 ## Actors in the Lilypad ecosystem and nomenclature
 
