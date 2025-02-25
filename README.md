@@ -27,7 +27,7 @@ Validators are users in the network who validate the work done by Resource Provi
 
 ### Solver
 
-The Solver is the match maker in the network that matches Job Creator who want to run jobs with Resource Providers who are capable and willing to run them. The result of a match is a deal and the Solver earns a fee for the creation of each deal.
+The Solver is the match maker in the network that matches Job Creators who want to run jobs with Resource Providers who are capable and willing to run them. The result of a match is a deal and the Solver earns a fee for the creation of each deal.
 
 ### Deal
 
