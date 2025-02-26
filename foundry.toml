@@ -30,3 +30,6 @@ single_line_statement_blocks = 'preserve'
 ignore = ["src/console.sol", "src/console2.sol"]
 
 gas_reports = ["*"]
+
+[etherscan]
+arbitrum-sepolia = { key = "${ARBISCAN_API_KEY}", url = "https://api-sepolia.arbiscan.io/api" }
