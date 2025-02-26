@@ -24,6 +24,6 @@ contract DeployLilypadStorage is Script {
         console.log("LilypadStorage deployed at:", address(proxy));
 
         // Return the proxy address - this is the address users will interact with
-        return address(proxy);
+        return proxy;
     }
 }
