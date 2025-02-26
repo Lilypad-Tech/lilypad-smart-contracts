@@ -32,6 +32,6 @@ contract DeployLilypadModuleDirectory is Script {
         vm.stopBroadcast();
 
         // Return the proxy address - this is the address users will interact with
-        return address(proxy);
+        return proxy;
     }
 }
