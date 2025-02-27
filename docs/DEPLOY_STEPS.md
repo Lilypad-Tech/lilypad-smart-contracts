@@ -25,7 +25,7 @@ There are many gotcha's with proxt contracts such as storage slot collisions, co
 - A private key for the deployer (this will be the admin of the proxy contracts and the admin of the contracts)
 - The deployer's address (this will be the admin of the proxy contracts and the admin of the contracts)
 
-- Note: If you would like to verify the contract deployments, this will require you to have an API Key from Arbiscan to work and set in your enviroment variables as ARBISCAN_API_KEY
+- Note: If you would like to verify the contract deployments, this will require you to have an API Key from Arbiscan and Etherscan to work and set in your enviroment variables as ARBISCAN_API_KEY and ETHERSCAN_API_KEY respectively.
 
 - Note: If you manke any changes to the contracts after the initial deployment, you will need to run `forge clean && forge build` again to ensure the contract bytecode is up to date.
 
@@ -168,6 +168,14 @@ forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory -r
 ```
 
 Make note of the address of proxy contract deployed and add it to the .env file as MODULE_DIRECTORY_PROXY_ADDRESS for reference
+
+### Upgrading the Module Directory Contract
+
+As an example of how to upgrade the Module Directory Contract, we have a mock script that can be used to upgrade the contract to a new implementation.  This script is only meant for auditors to assess the correctness of the upgrade process as all the other contracts will then have a similar upgrade process. While not applicatiable to this particular contract, if other contracts require new variable to be set (i.e. those that are set in the initialize function), we will be calling the corresponding setter functions defined for those variable after the upgrade has completed.
+
+```shell
+forge script script/upgrades/MockUpgradeLilypadModuleDirectory.s.sol:MockUpgradeLilypadModuleDirectory --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
+```
 
 ## 6. Deploy the Payment Engine Contract
 
