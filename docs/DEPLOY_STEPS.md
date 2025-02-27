@@ -173,6 +173,8 @@ Make note of the address of proxy contract deployed and add it to the .env file 
 
 As an example of how to upgrade the Module Directory Contract, we have a mock script that can be used to upgrade the contract to a new implementation.  This script is only meant for auditors to assess the correctness of the upgrade process as all the other contracts will then have a similar upgrade process. While not applicatiable to this particular contract, if other contracts require new variables to be set (i.e. those that are set in the initialize function), we will be calling the corresponding setter functions defined for those variable after the upgrade has completed.
 
+Anvil (Anvil private key used below):
+
 ```shell
 forge script script/upgrades/MockUpgradeLilypadModuleDirectory.s.sol:MockUpgradeLilypadModuleDirectory --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
 ```
