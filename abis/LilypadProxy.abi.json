@@ -1,0 +1,899 @@
+[
+  {
+    "type": "function",
+    "name": "DEFAULT_ADMIN_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "acceptJobPayment",
+    "inputs": [
+      {
+        "name": "_amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "acceptResourceProviderCollateral",
+    "inputs": [
+      {
+        "name": "_amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getDeal",
+    "inputs": [
+      {
+        "name": "dealId",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct SharedStructs.Deal",
+        "components": [
+          {
+            "name": "dealId",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "jobCreator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "resourceProvider",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "moduleCreator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "solver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "jobOfferCID",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "resourceOfferCID",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum SharedStructs.DealStatusEnum"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "paymentStructure",
+            "type": "tuple",
+            "internalType": "struct SharedStructs.DealPaymentStructure",
+            "components": [
+              {
+                "name": "jobCreatorSolverFee",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "resourceProviderSolverFee",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "networkCongestionFee",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "moduleCreatorFee",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "priceOfJobWithoutFees",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getEscrowBalance",
+    "inputs": [
+      {
+        "name": "_address",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getMinimumResourceProviderCollateralAmount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPaymentEngineAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getResult",
+    "inputs": [
+      {
+        "name": "_resultId",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct SharedStructs.Result",
+        "components": [
+          {
+            "name": "resultId",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "dealId",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "resultCID",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum SharedStructs.ResultStatusEnum"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleAdmin",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getStorageAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getUserAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getVersion",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getl2LilypadTokenAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "grantRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "hasRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initialize",
+    "inputs": [
+      {
+        "name": "_storageAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_paymentEngineAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_userAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_tokenAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "renounceRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "callerConfirmation",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revokeRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setDeal",
+    "inputs": [
+      {
+        "name": "deal",
+        "type": "tuple",
+        "internalType": "struct SharedStructs.Deal",
+        "components": [
+          {
+            "name": "dealId",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "jobCreator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "resourceProvider",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "moduleCreator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "solver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "jobOfferCID",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "resourceOfferCID",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum SharedStructs.DealStatusEnum"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "paymentStructure",
+            "type": "tuple",
+            "internalType": "struct SharedStructs.DealPaymentStructure",
+            "components": [
+              {
+                "name": "jobCreatorSolverFee",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "resourceProviderSolverFee",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "networkCongestionFee",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "moduleCreatorFee",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "priceOfJobWithoutFees",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setL2LilypadTokenContract",
+    "inputs": [
+      {
+        "name": "_l2LilypadTokenAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPaymentEngineContract",
+    "inputs": [
+      {
+        "name": "_paymentEngineAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setResult",
+    "inputs": [
+      {
+        "name": "result",
+        "type": "tuple",
+        "internalType": "struct SharedStructs.Result",
+        "components": [
+          {
+            "name": "resultId",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "dealId",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "resultCID",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum SharedStructs.ResultStatusEnum"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setStorageContract",
+    "inputs": [
+      {
+        "name": "_storageAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setUserContract",
+    "inputs": [
+      {
+        "name": "_userAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "supportsInterface",
+    "inputs": [
+      {
+        "name": "interfaceId",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "version",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "Initialized",
+    "inputs": [
+      {
+        "name": "version",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LilypadProxy__JobCreatorEscrowPayment",
+    "inputs": [
+      {
+        "name": "jobCreator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LilypadProxy__JobCreatorInserted",
+    "inputs": [
+      {
+        "name": "jobCreator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LilypadProxy__ResourceProviderCollateralPayment",
+    "inputs": [
+      {
+        "name": "resourceProvider",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LilypadProxy__ResourceProviderInserted",
+    "inputs": [
+      {
+        "name": "resourceProvider",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RoleAdminChanged",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "previousAdminRole",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "newAdminRole",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RoleGranted",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "sender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RoleRevoked",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "sender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AccessControlBadConfirmation",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AccessControlUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "neededRole",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidInitialization",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LilypadProxy__DealFailedToLockup",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LilypadProxy__DealFailedToSave",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LilypadProxy__NotAuthorizedToGetResult",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LilypadProxy__NotEnoughAllowance",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LilypadProxy__ResultFailedToSave",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LilypadProxy__ZeroAddressNotAllowed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LilypadProxy__ZeroAmountNotAllowed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LilypadProxy__acceptJobPayment__NotJobCreator",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LilypadProxy__acceptResourceProviderCollateral__NotResourceProvider",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotInitializing",
+    "inputs": []
+  }
+]
