@@ -58,6 +58,8 @@ contract LilypadPaymentEngineTest is Test {
     event LilypadPayment__LilypadStorageUpdated(address indexed lilypadStorage, address indexed caller);
     event LilypadPayment__LilypadUserUpdated(address indexed lilypadUser, address indexed caller);
 
+    error LilypadPayment__unauthorizedWithdrawal();
+
     function setUp() public {
         // Deploy token with initial supply (using 1 million instead of 1 billion for initial supply)
         uint256 initialSupply = 1_000_000 * 10 ** 18; // 1 million tokens
@@ -148,7 +150,40 @@ contract LilypadPaymentEngineTest is Test {
 
         assertTrue(success);
         assertEq(paymentEngine.escrowBalances(ALICE), amount);
+        assertEq(paymentEngine.depositTimestamps(ALICE), block.timestamp + paymentEngine.COLLATERAL_LOCK_DURATION());
         assertEq(paymentEngine.totalEscrow(), amount);
+        vm.stopPrank();
+    }
+
+    function test_PayEscrow_ForResourceProvider() public {
+        uint256 amount = 10 * 10 ** 18;
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__escrowPaid(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
+
+        bool success = paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
+
+        assertTrue(success);
+        assertEq(paymentEngine.escrowBalances(BOB), amount);
+        assertEq(paymentEngine.depositTimestamps(BOB), block.timestamp + paymentEngine.COLLATERAL_LOCK_DURATION());
+        assertEq(paymentEngine.totalEscrow(), amount);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_PayEscrow_ForResourceProvider_WithInsufficientBalance() public {
+        uint256 amount = 9 * 10 ** 18;
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), amount);
+
+        vm.expectRevert(
+            LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector
+        );
+        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
+
         vm.stopPrank();
     }
 
@@ -164,6 +199,7 @@ contract LilypadPaymentEngineTest is Test {
 
         assertTrue(success);
         assertEq(paymentEngine.escrowBalances(ALICE), amount);
+        assertEq(paymentEngine.depositTimestamps(ALICE), block.timestamp + paymentEngine.COLLATERAL_LOCK_DURATION());
         assertEq(paymentEngine.totalEscrow(), amount);
         vm.stopPrank();
     }
@@ -181,6 +217,10 @@ contract LilypadPaymentEngineTest is Test {
 
         // Wait for lock period
         vm.warp(block.timestamp + paymentEngine.COLLATERAL_LOCK_DURATION());
+
+        // Expect the escrow withdrawal event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit LilypadPayment__escrowWithdrawn(BOB, withdrawAmount);
 
         // Withdraw
         vm.startPrank(BOB);
@@ -218,6 +258,20 @@ contract LilypadPaymentEngineTest is Test {
         paymentEngine.withdrawEscrow(BOB, amount + 1);
         vm.stopPrank();
         assertEq(paymentEngine.totalEscrow(), amount);
+    }
+
+    function test_RevertWhen_NonOwnerWithdrawsEscrow() public {
+        uint256 amount = 100 * 10 ** 18;
+
+        vm.startPrank(BOB);
+        token.approve(address(paymentEngine), amount);
+        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
+        vm.stopPrank();
+
+        vm.startPrank(ALICE);
+        vm.expectRevert(LilypadPaymentEngine.LilypadPayment__unauthorizedWithdrawal.selector);
+        paymentEngine.withdrawEscrow(BOB, amount);
+        vm.stopPrank();
     }
 
     function test_SetTreasuryWallet() public {
