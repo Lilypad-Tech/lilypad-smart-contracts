@@ -283,6 +283,7 @@ contract LilypadPaymentEngine is
     function payEscrow(address _payee, SharedStructs.PaymentReason _paymentReason, uint256 _amount)
         external
         moreThanZero(_amount)
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
         if (_payee == address(0)) revert LilypadPayment__ZeroPayeeAddress();
