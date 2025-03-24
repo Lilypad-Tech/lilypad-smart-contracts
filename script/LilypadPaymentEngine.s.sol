@@ -8,9 +8,12 @@ import {LilypadStorage} from "../src/LilypadStorage.sol";
 import {LilypadUser} from "../src/LilypadUser.sol";
 import {LilypadTokenomics} from "../src/LilypadTokenomics.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract DeployLilypadPaymentEngine is Script {
+    error LilypadPayment__InvalidL2TokenDecimals();
+
     function deployEngine(
         address token,
         address storage_,
@@ -34,6 +37,12 @@ contract DeployLilypadPaymentEngine is Script {
             rewards,
             validationPool
         );
+
+        // Check if the L2 token has 18 decimals and if not, revert
+        ERC20 l2Token = ERC20(token);
+        if (l2Token.decimals() != 18) {
+            revert LilypadPayment__InvalidL2TokenDecimals();
+        }
 
         address paymentEngineProxy = Upgrades.deployTransparentProxy("LilypadPaymentEngine.sol", initialOwner, initData);
 
