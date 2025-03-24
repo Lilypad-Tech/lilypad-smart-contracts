@@ -6,6 +6,7 @@ import {LilypadUser} from "../src/LilypadUser.sol";
 import {SharedStructs} from "../src/SharedStructs.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract LilypadUserTest is Test {
     LilypadUser public lilypadUser;
@@ -23,7 +24,9 @@ contract LilypadUserTest is Test {
 
     function setUp() public {
         lilypadUser = new LilypadUser();
-        lilypadUser.initialize();
+        bytes memory initData = abi.encodeWithSelector(LilypadUser.initialize.selector);
+        ERC1967Proxy lilypadUserProxy = new ERC1967Proxy(address(lilypadUser), initData);
+        lilypadUser = LilypadUser(address(lilypadUserProxy));
 
         // Grant operator role to OPERATOR address
         lilypadUser.grantRole(SharedStructs.CONTROLLER_ROLE, CONTROLLER);
