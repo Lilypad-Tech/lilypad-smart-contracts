@@ -163,7 +163,9 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), amount);
+        vm.stopPrank();
 
+        vm.startPrank(address(paymentEngine));
         vm.expectEmit(true, true, true, true);
         emit LilypadPayment__escrowPaid(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
 
@@ -181,6 +183,9 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), amount);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
 
         vm.expectRevert(
             LilypadPaymentEngine.LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet.selector
@@ -285,6 +290,9 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), amount);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
         vm.stopPrank();
 
