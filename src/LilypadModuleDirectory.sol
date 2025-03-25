@@ -255,7 +255,7 @@ contract LilypadModuleDirectory is ILilypadModuleDirectory, Initializable, Acces
         address newOwner,
         string memory moduleName,
         string memory moduleUrl
-    ) external override returns (bool) {
+    ) external override moduleOwnerOnly(moduleOwner, moduleName) returns (bool) {
         if (!_moduleExists[moduleOwner][moduleName]) {
             revert LilypadModuleDirectory__ModuleNotFound();
         }

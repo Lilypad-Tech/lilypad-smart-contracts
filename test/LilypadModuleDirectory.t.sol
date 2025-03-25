@@ -37,16 +37,18 @@ contract LilypadModuleDirectoryTest is Test {
     function setUp() public {
         // Deploy lilypadUser
         lilypadUser = new LilypadUser();
-        lilypadUser.initialize();
+        bytes memory initDataLilypadUser = abi.encodeWithSelector(LilypadUser.initialize.selector);
+        ERC1967Proxy lilypadUserProxy = new ERC1967Proxy(address(lilypadUser), initDataLilypadUser);
+        lilypadUser = LilypadUser(address(lilypadUserProxy));
 
         // Deploy implementation
         LilypadModuleDirectory implementation = new LilypadModuleDirectory();
 
         // Encode initialization data
-        bytes memory initData = abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector, address(lilypadUser));
+        bytes memory initDataModuleDirectory = abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector, address(lilypadUser));
 
         // Deploy proxy
-        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initDataModuleDirectory);
 
         // Cast proxy to LilypadModuleDirectory
         moduleDirectory = LilypadModuleDirectory(address(proxy));
@@ -406,8 +408,17 @@ contract LilypadModuleDirectoryTest is Test {
         vm.startPrank(CONTROLLER);
         moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
-        vm.startPrank(BOB);
+        vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__TransferNotApproved.selector);
+        moduleDirectory.transferModuleOwnership(ALICE, BOB, "module1", "url1");
+    }
+
+    function test_RevertWhen_TransferringWhenNotModuleOwner() public {
+        vm.startPrank(CONTROLLER);
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
+
+        vm.startPrank(BOB);
+        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__NotModuleOwner.selector);
         moduleDirectory.transferModuleOwnership(ALICE, BOB, "module1", "url1");
     }
 

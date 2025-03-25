@@ -49,6 +49,11 @@ contract LilypadTokenomics is Initializable, AccessControlUpgradeable {
     error LilypadTokenomics__V2MustBeLessThanV1();
     error LilypadTokenomics__ZeroAddressNotAllowed();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize() external initializer {
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
