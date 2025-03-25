@@ -406,8 +406,17 @@ contract LilypadModuleDirectoryTest is Test {
         vm.startPrank(CONTROLLER);
         moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
 
-        vm.startPrank(BOB);
+        vm.startPrank(ALICE);
         vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__TransferNotApproved.selector);
+        moduleDirectory.transferModuleOwnership(ALICE, BOB, "module1", "url1");
+    }
+
+    function test_RevertWhen_TransferringWhenNotModuleOwner() public {
+        vm.startPrank(CONTROLLER);
+        moduleDirectory.registerModuleForCreator(ALICE, "module1", "url1");
+
+        vm.startPrank(BOB);
+        vm.expectRevert(LilypadModuleDirectory.LilypadModuleDirectory__NotModuleOwner.selector);
         moduleDirectory.transferModuleOwnership(ALICE, BOB, "module1", "url1");
     }
 
