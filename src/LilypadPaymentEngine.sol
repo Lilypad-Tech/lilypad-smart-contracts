@@ -89,6 +89,9 @@ contract LilypadPaymentEngine is
     event LilypadPayment__ControllerRoleRevoked(address indexed account, address indexed sender);
     event LilypadPayment__escrowPayout(address indexed to, uint256 amount);
     event LilypadPayment__TokensBurned(uint256 blockNumber, uint256 blockTimestamp, uint256 amountBurnt);
+    event LilypadPayment__TreasuryWalletUpdated(address newTreasuryWallet);
+    event LilypadPayment__ValueBasedRewardsWalletUpdated(address newValueBasedRewardsWallet);
+    event LilypadPayment__ValidationPoolWalletUpdated(address newValidationPoolWallet);
 
     error LilypadPayment__insufficientEscrowAmount(uint256 escrowAmount, uint256 requiredAmount);
     error LilypadPayment__insufficientActiveEscrowAmount();
@@ -215,6 +218,7 @@ contract LilypadPaymentEngine is
     function setTreasuryWallet(address _treasuryWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
         treasuryWallet = _treasuryWallet;
+        emit LilypadPayment__TreasuryWalletUpdated(_treasuryWallet);
     }
 
     /**
@@ -224,6 +228,7 @@ contract LilypadPaymentEngine is
     function setValueBasedRewardsWallet(address _valueBasedRewardsWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
         valueBasedRewardsWallet = _valueBasedRewardsWallet;
+        emit LilypadPayment__ValueBasedRewardsWalletUpdated(_valueBasedRewardsWallet);
     }
 
     /**
@@ -233,6 +238,7 @@ contract LilypadPaymentEngine is
     function setValidationPoolWallet(address _validationPoolWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
         validationPoolWallet = _validationPoolWallet;
+        emit LilypadPayment__ValidationPoolWalletUpdated(_validationPoolWallet);
     }
 
     /**
