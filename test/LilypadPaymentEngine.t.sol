@@ -142,6 +142,9 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), amount);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
 
         vm.expectEmit(true, true, true, true);
         emit LilypadPayment__escrowPaid(ALICE, SharedStructs.PaymentReason.JobFee, amount);
@@ -194,6 +197,9 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), amount);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
 
         bool success = paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, amount);
 
@@ -212,6 +218,9 @@ contract LilypadPaymentEngineTest is Test {
         // Setup initial deposit
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), depositAmount);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, depositAmount);
         vm.stopPrank();
 
@@ -237,11 +246,17 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), amount);
-        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
+        vm.stopPrank();
 
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__escrowNotWithdrawable.selector);
         paymentEngine.withdrawEscrow(BOB, amount);
         vm.stopPrank();
+
         assertEq(paymentEngine.totalEscrow(), amount);
     }
 
@@ -250,8 +265,13 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), amount);
-        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
+        vm.stopPrank();
 
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, amount);
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
         vm.warp(block.timestamp + paymentEngine.COLLATERAL_LOCK_DURATION() + 1);
 
         vm.expectRevert(LilypadPaymentEngine.LilypadPayment__insufficientEscrowBalanceForWithdrawal.selector);
@@ -351,11 +371,14 @@ contract LilypadPaymentEngineTest is Test {
         // Setup escrow
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -377,6 +400,9 @@ contract LilypadPaymentEngineTest is Test {
         // Only fund job creator, not resource provider
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
         paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
@@ -407,11 +433,14 @@ contract LilypadPaymentEngineTest is Test {
         // Setup escrow for job creator and resource provider
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -518,11 +547,14 @@ contract LilypadPaymentEngineTest is Test {
         // Setup escrow for job creator and resource provider
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -631,11 +663,14 @@ contract LilypadPaymentEngineTest is Test {
         // Setup escrow and complete standard setup
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -711,11 +746,14 @@ contract LilypadPaymentEngineTest is Test {
         // Setup escrow
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -794,11 +832,14 @@ contract LilypadPaymentEngineTest is Test {
         // Setup escrow
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -913,11 +954,14 @@ contract LilypadPaymentEngineTest is Test {
         // Setup escrow
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -983,11 +1027,14 @@ contract LilypadPaymentEngineTest is Test {
         // Setup escrow
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -1123,11 +1170,14 @@ contract LilypadPaymentEngineTest is Test {
         // Setup escrow for both parties
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -1320,16 +1370,17 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(EVE);
         token.approve(address(paymentEngine), rpCollateral);
-        paymentEngine.payEscrow(EVE, SharedStructs.PaymentReason.ValidationCollateral, rpCollateral);
         vm.stopPrank();
 
-        // Lock active escrow
         vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
+        paymentEngine.payEscrow(EVE, SharedStructs.PaymentReason.ValidationCollateral, rpCollateral);
+
+        // Lock active escrow
         paymentEngine.initiateLockupOfEscrowForJob(ALICE, EVE, "deal1", jobCost, validatorRequiredActiveEscrow);
         vm.stopPrank();
 
@@ -1453,16 +1504,19 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
-        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(EVE);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
+        paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         paymentEngine.payEscrow(EVE, SharedStructs.PaymentReason.ValidationCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -1567,11 +1621,14 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -1650,11 +1707,14 @@ contract LilypadPaymentEngineTest is Test {
 
         vm.startPrank(ALICE);
         token.approve(address(paymentEngine), jobCost);
-        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         vm.stopPrank();
 
         vm.startPrank(BOB);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(paymentEngine));
+        paymentEngine.payEscrow(ALICE, SharedStructs.PaymentReason.JobFee, jobCost);
         paymentEngine.payEscrow(BOB, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
