@@ -166,6 +166,11 @@ contract LilypadPaymentEngine is
     ///////// Constructor //////////
     ////////////////////////////////
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         address _l2token,
         address _lilypadStorageAddress,

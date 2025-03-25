@@ -35,6 +35,11 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     error LilypadProxy__NotAuthorizedToGetResult();
     error LilypadProxy__ResultFailedToSave();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         address _storageAddress,
         address _paymentEngineAddress,

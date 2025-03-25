@@ -46,6 +46,11 @@ contract LilypadContractRegistry is Initializable, AccessControlUpgradeable {
     error LilypadContractRegistry__NotController();
     error LilpadContractRegistry__NoZeroAddress();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     // Initialize
     function initialize(
         address _l1LilypadTokenAddress,

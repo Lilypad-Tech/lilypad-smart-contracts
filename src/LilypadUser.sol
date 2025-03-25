@@ -37,6 +37,11 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
     error LilypadUser__RoleNotAllowed();
     error LilypadUser__RoleNotFound();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize() external initializer {
         __AccessControl_init();
 
