@@ -309,7 +309,7 @@ contract LilypadPaymentEngine is
         }
 
         // Set the time when the deposit can be withdrawn by the account
-        // Note: If the account continueously tops up their escrow balance, the withdrawl time will be extended to 30 days from the last deposit
+        // Note: If the account continueously tops up their escrow balance, the withdrawal time will be extended to 30 days from the last deposit
         depositTimestamps[_payee] = block.timestamp + COLLATERAL_LOCK_DURATION;
 
         // Add the amount to the total escrow for tracking
