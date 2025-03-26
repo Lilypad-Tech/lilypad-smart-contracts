@@ -82,6 +82,8 @@ contract LilypadContractRegistry is Initializable, AccessControlUpgradeable {
         lilypadPaymentEngineAddress = _lilypadPaymentEngineAddress;
         lilypadProxyAddress = _lilypadProxyAddress;
         lilypadVestingAddress = _lilypadVestingAddress;
+
+        version = "1.0.0";
     }
 
     /**
