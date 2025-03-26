@@ -8,7 +8,7 @@ import {SharedStructs} from "./SharedStructs.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
-    IERC20 private l2LilypadToken;
+    IERC20 private immutable l2LilypadToken;
 
     // Vesting schedule id counter which will be incremented each time a new vesting schedule is created
     uint256 public vestingScheduleCount;
@@ -174,19 +174,20 @@ contract LilypadVesting is ILilypadVesting, ReentrancyGuard, AccessControl {
         if (scheduleId > vestingScheduleCount) revert LilypadVesting__InvalidScheduleId();
 
         VestingSchedule storage schedule = vestingSchedules[scheduleId];
+        address beneficiary = schedule.beneficiary;
         if (schedule.revoked) revert LilypadVesting__VestingScheduleRevoked();
-        if (msg.sender != schedule.beneficiary) revert LilypadVesting__InvalidBeneficiary();
+        if (msg.sender != beneficiary) revert LilypadVesting__InvalidBeneficiary();
 
-        uint256 releasableAmount = _calculateReleasableTokens(schedule.beneficiary, scheduleId);
+        uint256 releasableAmount = _calculateReleasableTokens(beneficiary, scheduleId);
         if (releasableAmount == 0) revert LilypadVesting__NothingToRelease();
 
         schedule.released += releasableAmount;
 
-        bool success = l2LilypadToken.transfer(schedule.beneficiary, releasableAmount);
+        bool success = l2LilypadToken.transfer(beneficiary, releasableAmount);
         if (!success) revert LilypadVesting__TransferFailed();
 
         vestingSchedulesTotalAmount -= releasableAmount;
-        emit LilypadVesting__l2TokensReleased(schedule.beneficiary, scheduleId, releasableAmount);
+        emit LilypadVesting__l2TokensReleased(beneficiary, scheduleId, releasableAmount);
         return true;
     }
 
