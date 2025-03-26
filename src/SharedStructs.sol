@@ -47,19 +47,6 @@ library SharedStructs {
         MatchFee
     }
 
-    enum PaymentDirection {
-        // money flowing into the contract
-        PaidIn,
-        // money paid out to services
-        PaidOut,
-        // collateral that is locked up being refunded
-        Refunded,
-        // collateral that is locked up being slashed
-        Slashed,
-        // money that is burnt
-        Burned
-    }
-
     enum UserOperation {
         NewUser,
         UpdateUser,
