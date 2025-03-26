@@ -45,7 +45,8 @@ contract LilypadModuleDirectoryTest is Test {
         LilypadModuleDirectory implementation = new LilypadModuleDirectory();
 
         // Encode initialization data
-        bytes memory initDataModuleDirectory = abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector, address(lilypadUser));
+        bytes memory initDataModuleDirectory =
+            abi.encodeWithSelector(LilypadModuleDirectory.initialize.selector, address(lilypadUser));
 
         // Deploy proxy
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initDataModuleDirectory);
