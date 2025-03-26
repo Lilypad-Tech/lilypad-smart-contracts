@@ -43,7 +43,6 @@ contract LilypadContractRegistry is Initializable, AccessControlUpgradeable {
     event LilypadContractRegistry__ContractAddressSet(string name, address indexed contractAddress);
 
     // Custom Errors
-    error LilypadContractRegistry__NotController();
     error LilpadContractRegistry__NoZeroAddress();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -82,6 +81,8 @@ contract LilypadContractRegistry is Initializable, AccessControlUpgradeable {
         lilypadPaymentEngineAddress = _lilypadPaymentEngineAddress;
         lilypadProxyAddress = _lilypadProxyAddress;
         lilypadVestingAddress = _lilypadVestingAddress;
+
+        version = "1.0.0";
     }
 
     /**

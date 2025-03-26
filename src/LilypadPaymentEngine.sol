@@ -315,7 +315,7 @@ contract LilypadPaymentEngine is
         }
 
         // Set the time when the deposit can be withdrawn by the account
-        // Note: If the account continueously tops up their escrow balance, the withdrawl time will be extended to 30 days from the last deposit
+        // Note: If the account continueously tops up their escrow balance, the withdrawal time will be extended to 30 days from the last deposit
         depositTimestamps[_payee] = block.timestamp + COLLATERAL_LOCK_DURATION;
 
         // Add the amount to the total escrow for tracking
@@ -509,9 +509,8 @@ contract LilypadPaymentEngine is
         uint256 rpScaler = lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000;
 
         // Calculate the required active collateral for the resource provider
-        uint256 resoureProviderRequiredActiveEscrow = (
-            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
-        ) * (rpScaler);
+        uint256 resoureProviderRequiredActiveEscrow =
+            (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (rpScaler);
 
         // Get the active escrow for both parties
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
@@ -623,9 +622,8 @@ contract LilypadPaymentEngine is
         uint256 rpScaler = lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000;
 
         // Calculate the required active collateral for the resource provider to be slashed
-        uint256 resoureProviderRequiredActiveEscrow = (
-            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
-        ) * (rpScaler);
+        uint256 resoureProviderRequiredActiveEscrow =
+            (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (rpScaler);
 
         // Get the active escrow for both parties
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];

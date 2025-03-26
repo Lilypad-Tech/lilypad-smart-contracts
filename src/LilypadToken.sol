@@ -59,9 +59,6 @@ contract LilypadToken is ERC20Burnable, ERC20Pausable, AccessControl {
         _grantRole(SharedStructs.MINTER_ROLE, msg.sender);
         _grantRole(SharedStructs.PAUSER_ROLE, msg.sender);
 
-        // The stimulent factor for future growth of the token
-        alpha = 0;
-
         _mint(msg.sender, initialSupply);
     }
 

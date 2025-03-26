@@ -1135,7 +1135,7 @@ contract LilypadProxyTest is Test {
         // Setup escrow
         vm.startPrank(JOB_CREATOR);
         token.approve(address(paymentEngine), totalCost);
-        
+
         vm.stopPrank();
 
         vm.startPrank(RESOURCE_PROVIDER);
