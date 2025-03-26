@@ -200,9 +200,10 @@ contract LilypadUser is ILilypadUser, Initializable, AccessControlUpgradeable {
 
         // Remove from validator list if role is Validator
         if (role == SharedStructs.UserType.Validator) {
-            for (uint256 i = 0; i < validatorAddresses.length; i++) {
+            uint256 validatorArrayLength = validatorAddresses.length;
+            for (uint256 i = 0; i < validatorArrayLength; i++) {
                 if (validatorAddresses[i] == walletAddress) {
-                    validatorAddresses[i] = validatorAddresses[validatorAddresses.length - 1];
+                    validatorAddresses[i] = validatorAddresses[validatorArrayLength - 1];
                     validatorAddresses.pop();
                     break;
                 }
