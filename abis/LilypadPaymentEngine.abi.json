@@ -1,5 +1,10 @@
 [
   {
+    "type": "constructor",
+    "inputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "function",
     "name": "COLLATERAL_LOCK_DURATION",
     "inputs": [],
@@ -1034,6 +1039,19 @@
   },
   {
     "type": "event",
+    "name": "LilypadPayment__TreasuryWalletUpdated",
+    "inputs": [
+      {
+        "name": "newTreasuryWallet",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "LilypadPayment__ValidationFailed",
     "inputs": [
       {
@@ -1090,6 +1108,32 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LilypadPayment__ValidationPoolWalletUpdated",
+    "inputs": [
+      {
+        "name": "newValidationPoolWallet",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LilypadPayment__ValueBasedRewardsWalletUpdated",
+    "inputs": [
+      {
+        "name": "newValueBasedRewardsWallet",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -1504,17 +1548,6 @@
     "type": "error",
     "name": "LilypadPayment__escrowNotWithdrawable",
     "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LilypadPayment__escrowNotWithdrawableForActor",
-    "inputs": [
-      {
-        "name": "actor",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
   },
   {
     "type": "error",

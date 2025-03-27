@@ -1,5 +1,10 @@
 [
   {
+    "type": "constructor",
+    "inputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "function",
     "name": "DEFAULT_ADMIN_ROLE",
     "inputs": [],
@@ -715,6 +720,32 @@
   },
   {
     "type": "event",
+    "name": "LilypadProxy__L2LilypadTokenContractUpdated",
+    "inputs": [
+      {
+        "name": "newL2LilypadTokenContract",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LilypadProxy__PaymentEngineContractUpdated",
+    "inputs": [
+      {
+        "name": "newPaymentEngineContract",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "LilypadProxy__ResourceProviderCollateralPayment",
     "inputs": [
       {
@@ -738,6 +769,32 @@
     "inputs": [
       {
         "name": "resourceProvider",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LilypadProxy__StorageContractUpdated",
+    "inputs": [
+      {
+        "name": "newStorageContract",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LilypadProxy__UserContractUpdated",
+    "inputs": [
+      {
+        "name": "newUserContract",
         "type": "address",
         "indexed": true,
         "internalType": "address"

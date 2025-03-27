@@ -1,5 +1,10 @@
 [
   {
+    "type": "constructor",
+    "inputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "function",
     "name": "DEFAULT_ADMIN_ROLE",
     "inputs": [],
@@ -483,11 +488,6 @@
   {
     "type": "error",
     "name": "LilypadTokenomics__V1MustBeGreaterThanV2",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LilypadTokenomics__V2MustBeLessThanV1",
     "inputs": []
   },
   {
