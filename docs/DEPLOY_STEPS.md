@@ -48,12 +48,12 @@ forge script script/LilypadUser.s.sol:DeployLilypadUser --rpc-url http://127.0.0
 
 Arbitrum Sepolia:
 ```shell
-forge script script/LilypadUser.s.sol:DeployLilypadUser -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
+forge script script/LilypadUser.s.sol:DeployLilypadUser --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
 ```
 
 Arbitrum Sepolia with verification (note: have the ARBISCAN_API_KEY set in your environment variables):
 ```shell
-forge script script/LilypadUser.s.sol:DeployLilypadUser -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+forge script script/LilypadUser.s.sol:DeployLilypadUser --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
 ```
 
 Make note of the address of proxy contract deployed and add it to the .env file as USER_PROXY_ADDRESS
@@ -69,12 +69,12 @@ forge script script/LilypadStorage.s.sol:DeployLilypadStorage --rpc-url http://1
 
 Arbitrum Sepolia:
 ```shell
-forge script script/LilypadStorage.s.sol:DeployLilypadStorage -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
+forge script script/LilypadStorage.s.sol:DeployLilypadStorage --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
 ```
 
 Arbitrum Sepolia with verification (note: have the ARBISCAN_API_KEY set in your environment variables):
 ```shell
-forge script script/LilypadStorage.s.sol:DeployLilypadStorage -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+forge script script/LilypadStorage.s.sol:DeployLilypadStorage --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
 ```
 
 Make note of the address of proxy contract deployed and add it to the .env file as STORAGE_PROXY_ADDRESS
@@ -92,13 +92,13 @@ forge script script/LilypadTokenomics.s.sol:DeployLilypadTokenomics --rpc-url ht
 Arbitrum Sepolia:
 
 ```shell
-forge script script/LilypadTokenomics.s.sol:DeployLilypadTokenomics -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
+forge script script/LilypadTokenomics.s.sol:DeployLilypadTokenomics --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
 ```
 
 Arbitrum Sepolia with verification (note: have the ARBISCAN_API_KEY set in your environment variables):
 
 ```shell
-forge script script/LilypadTokenomics.s.sol:DeployLilypadTokenomics -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+forge script script/LilypadTokenomics.s.sol:DeployLilypadTokenomics --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
 ```
 
 Make note of the address of proxy contract deployed and add it to the .env file as TOKENOMICS_PROXY_ADDRESS
@@ -116,13 +116,13 @@ forge script script/LilypadToken.s.sol:DeployLilypadToken --rpc-url http://127.0
 Sepolia:
 
 ```shell
-forge script script/LilypadToken.s.sol:DeployLilypadToken -rpc-url https://1rpc.io/sepolia --private-key $PRIVATE_KEY --broadcast
+forge script script/LilypadToken.s.sol:DeployLilypadToken --rpc-url https://1rpc.io/sepolia --private-key $PRIVATE_KEY --broadcast
 ```
 
 Sepolia with verification (note: have the ETHERSCAN_API_KEY set in your environment variables):
 
 ```shell
-forge script script/LilypadToken.s.sol:DeployLilypadToken -rpc-url https://1rpc.io/sepolia --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+forge script script/LilypadToken.s.sol:DeployLilypadToken --rpc-url https://1rpc.io/sepolia --private-key $PRIVATE_KEY --broadcast --verify -vvvv
 ```
 
 Make note of the address of proxy contract deployed and add it to the .env file as L1_TOKEN_ADDRESS for reference
@@ -158,13 +158,13 @@ forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory --
 Arbitrum Sepolia:
 
 ```shell
-forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
+forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
 ```
 
 Arbitrum Sepolia with verification (note: have the ARBISCAN_API_KEY set in your environment variables):
 
 ```shell
-forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+forge script script/LilypadModuleDirectory.s.sol:DeployLilypadModuleDirectory --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
 ```
 
 Make note of the address of proxy contract deployed and add it to the .env file as MODULE_DIRECTORY_PROXY_ADDRESS for reference
@@ -198,13 +198,13 @@ forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine --rpc-
 Arbitrum Sepolia:
 
 ```shell
-forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
+forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
 ```
 
 Arbitrum Sepolia with verification (note: have the ARBISCAN_API_KEY set in your environment variables):
 
 ```shell
-forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+forge script script/LilypadPaymentEngine.s.sol:DeployLilypadPaymentEngine --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
 ```
 
 Make note of the address of proxy contract deployed and add it to the .env file as PAYMENT_ENGINE_PROXY_ADDRESS
@@ -228,13 +228,13 @@ forge script script/LilypadProxy.s.sol:DeployLilypadProxy --rpc-url http://127.0
 Arbitrum Sepolia:
 
 ```shell
-forge script script/LilypadProxy.s.sol:DeployLilypadProxy -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
+forge script script/LilypadProxy.s.sol:DeployLilypadProxy --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
 ```
 
 Arbitrum Sepolia with verification (note: have the ARBISCAN_API_KEY set in your environment variables):
 
 ```shell
-forge script script/LilypadProxy.s.sol:DeployLilypadProxy -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+forge script script/LilypadProxy.s.sol:DeployLilypadProxy --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
 ```
 
 Make note of the address of proxy contract deployed and add it to the .env file as LILYPAD_PROXY_ADDRESS
@@ -255,13 +255,13 @@ forge script script/LilypadVesting.s.sol:DeployLilypadVesting --rpc-url http://1
 Arbitrum Sepolia:
 
 ```shell
-forge script script/LilypadVesting.s.sol:DeployLilypadVesting -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
+forge script script/LilypadVesting.s.sol:DeployLilypadVesting --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
 ```     
 
 Arbitrum Sepolia with verification (note: have the ARBISCAN_API_KEY set in your environment variables):
 
 ```shell
-forge script script/LilypadVesting.s.sol:DeployLilypadVesting -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+forge script script/LilypadVesting.s.sol:DeployLilypadVesting --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
 ```     
 
 Make note of the address of the contract deployed and add it to the .env file as VESTING_ADDRESS
@@ -289,13 +289,13 @@ forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry 
 Arbitrum Sepolia:
 
 ```shell
-forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
+forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast
 ```
 
 Arbitrum Sepolia with verification (note: have the ARBISCAN_API_KEY set in your environment variables):
 
 ```shell
-forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry -rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
+forge script script/LilypadContractRegistry.s.sol:DeployLilypadContractRegistry --rpc-url https://arbitrum-sepolia-rpc.publicnode.com --private-key $PRIVATE_KEY --broadcast --verify -vvvv
 ```
 
 Make note of the contract address once deployed for record keeping purposes
