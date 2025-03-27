@@ -24,6 +24,10 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     event LilypadProxy__ResourceProviderCollateralPayment(address indexed resourceProvider, uint256 amount);
     event LilypadProxy__JobCreatorInserted(address indexed jobCreator);
     event LilypadProxy__ResourceProviderInserted(address indexed resourceProvider);
+    event LilypadProxy__UserContractUpdated(address indexed newUserContract);
+    event LilypadProxy__PaymentEngineContractUpdated(address indexed newPaymentEngineContract);
+    event LilypadProxy__StorageContractUpdated(address indexed newStorageContract);
+    event LilypadProxy__L2LilypadTokenContractUpdated(address indexed newL2LilypadTokenContract);
 
     error LilypadProxy__ZeroAddressNotAllowed();
     error LilypadProxy__ZeroAmountNotAllowed();
@@ -34,6 +38,11 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     error LilypadProxy__DealFailedToLockup();
     error LilypadProxy__NotAuthorizedToGetResult();
     error LilypadProxy__ResultFailedToSave();
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize(
         address _storageAddress,
@@ -52,6 +61,8 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
         l2LilypadToken = IERC20(_tokenAddress);
         version = "1.0.0";
 
+        __AccessControl_init();
+
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SharedStructs.CONTROLLER_ROLE, msg.sender);
     }
@@ -63,6 +74,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     function setStorageContract(address _storageAddress) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
         if (_storageAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         lilypadStorage = LilypadStorage(_storageAddress);
+        emit LilypadProxy__StorageContractUpdated(_storageAddress);
         return true;
     }
 
@@ -73,12 +85,14 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     {
         if (_paymentEngineAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         paymentEngine = LilypadPaymentEngine(_paymentEngineAddress);
+        emit LilypadProxy__PaymentEngineContractUpdated(_paymentEngineAddress);
         return true;
     }
 
     function setUserContract(address _userAddress) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
         if (_userAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         lilypadUser = LilypadUser(_userAddress);
+        emit LilypadProxy__UserContractUpdated(_userAddress);
         return true;
     }
 
@@ -89,6 +103,7 @@ contract LilypadProxy is ILilypadProxy, AccessControlUpgradeable {
     {
         if (_l2LilypadTokenAddress == address(0)) revert LilypadProxy__ZeroAddressNotAllowed();
         l2LilypadToken = IERC20(_l2LilypadTokenAddress);
+        emit LilypadProxy__L2LilypadTokenContractUpdated(_l2LilypadTokenAddress);
         return true;
     }
 

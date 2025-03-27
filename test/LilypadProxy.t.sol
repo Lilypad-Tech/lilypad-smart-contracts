@@ -1135,11 +1135,15 @@ contract LilypadProxyTest is Test {
         // Setup escrow
         vm.startPrank(JOB_CREATOR);
         token.approve(address(paymentEngine), totalCost);
-        paymentEngine.payEscrow(JOB_CREATOR, SharedStructs.PaymentReason.JobFee, totalCost);
+
         vm.stopPrank();
 
         vm.startPrank(RESOURCE_PROVIDER);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(proxy));
+        paymentEngine.payEscrow(JOB_CREATOR, SharedStructs.PaymentReason.JobFee, totalCost);
         paymentEngine.payEscrow(RESOURCE_PROVIDER, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 
@@ -1206,11 +1210,14 @@ contract LilypadProxyTest is Test {
         // Setup escrow
         vm.startPrank(JOB_CREATOR);
         token.approve(address(paymentEngine), totalCost);
-        paymentEngine.payEscrow(JOB_CREATOR, SharedStructs.PaymentReason.JobFee, totalCost);
         vm.stopPrank();
 
         vm.startPrank(RESOURCE_PROVIDER);
         token.approve(address(paymentEngine), rpCollateral);
+        vm.stopPrank();
+
+        vm.startPrank(address(proxy));
+        paymentEngine.payEscrow(JOB_CREATOR, SharedStructs.PaymentReason.JobFee, totalCost);
         paymentEngine.payEscrow(RESOURCE_PROVIDER, SharedStructs.PaymentReason.ResourceProviderCollateral, rpCollateral);
         vm.stopPrank();
 

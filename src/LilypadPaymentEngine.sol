@@ -89,6 +89,9 @@ contract LilypadPaymentEngine is
     event LilypadPayment__ControllerRoleRevoked(address indexed account, address indexed sender);
     event LilypadPayment__escrowPayout(address indexed to, uint256 amount);
     event LilypadPayment__TokensBurned(uint256 blockNumber, uint256 blockTimestamp, uint256 amountBurnt);
+    event LilypadPayment__TreasuryWalletUpdated(address newTreasuryWallet);
+    event LilypadPayment__ValueBasedRewardsWalletUpdated(address newValueBasedRewardsWallet);
+    event LilypadPayment__ValidationPoolWalletUpdated(address newValidationPoolWallet);
 
     error LilypadPayment__insufficientEscrowAmount(uint256 escrowAmount, uint256 requiredAmount);
     error LilypadPayment__insufficientActiveEscrowAmount();
@@ -97,7 +100,6 @@ contract LilypadPaymentEngine is
     error LilypadPayment__insufficientEscrowBalanceForWithdrawal();
     error LilypadPayment__transferFailed();
     error LilypadPayment__escrowNotWithdrawable();
-    error LilypadPayment__escrowNotWithdrawableForActor(address actor);
     error LilypadPayment__HandleJobCompletion__InvalidTreasuryAmounts(
         uint256 pValue, uint256 p1Value, uint256 p2Value, uint256 p3Value
     );
@@ -167,6 +169,11 @@ contract LilypadPaymentEngine is
     ///////// Constructor //////////
     ////////////////////////////////
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         address _l2token,
         address _lilypadStorageAddress,
@@ -211,6 +218,7 @@ contract LilypadPaymentEngine is
     function setTreasuryWallet(address _treasuryWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_treasuryWallet == address(0)) revert LilypadPayment__ZeroTreasuryWallet();
         treasuryWallet = _treasuryWallet;
+        emit LilypadPayment__TreasuryWalletUpdated(_treasuryWallet);
     }
 
     /**
@@ -220,6 +228,7 @@ contract LilypadPaymentEngine is
     function setValueBasedRewardsWallet(address _valueBasedRewardsWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_valueBasedRewardsWallet == address(0)) revert LilypadPayment__ZeroValueBasedRewardsWallet();
         valueBasedRewardsWallet = _valueBasedRewardsWallet;
+        emit LilypadPayment__ValueBasedRewardsWalletUpdated(_valueBasedRewardsWallet);
     }
 
     /**
@@ -229,6 +238,7 @@ contract LilypadPaymentEngine is
     function setValidationPoolWallet(address _validationPoolWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_validationPoolWallet == address(0)) revert LilypadPayment__ZeroValidationPoolWallet();
         validationPoolWallet = _validationPoolWallet;
+        emit LilypadPayment__ValidationPoolWalletUpdated(_validationPoolWallet);
     }
 
     /**
@@ -283,6 +293,7 @@ contract LilypadPaymentEngine is
     function payEscrow(address _payee, SharedStructs.PaymentReason _paymentReason, uint256 _amount)
         external
         moreThanZero(_amount)
+        onlyRole(SharedStructs.CONTROLLER_ROLE)
         returns (bool)
     {
         if (_payee == address(0)) revert LilypadPayment__ZeroPayeeAddress();
@@ -290,11 +301,9 @@ contract LilypadPaymentEngine is
         bool isResourceProviderOrValidator = lilypadUser.hasRole(_payee, SharedStructs.UserType.ResourceProvider)
             || lilypadUser.hasRole(_payee, SharedStructs.UserType.Validator);
 
-        if (isResourceProviderOrValidator) {
-            // Check if the resource provider has enough escrow to cover the amount
-            if (_amount < MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT) {
-                revert LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet();
-            }
+        // Check if the resource provider has provided enough collateral escrow to cover their minimum deposit amount
+        if (isResourceProviderOrValidator && _amount < MIN_RESOURCE_PROVIDER_DEPOSIT_AMOUNT) {
+            revert LilypadPayment__minimumResourceProviderAndValidatorDepositAmountNotMet();
         }
 
         // Do the accounting to bump the escrow balance of the account
@@ -305,11 +314,9 @@ contract LilypadPaymentEngine is
             revert LilypadPayment__transferFailed();
         }
 
-        if (isResourceProviderOrValidator) {
-            // In the case of a Resource Provider or Validator, set the time when the deposit can be withdrawn by the account
-            // Note: If the account continueously tops up their escrow balance, the withdrawl time will be extended to 30 days from the last deposit
-            depositTimestamps[_payee] = block.timestamp + COLLATERAL_LOCK_DURATION;
-        }
+        // Set the time when the deposit can be withdrawn by the account
+        // Note: If the account continueously tops up their escrow balance, the withdrawal time will be extended to 30 days from the last deposit
+        depositTimestamps[_payee] = block.timestamp + COLLATERAL_LOCK_DURATION;
 
         // Add the amount to the total escrow for tracking
         totalEscrow += _amount;
@@ -350,7 +357,7 @@ contract LilypadPaymentEngine is
 
     /**
      * @dev Withdraws a specified amount from an escrow balance.
-     * @notice Only Resource Providers and Validators can withdraw their escrow
+     * @notice Token holders can withdraw their escrow after the collateral lockup period has expired
      */
     function withdrawEscrow(address _withdrawer, uint256 _amount)
         external
@@ -360,17 +367,7 @@ contract LilypadPaymentEngine is
     {
         if (_withdrawer == address(0)) revert LilypadPayment__ZeroWithdrawalAddress();
         if (msg.sender != _withdrawer) revert LilypadPayment__unauthorizedWithdrawal();
-        if (
-            lilypadUser.hasRole(_withdrawer, SharedStructs.UserType.ResourceProvider)
-                || lilypadUser.hasRole(_withdrawer, SharedStructs.UserType.Validator)
-        ) {
-            if (block.timestamp < depositTimestamps[_withdrawer]) {
-                revert LilypadPayment__escrowNotWithdrawable();
-            }
-        } else {
-            // If we enter this block, it means a non-RP or non-Validator is trying to withdraw their escrow
-            revert LilypadPayment__escrowNotWithdrawableForActor(_withdrawer);
-        }
+        if (block.timestamp < depositTimestamps[_withdrawer]) revert LilypadPayment__escrowNotWithdrawable();
         if (escrowBalances[_withdrawer] < _amount || escrowBalances[_withdrawer] == 0) {
             revert LilypadPayment__insufficientEscrowBalanceForWithdrawal();
         }
@@ -509,10 +506,11 @@ contract LilypadPaymentEngine is
         uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.jobCreatorSolverFee
             + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.networkCongestionFee;
 
+        uint256 rpScaler = lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000;
+
         // Calculate the required active collateral for the resource provider
-        uint256 resoureProviderRequiredActiveEscrow = (
-            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
-        ) * (lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000);
+        uint256 resoureProviderRequiredActiveEscrow =
+            (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (rpScaler);
 
         // Get the active escrow for both parties
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
@@ -621,10 +619,11 @@ contract LilypadPaymentEngine is
         uint256 totalCostOfJob = deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.jobCreatorSolverFee
             + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.networkCongestionFee;
 
+        uint256 rpScaler = lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000;
+
         // Calculate the required active collateral for the resource provider to be slashed
-        uint256 resoureProviderRequiredActiveEscrow = (
-            deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee
-        ) * (lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000);
+        uint256 resoureProviderRequiredActiveEscrow =
+            (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * (rpScaler);
 
         // Get the active escrow for both parties
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];

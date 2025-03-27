@@ -25,7 +25,7 @@ contract LilypadTokenomics is Initializable, AccessControlUpgradeable {
      *
      *     v1: The scaling factor for determining value based rewards for RPs based on total fees geenrated by the RP
      *     v2: The scaling factor for determining value based rewards for RPs based on total average collateral locked up
-     *     Note: v1 > v2 to scaoe the importance of fees over collateral
+     *     Note: v1 > v2 to scale the importance of fees over collateral
      */
     uint256 public p;
     uint256 public p1;
@@ -46,8 +46,12 @@ contract LilypadTokenomics is Initializable, AccessControlUpgradeable {
     error LilypadTokenomics__MValueTooLarge();
     error LilypadTokenomics__ParametersMustSumToTenThousand();
     error LilypadTokenomics__V1MustBeGreaterThanV2();
-    error LilypadTokenomics__V2MustBeLessThanV1();
     error LilypadTokenomics__ZeroAddressNotAllowed();
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize() external initializer {
         __AccessControl_init();
@@ -118,7 +122,6 @@ contract LilypadTokenomics is Initializable, AccessControlUpgradeable {
 
     function setVValues(uint256 _v1, uint256 _v2) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_v1 <= _v2) revert LilypadTokenomics__V1MustBeGreaterThanV2();
-        if (_v2 >= _v1) revert LilypadTokenomics__V2MustBeLessThanV1();
         v1 = _v1;
         v2 = _v2;
         emit LilypadTokenomics__TokenomicsParameterUpdated("v1", _v1);
