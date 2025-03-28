@@ -1214,7 +1214,7 @@ contract LilypadPaymentEngineTest is Test {
 
         // Lock escrow
         uint256 rpRequiredEscrow =
-            (basePayment + resourceProviderSolverFee) * (lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000);
+            ((basePayment + resourceProviderSolverFee) * lilypadTokenomics.resourceProviderActiveEscrowScaler()) / 10000;
         paymentEngine.initiateLockupOfEscrowForJob(ALICE, BOB, "deal1", jobCost, rpRequiredEscrow);
         vm.stopPrank();
 
@@ -1316,7 +1316,7 @@ contract LilypadPaymentEngineTest is Test {
 
         // Calculate required escrows
         uint256 rpRequiredEscrow =
-            (basePayment + resourceProviderSolverFee) * (lilypadTokenomics.resourceProviderActiveEscrowScaler() / 10000);
+            ((basePayment + resourceProviderSolverFee) * lilypadTokenomics.resourceProviderActiveEscrowScaler()) / 10000;
 
         // Skip the lockup of escrow for job creator and resource provider
 
