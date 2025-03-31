@@ -124,6 +124,21 @@ $ anvil
 
 Please refer to the [Deploy](./docs/DEPLOY_STEPS.md) file for more information on how to deploy the contracts locally and to a testnet.
 
+### Generating Go Bindings
+
+To generate the Go bindings for the smart contracts we have developed a shell script called `generate_bindings.sh` which automates the processs.  Necessarily, we use the `abigen` developer tool which is part of the `Geth` package thus if you are going to run the script, you will need to have that installed. You can follow the [official Geth Documentation](https://geth.ethereum.org/docs/getting-started/installing-geth) on how to download the library on your machine.
+
+**Running the script**
+
+Assuming you have `Geth` intstalled, preform the following steps to generate the GO bindings:
+
+Run the script which will read all the smart contracts at the root of the `src` folder and generate a Go file for each corresponding smart contract:
+```bash
+sh generate_bindings.sh
+```
+
+Now you should see the generated Go bindings in the `bindings` folder along with all the contract abi's in the `abis` folder.  Note: We need to message the output files that foundry creates to isolate the abi's so that the `abigen` tool can properly consume them which is why the script also creates individual abi's from each of the smart contracts 
+
 ### Cast
 
 ```shell
