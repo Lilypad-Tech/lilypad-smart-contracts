@@ -138,7 +138,7 @@ Here are proxy addresses for the contracts deployed on Arbitrum Sepolia
 **LilypadModuleDirectory**=[0xdF7b3f254a4Ae1904D3a39e5556ed79fC5E27d36](https://sepolia.arbiscan.io/address/0xdF7b3f254a4Ae1904D3a39e5556ed79fC5E27d36)
 **LilypadVesting**=[0x7D6701c0c3d34135eB7f0d6F7b726415E3E054Bd](https://sepolia.arbiscan.io/address/0x7D6701c0c3d34135eB7f0d6F7b726415E3E054Bd)
 **LilypadProxy**=[0x30DDD792e379b79cBDc26c3c5e864f451e67c3F9](https://sepolia.arbiscan.io/address/0x30DDD792e379b79cBDc26c3c5e864f451e67c3F9)
-**LilypadContractRegistry**=[0xC332A26540572E164051A57ee6DdC0231cDC76c0]((https://sepolia.arbiscan.io/address/0xC332A26540572E164051A57ee6DdC0231cDC76c0#readProxyContract)
+**LilypadContractRegistry**=[0xC332A26540572E164051A57ee6DdC0231cDC76c0](https://sepolia.arbiscan.io/address/0xC332A26540572E164051A57ee6DdC0231cDC76c0#readProxyContract)
 
 Use the **[LilypadContractRegistry](https://sepolia.arbiscan.io/address/0xC332A26540572E164051A57ee6DdC0231cDC76c0#readProxyContract)** as the source of truth for all the proxy contract addresses of related to the Lilypad Protocol
 
