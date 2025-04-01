@@ -126,21 +126,21 @@ Please refer to the [Deploy](./docs/DEPLOY_STEPS.md) file for more information o
 
 Here is the token address of the LILY token deplpoyed on Sepolia
 
-**LilypadToken**=0xAeea8c0f6Eb5d4377c341242d9E0826A369B48c6
+**LilypadToken**=[0xAeea8c0f6Eb5d4377c341242d9E0826A369B48c6](https://sepolia.etherscan.io/address/0xAeea8c0f6Eb5d4377c341242d9E0826A369B48c6)
 
 Here are proxy addresses for the contracts deployed on Arbitrum Sepolia
 
-**LilypadPaymentEngine**=0xf2c1212367549C67BB391CddaEB9d3A3EcEcc5F7
-**LilypadToken (L2 version bridged from regular Sepolia)**=0x1A377f7F6e9Ad07B10DaA1209011d92f0bfc4Af7
-**LilypadStorage**=0xB99685243e1f4978eb5e760520c5a03E7179Ce8c
-**LilypadUser**=0x9764E774db43b59bb8eeDd1945718672391288fa
-**LilypadTokenomics**=0x05cB889c70EaA72410ca760356f0951Bd240DC24
-**LilypadModuleDirectory**=0xdF7b3f254a4Ae1904D3a39e5556ed79fC5E27d36
-**LilypadVesting**=0x7D6701c0c3d34135eB7f0d6F7b726415E3E054Bd
-**LilypadProxy**=0x30DDD792e379b79cBDc26c3c5e864f451e67c3F9
-**LilypadContractRegistry**=0xC332A26540572E164051A57ee6DdC0231cDC76c0
+**LilypadPaymentEngine**=[0xf2c1212367549C67BB391CddaEB9d3A3EcEcc5F7](https://sepolia.arbiscan.io/address/0xf2c1212367549C67BB391CddaEB9d3A3EcEcc5F7)
+**LilypadToken (L2 version bridged from regular Sepolia)**=[0x1A377f7F6e9Ad07B10DaA1209011d92f0bfc4Af7](https://sepolia.arbiscan.io/address/0x1A377f7F6e9Ad07B10DaA1209011d92f0bfc4Af7)
+**LilypadStorage**=[0xB99685243e1f4978eb5e760520c5a03E7179Ce8c](https://sepolia.arbiscan.io/address/0xB99685243e1f4978eb5e760520c5a03E7179Ce8c)
+**LilypadUser**=[0x9764E774db43b59bb8eeDd1945718672391288fa](https://sepolia.arbiscan.io/address/0x9764E774db43b59bb8eeDd1945718672391288fa)
+**LilypadTokenomics**=[0x05cB889c70EaA72410ca760356f0951Bd240DC24](https://sepolia.arbiscan.io/address/0x05cB889c70EaA72410ca760356f0951Bd240DC24)
+**LilypadModuleDirectory**=[0xdF7b3f254a4Ae1904D3a39e5556ed79fC5E27d36](https://sepolia.arbiscan.io/address/0xdF7b3f254a4Ae1904D3a39e5556ed79fC5E27d36)
+**LilypadVesting**=[0x7D6701c0c3d34135eB7f0d6F7b726415E3E054Bd](https://sepolia.arbiscan.io/address/0x7D6701c0c3d34135eB7f0d6F7b726415E3E054Bd)
+**LilypadProxy**=[0x30DDD792e379b79cBDc26c3c5e864f451e67c3F9](https://sepolia.arbiscan.io/address/0x30DDD792e379b79cBDc26c3c5e864f451e67c3F9)
+**LilypadContractRegistry**=[0xC332A26540572E164051A57ee6DdC0231cDC76c0]((https://sepolia.arbiscan.io/address/0xC332A26540572E164051A57ee6DdC0231cDC76c0#readProxyContract)
 
-Use the **LilypadContractRegistry** as the source of truth for all the proxy contract addresses of related to the Lilypad Protocol
+Use the **[LilypadContractRegistry](https://sepolia.arbiscan.io/address/0xC332A26540572E164051A57ee6DdC0231cDC76c0#readProxyContract)** as the source of truth for all the proxy contract addresses of related to the Lilypad Protocol
 
 ### Generating Go Bindings
 
