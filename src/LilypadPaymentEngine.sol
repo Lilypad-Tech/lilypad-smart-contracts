@@ -507,8 +507,10 @@ contract LilypadPaymentEngine is
             + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.networkCongestionFee;
 
         // Calculate the required active collateral for the resource provider
-        uint256 resoureProviderRequiredActiveEscrow =
-            ((deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * lilypadTokenomics.resourceProviderActiveEscrowScaler()) / 10000;
+        uint256 resoureProviderRequiredActiveEscrow = (
+            (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee)
+                * lilypadTokenomics.resourceProviderActiveEscrowScaler()
+        ) / 10000;
 
         // Get the active escrow for both parties
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];
@@ -618,8 +620,10 @@ contract LilypadPaymentEngine is
             + deal.paymentStructure.moduleCreatorFee + deal.paymentStructure.networkCongestionFee;
 
         // Calculate the required active collateral for the resource provider to be slashed
-        uint256 resoureProviderRequiredActiveEscrow =
-            ((deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee) * lilypadTokenomics.resourceProviderActiveEscrowScaler()) / 10000;
+        uint256 resoureProviderRequiredActiveEscrow = (
+            (deal.paymentStructure.priceOfJobWithoutFees + deal.paymentStructure.resourceProviderSolverFee)
+                * lilypadTokenomics.resourceProviderActiveEscrowScaler()
+        ) / 10000;
 
         // Get the active escrow for both parties
         uint256 jobCreatorActiveEscrow = activeEscrow[deal.jobCreator];

@@ -11,7 +11,7 @@ contract LilypadTokenomics is Initializable, AccessControlUpgradeable {
 
     /**
      * These are the parameters described in the Lilypad tokenomics paper
-     *     src: _add_link_here_
+     *     src: TBD
      *
      *     p: The percentage of total fees that go towads the protocol
      *     (1-p): The percentage of total fees that go towards the value based rewards
