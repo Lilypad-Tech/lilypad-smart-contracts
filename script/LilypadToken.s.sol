@@ -8,6 +8,7 @@ contract DeployLilypadToken is Script {
     function run() external returns (address) {
         vm.startBroadcast();
 
+        // TODO: Set initial supply to the actual amount when ready to deploy
         uint256 initialSupply = 167_500_000 * 10 ** 18;
         LilypadToken implementation = new LilypadToken(initialSupply);
 
