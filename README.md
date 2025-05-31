@@ -123,6 +123,7 @@ $ anvil
 ### Deploying the Contracts
 
 Please refer to the [Deploy](./docs/DEPLOY_STEPS.md) file for more information on how to deploy the contracts locally and to a testnet.
+For safe smart account integration and interaction refer to the [Safe](./docs/SAFE_CONNECT.md)
 
 Here is the token address of the LILY token deplpoyed on Sepolia
 
